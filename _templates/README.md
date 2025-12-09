@@ -1,12 +1,12 @@
 # Hygen Code Generators
 
-This directory contains Hygen templates for generating boilerplate code in the Core project.
+This directory contains Hygen templates for generating boilerplate code in the Vietnam New Address Core project.
 
 ## Available Generators
 
 ### 1. Microservice Generator (`microservice/new`)
 
-Generates a complete new microservice with all necessary files and configuration.
+Generates a complete new microservice matching the applicant-service architecture with MongoDB, Mongoose, and full CRUD operations.
 
 **Usage:**
 
@@ -18,193 +18,177 @@ npm run gen:microservice -- --name order-service
 
 **Prompts:**
 
-- Service name (kebab-case, e.g., `order-service`)
-- Description
-- TCP Port (default: auto-calculated)
-- Database (mongodb/postgres/none)
-- Include authentication? (yes/no)
+1. **Service name** (kebab-case) - e.g., `order-service`
+2. **Description** - Service description
+3. **TCP Port** - Microservice TCP port (default: auto-calculated)
+4. **Health Port** - Health check HTTP port (default: TCP port + 10)
+5. **Entity Name** (singular, kebab-case) - e.g., `order`
 
-**Generates:**
+**Generates (~55 files):**
 
-- `apps/[service-name]/src/main.ts` - Entry point with TCP configuration
-- `apps/[service-name]/src/[service-name].module.ts` - Root module
-- `apps/[service-name]/src/apis/.gitkeep` - APIs directory
-- `apps/[service-name]/tsconfig.app.json` - TypeScript config
-- `apps/[service-name]/README.md` - Service documentation
-- Updates `.env.example` with service environment variables
-- Updates `nest-cli.json` with service configuration
-- Updates `package.json` with build/start scripts
+```
+apps/{service-name}/
+├── src/
+│   ├── main.ts                              # TCP + HTTP bootstrap
+│   ├── app.module.ts                        # Root module
+│   ├── health.controller.ts                 # Health endpoints
+│   ├── configs/                             # Configuration
+│   │   ├── app.config.ts
+│   │   └── index.ts
+│   ├── libs/
+│   │   ├── index.ts
+│   │   ├── imports.ts
+│   │   └── dals/
+│   │       ├── configuration/               # Config module
+│   │       │   ├── configuration.module.ts
+│   │       │   ├── providers.ts
+│   │       │   ├── constants.ts
+│   │       │   ├── services/
+│   │       │   │   ├── app-config.service.ts
+│   │       │   │   └── index.ts
+│   │       │   └── interfaces/
+│   │       │       ├── app-config-service.interface.ts
+│   │       │       └── index.ts
+│   │       └── mongodb/                     # MongoDB module
+│   │           ├── mongodb.module.ts
+│   │           ├── providers.ts
+│   │           ├── constants.ts
+│   │           ├── schemas/
+│   │           │   ├── {entity}.schema.ts
+│   │           │   └── index.ts
+│   │           ├── repositories/
+│   │           │   ├── base.repository.ts
+│   │           │   ├── {entity}.repository.ts
+│   │           │   └── index.ts
+│   │           └── interfaces/
+│   │               ├── base-repository.interface.ts
+│   │               ├── {entity}-repository.interface.ts
+│   │               └── index.ts
+│   └── apps/
+│       ├── index.ts
+│       └── web/
+│           ├── index.ts
+│           ├── providers.ts
+│           ├── constants.ts
+│           ├── apis/
+│           │   ├── index.ts
+│           │   └── {entity}/
+│           │       ├── {entity}.module.ts
+│           │       ├── index.ts
+│           │       ├── controllers/
+│           │       │   ├── {entity}.controller.ts
+│           │       │   └── index.ts
+│           │       └── dtos/
+│           │           ├── index.ts
+│           │           ├── requests/
+│           │           │   ├── create-{entity}.dto.ts
+│           │           │   ├── update-{entity}.dto.ts
+│           │           │   └── index.ts
+│           │           └── responses/
+│           │               ├── {entity}-response.dto.ts
+│           │               └── index.ts
+│           ├── services/
+│           │   ├── {entity}.service.ts
+│           │   └── index.ts
+│           └── interfaces/
+│               ├── {entity}-service.interface.ts
+│               └── index.ts
+├── .env.example
+├── .env.development
+├── Dockerfile
+├── README.md
+└── tsconfig.app.json
+```
+
+**Post-Generation Steps:**
+
+After running the generator, you need to manually update:
+
+1. **nest-cli.json** - Add service configuration (see `_manual/nest-cli-{service}.json`)
+2. **package.json** - Add build/start scripts (see `_manual/package-scripts-{service}.json`)
 
 **Example:**
 
 ```bash
 $ npm run gen:microservice
 
-✔ Service name (kebab-case): order-service
-✔ Service description: A microservice for managing orders
-✔ TCP Port: 3005
-✔ Database: mongodb
-✔ Include authentication?: Yes
+✔ Service name (kebab-case): orderService
+✔ Service description: Microservice for order management
+✔ TCP Port: 3006
+✔ Health HTTP Port: 3016
+✔ Entity name (singular): order
 
-✅ Generated:
-   apps/order-service/src/main.ts
-   apps/order-service/src/order-service.module.ts
-   apps/order-service/src/apis/.gitkeep
-   apps/order-service/tsconfig.app.json
-   apps/order-service/README.md
-   Updated .env.example
-   Updated nest-cli.json
-   Updated package.json
-```
+✅ Generated 55 files in apps/order-service/
 
-### 2. Gateway API Generator (`gateway-api/new`)
+⚠️  MANUAL STEPS:
+1. Update nest-cli.json (see _manual/nest-cli-order-service.json)
+2. Update package.json (see _manual/package-scripts-order-service.json)
 
-**Status:** Template structure created, implementation pending
-
-Generates API endpoints in the API Gateway that proxy to a microservice.
-
-**Usage:**
-
-```bash
-npm run gen:api
-```
-
-### 3. CRUD Generator (`crud/new`)
-
-**Status:** Template structure created, implementation pending
-
-Generates a complete CRUD feature module within a microservice.
-
-**Usage:**
-
-```bash
-npm run gen:crud
-```
-
-### 4. Entity Generator (`entity/new`)
-
-**Status:** Template structure created, implementation pending
-
-Generates a TypeORM entity with repository.
-
-**Usage:**
-
-```bash
-npm run gen:entity
+$ npm run start:order-service:dev
 ```
 
 ## Helper Functions
 
 Located in `helpers/index.js`, these utility functions are available to all templates:
 
-- `toPascalCase(str)` - Convert to PascalCase (e.g., "user-profile" → "UserProfile")
-- `toCamelCase(str)` - Convert to camelCase (e.g., "user-profile" → "userProfile")
-- `toKebabCase(str)` - Convert to kebab-case (e.g., "UserProfile" → "user-profile")
-- `toSnakeCase(str)` - Convert to snake_case (e.g., "UserProfile" → "user_profile")
-- `pluralize(str)` - Simple pluralization (e.g., "user" → "users")
-- `timestamp()` - Get current timestamp in YYMMDD-HHMM format
-- `getDefaultPort(serviceName)` - Calculate default TCP port for a service
-- `isValidServiceName(name)` - Validate service name format
-- `copyrightHeader()` - Generate copyright header comment
+| Function                     | Example           | Output            |
+| ---------------------------- | ----------------- | ----------------- |
+| `toPascalCase(str)`          | `'user-profile'`  | `'UserProfile'`   |
+| `toCamelCase(str)`           | `'user-profile'`  | `'userProfile'`   |
+| `toKebabCase(str)`           | `'UserProfile'`   | `'user-profile'`  |
+| `toSnakeCase(str)`           | `'UserProfile'`   | `'user_profile'`  |
+| `toUpperSnakeCase(str)`      | `'order-service'` | `'ORDER_SERVICE'` |
+| `pluralize(str)`             | `'order'`         | `'orders'`        |
+| `timestamp()`                | -                 | `'251210-0319'`   |
+| `getDefaultPort(name)`       | `'order-service'` | `3006`            |
+| `getDefaultHealthPort(port)` | `3006`            | `3016`            |
+| `isValidServiceName(name)`   | `'order-service'` | `true`            |
+| `isValidEntityName(name)`    | `'order'`         | `true`            |
+| `copyrightHeader()`          | -                 | Copyright comment |
 
-## Development
+## Port Assignment
 
-### Creating New Templates
+| Service              | TCP Port  | Health Port |
+| -------------------- | --------- | ----------- |
+| API Gateway          | 3000      | -           |
+| Applicant Service    | 3002      | 3012        |
+| Admin Service        | 3003      | 3013        |
+| Auth Service         | 3004      | 3014        |
+| Address Service      | 3005      | 3015        |
+| Order Service        | 3006      | 3016        |
+| Product Service      | 3007      | 3017        |
+| Notification Service | 3008      | 3018        |
+| Other Services       | 3010-3095 | +10         |
 
-1. Create a new directory under `_templates/`:
+## Architecture Patterns
 
-   ```bash
-   mkdir -p _templates/my-generator/new
-   ```
+### TCP Message Patterns
 
-2. Create a `prompt.js` file for interactive prompts:
-
-   ```javascript
-   module.exports = {
-     prompt: async ({ prompter, args }) => {
-       const questions = [
-         /* ... */
-       ];
-       const answers = await prompter.prompt(questions);
-       return answers;
-     },
-   };
-   ```
-
-3. Create template files with `.ejs.t` extension:
-
-   ```
-   ---
-   to: path/to/generated/file.ts
-   ---
-   <%= content %>
-   ```
-
-4. For injections into existing files, use `inject: true`:
-   ```
-   ---
-   inject: true
-   to: existing-file.json
-   after: "pattern"
-   skip_if: "skip-pattern"
-   ---
-   new content
-   ```
-
-### Template Testing
-
-Run the validation script:
-
-```bash
-./_templates/test-generator.sh
+```typescript
+@MessagePattern({ cmd: 'entity.create' })
+@MessagePattern({ cmd: 'entity.findById' })
+@MessagePattern({ cmd: 'entity.findAll' })
+@MessagePattern({ cmd: 'entity.update' })
+@MessagePattern({ cmd: 'entity.delete' })
 ```
 
-## Architecture
+### Symbol-Based DI
 
+```typescript
+// constants.ts
+export const ENTITY_REPO_PROVIDER = Symbol('EntityRepositoryProvider');
+export const ENTITY_SERVICE_WEB_PROVIDER = Symbol('EntityServiceWebProvider');
+
+// providers.ts
+export const EntityRepositoryProvider: Provider<IEntityRepository> = {
+  provide: ENTITY_REPO_PROVIDER,
+  useClass: EntityRepository,
+};
+
+// controller.ts
+@Inject(ENTITY_SERVICE_WEB_PROVIDER)
+private readonly entityService: IEntityService
 ```
-_templates/
-├── helpers/
-│   └── index.js           # Shared utility functions
-├── microservice/
-│   └── new/
-│       ├── prompt.js      # Interactive prompts
-│       ├── main.ts.ejs.t  # Main entry point template
-│       ├── module.ts.ejs.t
-│       ├── apis-structure.ejs.t
-│       ├── tsconfig.json.ejs.t
-│       ├── readme.ejs.t
-│       ├── env-example.ejs.t
-│       ├── nest-cli-update.ejs.t
-│       └── package-json-scripts.ejs.t
-├── gateway-api/
-│   └── new/               # (To be implemented)
-├── crud/
-│   └── new/               # (To be implemented)
-├── entity/
-│   └── new/               # (To be implemented)
-└── README.md              # This file
-```
-
-## Best Practices
-
-1. **Service Naming:**
-   - Use kebab-case for service names (e.g., `order-service`, `user-auth`)
-   - Keep names descriptive and consistent
-
-2. **Port Assignment:**
-   - Gateway: 3000
-   - Customer Service: 3002
-   - Admin Service: 3003
-   - New services: Auto-assigned from 3005+
-
-3. **Database Configuration:**
-   - Choose MongoDB for document-based data
-   - Choose PostgreSQL for relational data
-   - Choose "none" for stateless services
-
-4. **Authentication:**
-   - Include auth for user-facing services
-   - Skip auth for internal utility services
 
 ## Troubleshooting
 
@@ -215,25 +199,27 @@ npm run gen
 # Should list all available generators
 ```
 
-### Templates not applying
+### Missing environment file
 
-Check that:
+Create `.env.development` in `apps/{service}/`:
 
-- Template files end with `.ejs.t`
-- Front matter (---) is properly formatted
-- EJS syntax is correct (<%= %>)
+```bash
+DB_URL=mongodb://localhost:27017/{service}_dev
+```
 
-### Helper functions not working
+### TypeScript errors after generation
 
-Ensure `helpers/index.js` exports all functions and uses `module.exports`.
+```bash
+# Check imports resolve correctly
+npx tsc --noEmit -p apps/{service}/tsconfig.app.json
+```
 
 ## Future Enhancements
 
 - [ ] Implement gateway-api generator
-- [ ] Implement crud generator
-- [ ] Implement entity generator
-- [ ] Add Docker configuration templates
-- [ ] Add Kubernetes manifests templates
+- [ ] Implement crud generator (add entity to existing service)
+- [ ] Add PostgreSQL support
+- [ ] Add Kafka transport option
 - [ ] Add E2E test templates
 - [ ] Add migration generator
 
@@ -241,4 +227,4 @@ Ensure `helpers/index.js` exports all functions and uses `module.exports`.
 
 - [Hygen Documentation](https://www.hygen.io/)
 - [NestJS Microservices](https://docs.nestjs.com/microservices/basics)
-- [EJS Template Syntax](https://ejs.co/)
+- [Mongoose Documentation](https://mongoosejs.com/docs/)

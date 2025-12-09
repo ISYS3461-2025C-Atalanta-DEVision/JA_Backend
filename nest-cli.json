@@ -26,6 +26,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/applicant-service/tsconfig.app.json"
       }
+    },
+    "admin-service": {
+      "type": "application",
+      "root": "apps/admin-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/admin-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/admin-service/tsconfig.app.json"
+      }
     }
   }
 }

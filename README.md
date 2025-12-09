@@ -268,6 +268,82 @@ GET /new-provinces
 }
 ```
 
+## Code Generation (Hygen)
+
+This project uses [Hygen](https://www.hygen.io/) to generate boilerplate code for new microservices.
+
+### Generate New Microservice
+
+```bash
+# Interactive mode
+npm run gen:microservice
+
+# With service name argument
+npm run gen:microservice -- --name order-service
+```
+
+**Prompts:**
+
+| Prompt         | Example           | Description                          |
+| -------------- | ----------------- | ------------------------------------ |
+| Service name   | `order-service`   | Kebab-case service name              |
+| Description    | `Order management`| Service description                  |
+| TCP Port       | `3006`            | Microservice TCP port                |
+| Health Port    | `3016`            | Health check HTTP port (TCP + 10)    |
+| Entity name    | `order`           | Singular entity name (kebab-case)    |
+
+**Generated Structure (~55 files):**
+
+```
+apps/{service-name}/
+├── src/
+│   ├── main.ts                    # TCP + HTTP bootstrap
+│   ├── app.module.ts              # Root module
+│   ├── health.controller.ts       # Health endpoints
+│   ├── configs/                   # Configuration
+│   ├── libs/dals/
+│   │   ├── configuration/         # Config module + service
+│   │   └── mongodb/               # Schemas, repositories, interfaces
+│   └── apps/web/
+│       ├── apis/{entity}/         # Controller, DTOs, module
+│       ├── services/              # Business logic
+│       └── interfaces/            # Service interfaces
+├── .env.example
+├── .env.development
+├── Dockerfile
+├── README.md
+└── tsconfig.app.json
+```
+
+**Post-Generation Steps:**
+
+After running the generator, manually update:
+
+1. **nest-cli.json** - Add service configuration (see `_manual/nest-cli-{service}.json`)
+2. **package.json** - Add build/start scripts (see `_manual/package-scripts-{service}.json`)
+
+**Port Assignment:**
+
+| Service              | TCP Port | Health Port |
+| -------------------- | -------- | ----------- |
+| API Gateway          | 3000     | -           |
+| Applicant Service    | 3002     | 3012        |
+| Admin Service        | 3003     | 3013        |
+| Auth Service         | 3004     | 3014        |
+| Address Service      | 3005     | 3015        |
+| Order Service        | 3006     | 3016        |
+| Other Services       | 3007+    | +10         |
+
+### Other Generators (Planned)
+
+```bash
+npm run gen:api      # Generate API Gateway route
+npm run gen:crud     # Add CRUD entity to existing service
+npm run gen:entity   # Generate entity schema
+```
+
+For detailed generator documentation, see [`_templates/README.md`](./_templates/README.md).
+
 ## Development
 
 ### Code Quality

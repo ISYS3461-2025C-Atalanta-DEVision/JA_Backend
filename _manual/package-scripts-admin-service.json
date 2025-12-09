@@ -1,0 +1,6 @@
+{
+  "build:admin-service": "nest build admin-service",
+  "start:admin-service": "nest start admin-service",
+  "start:admin-service:dev": "nest start admin-service --watch",
+  "start:admin-service:debug": "nest start admin-service --debug --watch"
+}
