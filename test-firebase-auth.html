@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Google Auth Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover { background: #357abd; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .error { color: red; }
+    .success { color: green; }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .step {
+      background: #e8f4fc;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    h3 { margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h1>Firebase Google Auth Test</h1>
+
+  <div class="step">
+    <strong>Setup Required:</strong>
+    <ol>
+      <li>Replace <code>firebaseConfig</code> below with your Firebase project config</li>
+      <li>Enable Google Sign-In in Firebase Console</li>
+      <li>Add <code>localhost</code> to authorized domains</li>
+      <li>Start backend services (API Gateway on port 3000)</li>
+    </ol>
+  </div>
+
+  <h3>Step 1: Sign in with Google (Firebase)</h3>
+  <button id="signInBtn" onclick="signInWithGoogle()">
+    Sign in with Google
+  </button>
+  <div id="step1Result"></div>
+
+  <h3>Step 2: Send Token to Backend</h3>
+  <button id="sendTokenBtn" onclick="sendTokenToBackend()" disabled>
+    Send to /auth/applicant/firebase/google
+  </button>
+  <div id="step2Result"></div>
+
+  <h3>Step 3: Test Protected Endpoint</h3>
+  <button id="testProtectedBtn" onclick="testProtectedEndpoint()" disabled>
+    GET /applicants (with cookie auth)
+  </button>
+  <div id="step3Result"></div>
+
+  <h3>Token Info</h3>
+  <pre id="tokenInfo">Sign in to see token info...</pre>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyBC5Vs5afWHwqjrA7DrLiC5uALPT0IdTBU",
+      authDomain: "menupilot-94baa.firebaseapp.com",
+      projectId: "menupilot-94baa",
+      storageBucket: "menupilot-94baa.firebasestorage.app",
+      messagingSenderId: "428488521025",
+      appId: "1:428488521025:web:376de8b40bf4561cf39dc0"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentIdToken = null;
+
+    // Make functions available globally
+    window.signInWithGoogle = async function() {
+      const resultDiv = document.getElementById('step1Result');
+      const tokenInfo = document.getElementById('tokenInfo');
+
+      try {
+        resultDiv.innerHTML = '<p>Opening Google Sign-In popup...</p>';
+
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Get the ID token
+        currentIdToken = await user.getIdToken();
+
+        resultDiv.innerHTML = `
+          <p class="success">✅ Signed in as: ${user.email}</p>
+          <p>Display Name: ${user.displayName}</p>
+          <p>Photo: <img src="${user.photoURL}" width="50" style="border-radius:50%"></p>
+        `;
+
+        tokenInfo.textContent = JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          idToken: currentIdToken.substring(0, 50) + '...',
+          tokenLength: currentIdToken.length
+        }, null, 2);
+
+        document.getElementById('sendTokenBtn').disabled = false;
+
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+        console.error('Sign-in error:', error);
+      }
+    };
+
+    window.sendTokenToBackend = async function() {
+      const resultDiv = document.getElementById('step2Result');
+
+      if (!currentIdToken) {
+        resultDiv.innerHTML = '<p class="error">No token available. Sign in first.</p>';
+        return;
+      }
+
+      try {
+        resultDiv.innerHTML = '<p>Sending token to backend...</p>';
+
+        const response = await fetch('http://localhost:3000/auth/applicant/firebase/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Important for cookies
+          body: JSON.stringify({ idToken: currentIdToken })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.innerHTML = `
+            <p class="success">✅ Authentication successful!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+            <p><small>HttpOnly cookies have been set for auth.</small></p>
+          `;
+          document.getElementById('testProtectedBtn').disabled = false;
+        } else {
+          resultDiv.innerHTML = `
+            <p class="error">❌ Error ${response.status}</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+        console.error('Backend error:', error);
+      }
+    };
+
+    window.testProtectedEndpoint = async function() {
+      const resultDiv = document.getElementById('step3Result');
+
+      try {
+        resultDiv.innerHTML = '<p>Testing protected endpoint...</p>';
+
+        const response = await fetch('http://localhost:3000/applicants?page=1&limit=5', {
+          method: 'GET',
+          credentials: 'include' // Send cookies
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.innerHTML = `
+            <p class="success">✅ Protected endpoint accessible!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <p class="error">❌ Error ${response.status}: ${data.message || 'Unauthorized'}</p>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+export const AUTH_MODULE_OPTIONS = 'AUTH_MODULE_OPTIONS';
+
+export const JWT_CONSTANTS = {
+  DEFAULT_ACCESS_TOKEN_EXPIRY: '30m',
+  DEFAULT_REFRESH_TOKEN_EXPIRY: '7d',
+  ARGON2_MEMORY_COST: 65536, // 64MB
+  ARGON2_TIME_COST: 3,
+  ARGON2_PARALLELISM: 4,
+};
+
+export const RATE_LIMIT_CONSTANTS = {
+  LOGIN_TTL: 900000, // 15 minutes in ms
+  LOGIN_LIMIT: 5, // 5 attempts per 15 min
+  OAUTH_TTL: 900000, // 15 minutes in ms
+  OAUTH_LIMIT: 10, // 10 attempts per 15 min
+};

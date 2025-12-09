@@ -1,0 +1,2 @@
+// Domain types placeholder
+export {};

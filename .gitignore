@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+
+# IDE
+/.idea
+/.awcache
+/.vscode
+
+# misc
+npm-debug.log
+
+# example
+/quick-start
+
+# tests
+/test
+/coverage
+/.nyc_output
+
+/docs
+
+# dist
+/dist
+
+# Environment files - ignore all .env except .env.example
+.env
+.env.development
+.env.production
+**/.env
+**/.env.development
+**/.env.production
+
+!.env.example
+!**/.env.example
+
+# Claude Code configuration
+.claude/
+
+# OpenCode configuration
+.opencode/
+
+# Plans directory
+plans/
+
+# Repomix files
+.repomixignore
+repomix-output.xml
+
+# Data files
+data/geometry-crawl
+data/geometry-crawl.csv
+
+CLAUDE.md

@@ -1,0 +1,59 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import helmet from 'helmet';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
+
+async function bootstrap() {
+  Logger.log('Starting API Gateway...');
+  const app = await NestFactory.create(AppModule);
+
+  // Enable validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:8080',
+      'https://diachimoi.vn',
+      'https://beta.diachimoi.vn',
+      'https://www.diachimoi.vn',
+      'https://www.beta.diachimoi.vn',
+      // Allow file:// protocol for local testing (only in development)
+      ...(process.env.NODE_ENV !== 'production' ? ['null'] : []),
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
+  });
+
+  app.use(cookieParser());
+
+  app.use(compression());
+
+  app.use(
+    helmet({
+      xssFilter: true,
+      hidePoweredBy: true,
+      contentSecurityPolicy: {
+        directives: {
+          upgradeInsecureRequests: null
+        }
+      }
+    }),
+  );
+
+  const port = process.env.API_GATEWAY_PORT || 3000;
+  await app.listen(port);
+  Logger.log(`API Gateway is running on: http://localhost:${port}`);
+  Logger.log(`Applicant API: http://localhost:${port}/applicants`);
+}
+bootstrap();
+
