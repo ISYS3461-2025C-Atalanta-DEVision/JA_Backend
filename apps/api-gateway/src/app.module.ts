@@ -3,8 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule as SharedAuthModule } from '@auth/auth.module';
-import { JwtAuthGuard } from '@auth/guards';
+import { JweAuthGuard } from '@auth/guards';
+import { RedisModule } from '@redis/redis.module';
 import { ApplicantModule, AuthModule } from './apis';
+import { CountriesModule } from './apis/countries';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { ApplicantModule, AuthModule } from './apis';
         jwtRefreshSecret: configService.get<string>('JWT_REFRESH_SECRET') || 'refresh-secret',
         jwtExpiresIn: '30m',
         jwtRefreshExpiresIn: '7d',
+        // JWE encryption secrets (optional, falls back to JWT secrets)
+        jweAccessSecret: configService.get<string>('JWE_ACCESS_SECRET'),
+        jweRefreshSecret: configService.get<string>('JWE_REFRESH_SECRET'),
         // Firebase Admin SDK configuration (replaces Google/Facebook OAuth)
         firebaseProjectId: configService.get<string>('FIREBASE_PROJECT_ID'),
         firebaseClientEmail: configService.get<string>('FIREBASE_CLIENT_EMAIL'),
@@ -33,10 +39,31 @@ import { ApplicantModule, AuthModule } from './apis';
       }),
       inject: [ConfigService],
     }),
+    // Redis module for token revocation (optional - works without Redis)
+    RedisModule.forRootAsync({
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          return { type: 'single', url: redisUrl };
+        }
+        return {
+          type: 'single',
+          options: {
+            host: configService.get<string>('REDIS_HOST') || 'localhost',
+            port: configService.get<number>('REDIS_PORT') || 6379,
+            password: configService.get<string>('REDIS_PASSWORD'),
+            lazyConnect: true, // Don't fail if Redis is not available
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
     // API modules (new structure)
     ApplicantModule,
     AuthModule,
+    CountriesModule,
   ],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_GUARD,
@@ -44,7 +71,7 @@ import { ApplicantModule, AuthModule } from './apis';
     },
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: JweAuthGuard,
     },
   ],
 })

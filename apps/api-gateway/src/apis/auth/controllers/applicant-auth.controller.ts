@@ -8,6 +8,7 @@ import {
   Res,
   Req,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
@@ -16,9 +17,10 @@ import { Throttle } from '@nestjs/throttler';
 import { Public } from '@auth/decorators';
 import { LoginDto, RegisterDto, FirebaseAuthDto } from '@auth/dto';
 import { FirebaseService } from '@auth/firebase';
-import { TokenService } from '@auth/services';
+import { JweTokenService } from '@auth/services';
 import { Role } from '@auth/enums';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { TokenRevocationService } from '@redis/services/token-revocation.service';
 
 /**
  * Gateway Auth Controller
@@ -33,14 +35,16 @@ import { createHash } from 'crypto';
  */
 @Controller('auth/applicant')
 export class ApplicantAuthController {
+  private readonly logger = new Logger(ApplicantAuthController.name);
   private readonly ACCESS_TOKEN_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
   private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(
     @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
     private readonly firebaseService: FirebaseService,
-    private readonly tokenService: TokenService,
-  ) { }
+    private readonly jweTokenService: JweTokenService,
+    @Optional() private readonly tokenRevocationService?: TokenRevocationService,
+  ) {}
 
   /**
    * Hash refresh token for storage
@@ -51,7 +55,8 @@ export class ApplicantAuthController {
   }
 
   /**
-   * Generate tokens and store in oauth_accounts
+   * Generate JWE tokens and store in oauth_accounts
+   * Uses A256GCM encryption for enhanced security
    */
   private async generateAndStoreTokens(
     user: {
@@ -59,11 +64,17 @@ export class ApplicantAuthController {
       email: string;
       name: string;
       role: Role;
+      country?: string;
     },
     provider: string,
   ) {
-    // Generate tokens in Gateway
-    const tokens = this.tokenService.generateTokens(user.id, user.email, user.role);
+    // Generate JWE encrypted tokens in Gateway
+    const tokens = await this.jweTokenService.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.country,
+    );
 
     // Calculate expiration dates
     const now = new Date();
@@ -72,7 +83,12 @@ export class ApplicantAuthController {
 
     // Hash refresh token for storage
     const refreshTokenHash = this.hashRefreshToken(tokens.refreshToken);
-    Logger.debug('finish token', tokens)
+
+    // Register token in Redis for revocation tracking (if available)
+    const jti = randomUUID();
+    if (this.tokenRevocationService) {
+      await this.tokenRevocationService.registerToken(jti, user.id);
+    }
 
     // Store tokens in Applicant Service (oauth_accounts)
     await firstValueFrom(
@@ -91,7 +107,7 @@ export class ApplicantAuthController {
         .pipe(timeout(5000)),
     );
 
-    Logger.debug('finish token', tokens)
+    this.logger.debug(`JWE tokens generated for user ${user.id}`);
 
     return tokens;
   }
@@ -209,8 +225,8 @@ export class ApplicantAuthController {
         throw new HttpException('Refresh token not found', HttpStatus.UNAUTHORIZED);
       }
 
-      // 1. Verify refresh token JWT signature in Gateway
-      const payload = this.tokenService.verifyRefreshToken(refreshToken);
+      // 1. Verify and decrypt JWE refresh token in Gateway
+      const payload = await this.jweTokenService.verifyRefreshToken(refreshToken);
 
       // Get provider from JWT payload or default to 'email'
       const provider = (payload as any).provider || 'email';
@@ -234,7 +250,7 @@ export class ApplicantAuthController {
           ),
       );
 
-      // 3. Generate new tokens in Gateway (using provider from result)
+      // 3. Generate new JWE tokens in Gateway (using provider from result)
       const tokens = await this.generateAndStoreTokens(result.user, result.provider);
 
       // 4. Set cookies
@@ -317,6 +333,13 @@ export class ApplicantAuthController {
     try {
       const applicantId = req.user?.id;
       if (applicantId) {
+        // Revoke all tokens in Redis (if available)
+        if (this.tokenRevocationService) {
+          await this.tokenRevocationService.revokeAllUserTokens(applicantId);
+          this.logger.debug(`All tokens revoked for user ${applicantId}`);
+        }
+
+        // Clear tokens in Applicant Service
         await firstValueFrom(
           this.applicantClient
             .send({ cmd: 'applicant.auth.logout' }, { applicantId })

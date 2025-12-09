@@ -1,11 +1,13 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { AuthModuleOptions, AuthModuleAsyncOptions } from './interfaces';
 import { AUTH_MODULE_OPTIONS } from './constants';
-import { TokenService } from './services';
-import { JwtStrategy } from './strategies';
-import { JwtAuthGuard, RolesGuard } from './guards';
+import { JweTokenService } from './services';
+import {
+  JweAuthGuard,
+  RolesGuard,
+  ApiKeyGuard,
+  ApiKeyOrJweGuard,
+} from './guards';
 import { FirebaseService } from './firebase/firebase.service';
 import { FIREBASE_OPTIONS } from './firebase/firebase.constants';
 
@@ -32,27 +34,24 @@ export class AuthModule {
         }),
         inject: [AUTH_MODULE_OPTIONS],
       },
-      TokenService,
-      JwtStrategy,
-      JwtAuthGuard,
+      JweTokenService,
+      JweAuthGuard,
       RolesGuard,
+      ApiKeyGuard,
+      ApiKeyOrJweGuard,
       FirebaseService,
     ];
 
     return {
       module: AuthModule,
       global: true,
-      imports: [
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.register({}), // JWT options provided per-token in TokenService
-      ],
       providers,
       exports: [
-        TokenService,
-        JwtAuthGuard,
+        JweTokenService,
+        JweAuthGuard,
         RolesGuard,
-        PassportModule,
-        JwtModule,
+        ApiKeyGuard,
+        ApiKeyOrJweGuard,
         FirebaseService,
       ],
     };
@@ -65,10 +64,6 @@ export class AuthModule {
     return {
       module: AuthModule,
       global: true,
-      imports: [
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.register({}),
-      ],
       providers: [
         {
           provide: AUTH_MODULE_OPTIONS,
@@ -82,18 +77,19 @@ export class AuthModule {
             privateKey: options.firebasePrivateKey || '',
           },
         },
-        TokenService,
-        JwtStrategy,
-        JwtAuthGuard,
+        JweTokenService,
+        JweAuthGuard,
         RolesGuard,
+        ApiKeyGuard,
+        ApiKeyOrJweGuard,
         FirebaseService,
       ],
       exports: [
-        TokenService,
-        JwtAuthGuard,
+        JweTokenService,
+        JweAuthGuard,
         RolesGuard,
-        PassportModule,
-        JwtModule,
+        ApiKeyGuard,
+        ApiKeyOrJweGuard,
         FirebaseService,
       ],
     };

@@ -9,4 +9,4 @@ import { MongodbModule } from '../../../../libs/dals/mongodb';
   providers: [ApplicantAuthServiceWebProvider],
   exports: [ApplicantAuthServiceWebProvider],
 })
-export class ApplicantAuthModule {}
+export class ApplicantAuthModule { }

@@ -9,4 +9,4 @@ import { ApplicantServiceWebProvider } from '../../providers';
   providers: [ApplicantServiceWebProvider],
   exports: [ApplicantServiceWebProvider],
 })
-export class ApplicantModule {}
+export class ApplicantModule { }

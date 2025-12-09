@@ -22,4 +22,4 @@ import { ApplicantController } from './controllers';
   ],
   controllers: [ApplicantController],
 })
-export class ApplicantModule {}
+export class ApplicantModule { }

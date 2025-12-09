@@ -17,7 +17,8 @@
       "@libs/*": ["libs/*"],
       "@common/*": ["libs/common/*"],
       "@dals/*": ["libs/dals/*"],
-      "@auth/*": ["libs/auth/*"]
+      "@auth/*": ["libs/auth/*"],
+      "@redis/*": ["libs/redis/*"]
     }
   }
 }

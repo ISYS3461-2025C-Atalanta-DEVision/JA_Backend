@@ -10,24 +10,35 @@ import {
   HttpStatus,
   HttpException,
   Inject,
+  Logger,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Request } from 'express';
+import { CurrentUser, ApiKeyAuth } from '@auth/decorators';
+import { AuthenticatedUser } from '@auth/interfaces';
 import { CreateApplicantDto } from '../dtos/requests/create-applicant.dto';
 import { UpdateApplicantDto } from '../dtos/requests/update-applicant.dto';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 
 @Controller('applicants')
 export class ApplicantController {
+  private readonly logger = new Logger(ApplicantController.name);
+
   constructor(
     @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
   ) {}
 
   @Post()
-  async create(@Body() createDto: CreateApplicantDto) {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() createDto: CreateApplicantDto,
+  ) {
+    this.logger.log(`User ${user.email} creating applicant`);
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.create' }, createDto)
+          .send({ cmd: 'applicant.create' }, { ...createDto, userId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {
@@ -51,7 +62,16 @@ export class ApplicantController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string) {
+  @ApiKeyAuth()
+  async findById(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    const authType = (request as any).authType || 'jwt';
+    const identifier = authType === 'jwt' && user ? user.email : 'API Key';
+    this.logger.log(`${identifier} accessing applicant ${id}`);
+
     try {
       const result = await firstValueFrom(
         this.applicantClient
@@ -79,10 +99,17 @@ export class ApplicantController {
   }
 
   @Get()
+  @ApiKeyAuth()
   async findAll(
+    @CurrentUser() user: AuthenticatedUser | undefined,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Req() request: Request,
   ) {
+    const authType = (request as any).authType || 'jwt';
+    const identifier = authType === 'jwt' && user ? user.email : 'API Key';
+    this.logger.log(`${identifier} listing applicants (page ${page})`);
+
     try {
       const result = await firstValueFrom(
         this.applicantClient
@@ -110,11 +137,16 @@ export class ApplicantController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateDto: UpdateApplicantDto) {
+  async update(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateApplicantDto,
+  ) {
+    this.logger.log(`User ${user.email} updating applicant ${id}`);
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.update' }, { id, updates: updateDto })
+          .send({ cmd: 'applicant.update' }, { id, updates: updateDto, userId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {
@@ -138,11 +170,15 @@ export class ApplicantController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
+  async delete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    this.logger.log(`User ${user.email} deleting applicant ${id}`);
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.delete' }, { id })
+          .send({ cmd: 'applicant.delete' }, { id, userId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {

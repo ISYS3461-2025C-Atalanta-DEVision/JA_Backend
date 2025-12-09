@@ -1,7 +1,11 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { APPLICANT_AUTH_SERVICE_WEB_PROVIDER } from '../../../constants';
-import { IApplicantAuthService, TokenStorageData } from '../../../interfaces';
+import {
+  IApplicantAuthService,
+  TokenStorageData,
+  RegisterData,
+} from '../../../interfaces';
 
 @Controller()
 export class ApplicantAuthController {
@@ -15,10 +19,8 @@ export class ApplicantAuthController {
    * Returns user data (Gateway generates tokens)
    */
   @MessagePattern({ cmd: 'applicant.auth.register' })
-  async register(
-    @Payload() data: { name: string; email: string; password: string },
-  ) {
-    return await this.authService.register(data.name, data.email, data.password);
+  async register(@Payload() data: RegisterData) {
+    return await this.authService.register(data);
   }
 
   /**

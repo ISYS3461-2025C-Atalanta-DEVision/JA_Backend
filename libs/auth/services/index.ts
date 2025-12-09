@@ -1,1 +1,1 @@
-export * from './token.service';
+export * from './jwe-token.service';

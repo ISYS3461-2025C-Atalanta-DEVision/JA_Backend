@@ -17,10 +17,37 @@ export class ApplicantRepository
   }
 
   async findByEmail(email: string): Promise<Applicant | null> {
-    return await this.model.findOne({ email }).lean().exec() as Applicant | null;
+    return (await this.model
+      .findOne({ email: email.toLowerCase() })
+      .lean()
+      .exec()) as Applicant | null;
   }
 
   async updateLastLogin(id: string): Promise<void> {
     await this.model.findByIdAndUpdate(id, { lastLoginAt: new Date() }).exec();
+  }
+
+  async incrementLoginAttempts(id: string): Promise<void> {
+    await this.model
+      .findByIdAndUpdate(id, {
+        $inc: { loginAttempts: 1 },
+      })
+      .exec();
+  }
+
+  async resetLoginAttempts(id: string): Promise<void> {
+    await this.model
+      .findByIdAndUpdate(id, {
+        $set: { loginAttempts: 0, lockUntil: null },
+      })
+      .exec();
+  }
+
+  async lockAccount(id: string, lockUntil: Date): Promise<void> {
+    await this.model
+      .findByIdAndUpdate(id, {
+        $set: { lockUntil },
+      })
+      .exec();
   }
 }

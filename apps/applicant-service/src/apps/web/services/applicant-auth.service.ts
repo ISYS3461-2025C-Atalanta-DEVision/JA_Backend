@@ -1,8 +1,26 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { hash, verify } from '@node-rs/argon2';
 import { Role } from '@auth/enums';
-import { ApplicantRepository, OAuthAccountRepository, Applicant, OAuthAccount } from '../../../libs/dals/mongodb';
-import { IApplicantAuthService, ApplicantAuthResponse, TokenStorageData } from '../interfaces';
+import {
+  ApplicantRepository,
+  OAuthAccountRepository,
+  Applicant,
+  OAuthAccount,
+} from '../../../libs/dals/mongodb';
+import {
+  IApplicantAuthService,
+  ApplicantAuthResponse,
+  TokenStorageData,
+  RegisterData,
+} from '../interfaces';
+import { isValidCountryCode } from '@common/constants/countries';
 
 /**
  * Applicant Auth Service
@@ -22,24 +40,36 @@ export class ApplicantAuthService implements IApplicantAuthService {
    * Register new applicant with email/password
    * Returns user data for Gateway to generate tokens
    */
-  async register(name: string, email: string, password: string): Promise<ApplicantAuthResponse> {
+  async register(data: RegisterData): Promise<ApplicantAuthResponse> {
+    const { name, email, password, country, phone, street, city } = data;
+
     try {
+      // Validate country code
+      if (!isValidCountryCode(country)) {
+        throw new BadRequestException('Invalid country code');
+      }
+
       const existingApplicant = await this.applicantRepo.findByEmail(email);
       if (existingApplicant) {
         throw new ConflictException('Email already registered');
       }
 
       const passwordHash = await hash(password, {
-        memoryCost: 65536,
-        timeCost: 3,
-        parallelism: 4,
+        memoryCost: 19456, // ~19 MB (OWASP recommended)
+        timeCost: 2,
+        parallelism: 1,
         outputLen: 32,
       });
 
       const applicant = await this.applicantRepo.create({
         name,
-        email,
+        email: email.toLowerCase(),
+        country: country.toUpperCase(),
+        phone,
+        street,
+        city,
         passwordHash,
+        emailVerified: false,
         isActive: true,
       });
 
@@ -47,29 +77,54 @@ export class ApplicantAuthService implements IApplicantAuthService {
       await this.oauthAccountRepo.create({
         applicantId: applicant._id.toString(),
         provider: 'email',
-        providerId: email,
-        email,
+        providerId: email.toLowerCase(),
+        email: email.toLowerCase(),
         name,
       });
 
       return this.toAuthResponse(applicant, 'email');
     } catch (error) {
       this.logger.error(`Register failed for ${email}`, error.stack);
-      if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Email already registered');
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      if (error.code === 11000) {
+        throw new ConflictException('Email already registered');
+      }
       throw new InternalServerErrorException('Registration failed');
     }
   }
 
+  // Brute force protection constants
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOCK_DURATION_MS = 60 * 1000; // 60 seconds
+
   /**
    * Verify email/password credentials
    * Returns user data for Gateway to generate tokens
+   * Includes brute force protection (5 attempts → 60 sec lock)
    */
-  async verifyCredentials(email: string, password: string): Promise<ApplicantAuthResponse> {
+  async verifyCredentials(
+    email: string,
+    password: string,
+  ): Promise<ApplicantAuthResponse> {
     try {
       const applicant = await this.applicantRepo.findByEmail(email);
       if (!applicant || !applicant.isActive) {
         throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Check if account is locked (brute force protection)
+      if (applicant.lockUntil && applicant.lockUntil > new Date()) {
+        const remainingSeconds = Math.ceil(
+          (applicant.lockUntil.getTime() - Date.now()) / 1000,
+        );
+        throw new UnauthorizedException(
+          `Account locked. Try again in ${remainingSeconds} seconds.`,
+        );
       }
 
       if (!applicant.passwordHash) {
@@ -78,8 +133,32 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       const isPasswordValid = await verify(applicant.passwordHash, password);
       if (!isPasswordValid) {
+        // Increment login attempts
+        const newAttempts = (applicant.loginAttempts || 0) + 1;
+        await this.applicantRepo.incrementLoginAttempts(
+          applicant._id.toString(),
+        );
+
+        // Lock account if max attempts reached
+        if (newAttempts >= this.MAX_LOGIN_ATTEMPTS) {
+          const lockUntil = new Date(Date.now() + this.LOCK_DURATION_MS);
+          await this.applicantRepo.lockAccount(
+            applicant._id.toString(),
+            lockUntil,
+          );
+          this.logger.warn(
+            `Account locked for ${email} after ${newAttempts} failed attempts`,
+          );
+          throw new UnauthorizedException(
+            `Account locked due to too many failed attempts. Try again in 60 seconds.`,
+          );
+        }
+
         throw new UnauthorizedException('Invalid credentials');
       }
+
+      // Reset login attempts on successful login
+      await this.applicantRepo.resetLoginAttempts(applicant._id.toString());
 
       // Update last login
       await this.applicantRepo.updateLastLogin(applicant._id.toString());
@@ -152,9 +231,12 @@ export class ApplicantAuthService implements IApplicantAuthService {
         }
       } else {
         // 3. New user - create applicant + oauth account
+        // SSO users have email verified by provider
         applicant = await this.applicantRepo.create({
           name,
-          email,
+          email: email.toLowerCase(),
+          country: 'VN', // Default country for SSO users, can be updated later
+          emailVerified: provider === 'google', // Google verifies email
           isActive: true,
         });
 
@@ -162,7 +244,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
           applicantId: applicant._id.toString(),
           provider,
           providerId,
-          email,
+          email: email.toLowerCase(),
           name,
           picture,
         });
@@ -265,13 +347,18 @@ export class ApplicantAuthService implements IApplicantAuthService {
   /**
    * Convert applicant to auth response
    */
-  private toAuthResponse(applicant: Applicant, provider: string): ApplicantAuthResponse {
+  private toAuthResponse(
+    applicant: Applicant,
+    provider: string,
+  ): ApplicantAuthResponse {
     return {
       user: {
         id: applicant._id.toString(),
         email: applicant.email,
         name: applicant.name,
         role: Role.Applicant,
+        country: applicant.country,
+        emailVerified: applicant.emailVerified,
       },
       provider,
     };

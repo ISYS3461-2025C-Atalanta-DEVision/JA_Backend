@@ -10,6 +10,8 @@ export interface ApplicantAuthResponse {
     email: string;
     name: string;
     role: Role;
+    country?: string;
+    emailVerified?: boolean;
   };
   provider: string; // 'email' | 'google'
 }
@@ -27,6 +29,19 @@ export interface TokenStorageData {
 }
 
 /**
+ * Registration data
+ */
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  country: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+}
+
+/**
  * Applicant Service Auth Interface
  * Note: Token generation is handled by API Gateway, not Applicant Service
  */
@@ -35,7 +50,7 @@ export interface IApplicantAuthService {
    * Register new applicant with email/password
    * Returns user data (Gateway generates tokens)
    */
-  register(name: string, email: string, password: string): Promise<ApplicantAuthResponse>;
+  register(data: RegisterData): Promise<ApplicantAuthResponse>;
 
   /**
    * Verify email/password credentials

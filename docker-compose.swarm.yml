@@ -1,0 +1,168 @@
+version: '3.8'
+
+# Docker Swarm Deployment
+#
+# Environment Configuration:
+#   - .env                                    -> API Gateway (Firebase, JWT, JWE)
+#   - apps/applicant-service/.env.development -> Applicant Service (DB_URL)
+#
+# Usage:
+#   docker stack deploy -c docker-compose.swarm.yml ja-core
+
+services:
+  # ===========================================
+  # Redis - Token Revocation Store
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================
+  # API Gateway - HTTP Entry Point
+  # ===========================================
+  api-gateway:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/ja-core-gateway:${TAG:-latest}
+    networks:
+      - app-network
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      # Service Discovery: Use Docker DNS name instead of IP!
+      - APPLICANT_SERVICE_HOST=applicant-service
+      - APPLICANT_SERVICE_PORT=3002
+      - API_GATEWAY_PORT=3000
+      # JWT/JWE secrets (override defaults if not in .env)
+      - JWT_SECRET_APPLICANT=${JWT_SECRET_APPLICANT:-your-jwt-secret-change-in-production}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-in-production}
+      - JWE_ACCESS_SECRET=${JWE_ACCESS_SECRET:-your-jwe-access-secret-32-chars}
+      - JWE_REFRESH_SECRET=${JWE_REFRESH_SECRET:-your-jwe-refresh-secret-32-chars}
+      # Redis for token revocation
+      - REDIS_URL=redis://redis:6379
+      # Rate limiting
+      - THROTTLE_TTL=${THROTTLE_TTL:-60000}
+      - THROTTLE_LIMIT=${THROTTLE_LIMIT:-100}
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================
+  # Applicant Service - TCP Microservice
+  # ===========================================
+  applicant-service:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/ja-core-applicant:${TAG:-latest}
+    networks:
+      - app-network
+    # No external ports - internal only via overlay network
+    env_file:
+      - apps/applicant-service/.env.development
+    environment:
+      - NODE_ENV=production
+      - APPLICANT_SERVICE_PORT=3002
+      - HEALTH_PORT=3012
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  app-network:
+    driver: overlay
+    attachable: true
+
+volumes:
+  redis-data:
+    driver: local
