@@ -7,7 +7,7 @@ A **microservices-based** backend API system built with NestJS
 **Architecture**: Microservices with API Gateway pattern
 **Current Services**: Applicant Service (✅ Complete), Address Service (🔄 Planned)
 **Transport**: TCP for inter-service, HTTP/REST for external clients
-**Authentication**: ✅ **JWT + Firebase Google Auth** with Argon2 hashing
+**Authentication**: ✅ **JWE + Firebase Google Auth** with Argon2id hashing
 
 **Key Features**:
 
@@ -26,8 +26,9 @@ A **microservices-based** backend API system built with NestJS
 - **Transport**: TCP (current), Kafka (planned)
 - **Database**: MongoDB 6.17.0 (per-service databases)
 - **ORM**: Mongoose 8.20.2 (@nestjs/mongoose 11.0.3)
-- **Authentication**: JWT + Firebase Admin SDK 13.6.0
+- **Authentication**: JWE + Firebase Admin SDK 13.6.0
 - **Password Hashing**: Argon2id (@node-rs/argon2 2.0.2)
+- **Token Encryption**: Jose library (JWE A256GCM)
 - **Validation**: class-validator + class-transformer
 - **Security**: Helmet, CORS, Throttler (rate limiting)
 - **Testing**: Jest
@@ -40,7 +41,7 @@ External Clients (HTTP)
     ↓
 API Gateway (Port 3000)
     ↓ TCP Messages (5s timeout)
-    └─→ Applicant Service (Port 3002) → MongoDB (applicants)
+    └─→ Applicant Service (Port 3002, Health 3012) → MongoDB (applicants)
 ```
 
 ## Installation
@@ -78,9 +79,9 @@ FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY_HERE\n-----END PRIVATE KEY-----\n"
 
-# JWT
-JWT_SECRET=your-jwt-secret-key
-JWT_ACCESS_EXPIRY=15m
+# JWE Token Encryption
+JWE_SECRET=your-jwe-secret-key-32-chars-min
+JWT_ACCESS_EXPIRY=30m
 JWT_REFRESH_EXPIRY=7d
 ```
 
@@ -125,10 +126,11 @@ npm run start:api-gateway
 
 ```bash
 POST /auth/applicant/register        # Register with email/password
-POST /auth/applicant/login           # Login
+POST /auth/applicant/login           # Login (brute force protected)
 POST /auth/applicant/refresh         # Refresh access token
 POST /auth/applicant/firebase/google # Firebase Google Sign-In
 POST /auth/applicant/logout          # Logout
+GET  /countries                      # Get list of countries
 ```
 
 ### Applicant Management
@@ -138,7 +140,7 @@ POST /auth/applicant/logout          # Logout
 ```bash
 # Create applicant
 POST /applicants
-Body: { name, email, phone?, address?, addressProvinceCode? }
+Body: { name, email, phone?, address?, addressProvinceCode?, country }
 
 # Get applicant by ID
 GET /applicants/:id
@@ -148,10 +150,13 @@ GET /applicants?page=1&limit=10
 
 # Update applicant
 PUT /applicants/:id
-Body: { name?, email?, phone?, address?, addressProvinceCode?, isActive? }
+Body: { name?, email?, phone?, address?, addressProvinceCode?, country?, isActive? }
 
 # Delete applicant (soft delete)
 DELETE /applicants/:id
+
+# Health check
+GET /health  # Port 3012
 ```
 
 **Example - Register + Login**:
@@ -234,7 +239,11 @@ GET /new-provinces
   address?: string
   addressProvinceCode?: string
   addressProvinceName?: string
-  passwordHash?: string        // Argon2 hash
+  country: string (required, ISO 3166-1 alpha-2)
+  passwordHash?: string        // Argon2id hash
+  emailVerified: boolean (default: false)
+  loginAttempts: number (default: 0)
+  lockUntil?: Date            // Brute force protection
   lastLoginAt?: Date
   isActive: boolean (default: true)
   createdAt: Date
@@ -250,10 +259,10 @@ GET /new-provinces
   applicantId: string;
   provider: "email" | "google";
   providerId: string;
-  accessToken: string;
-  accessTokenExp: Date;
-  refreshTokenHash: string;
-  refreshTokenExp: Date;
+  accessToken: string;          // JWE encrypted (A256GCM)
+  accessTokenExp: Date;         // 30 min expiry
+  refreshTokenHash: string;     // SHA-256 hash
+  refreshTokenExp: Date;        // 7 days expiry
   createdAt: Date;
   updatedAt: Date;
 }
@@ -319,5 +328,5 @@ MIT License - see LICENSE file for details
 ---
 
 **Version**: 1.0.0
-**Last Updated**: 2025-12-09
+**Last Updated**: 2025-12-10
 **Maintained by**: JA backend core microservice
