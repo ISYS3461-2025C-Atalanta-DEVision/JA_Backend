@@ -51,3 +51,10 @@ data/geometry-crawl
 data/geometry-crawl.csv
 
 CLAUDE.md
+
+# MacOS finder file
+.DS_Store
+**/.DS_Store
+
+# bun package manager file
+bun.lockb
