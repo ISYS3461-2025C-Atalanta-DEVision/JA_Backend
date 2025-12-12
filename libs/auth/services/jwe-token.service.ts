@@ -1,11 +1,4 @@
 import { Injectable, Inject, UnauthorizedException, Logger } from '@nestjs/common';
-import {
-  EncryptJWT,
-  jwtDecrypt,
-  JWTPayload,
-  generateSecret,
-  base64url,
-} from 'jose';
 import { JwtPayload, AuthModuleOptions } from '../interfaces';
 import { Role } from '../enums';
 import { AUTH_MODULE_OPTIONS, JWT_CONSTANTS } from '../constants';
@@ -70,7 +63,9 @@ export class JweTokenService {
     role: Role,
     country?: string,
   ): Promise<string> {
-    const payload: JWTPayload = {
+    const { EncryptJWT } = await import('jose'); // dynamic import
+
+    const payload = {
       sub: userId,
       email,
       role,
@@ -98,7 +93,9 @@ export class JweTokenService {
     email: string,
     role: Role,
   ): Promise<string> {
-    const payload: JWTPayload = {
+    const { EncryptJWT } = await import('jose'); // dynamic import
+
+    const payload = {
       sub: userId,
       email,
       role,
@@ -139,6 +136,8 @@ export class JweTokenService {
    */
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     try {
+      const { jwtDecrypt } = await import('jose'); // dynamic import
+
       const { payload } = await jwtDecrypt(token, this.accessSecret);
 
       if ((payload as any).type !== 'access') {
@@ -165,6 +164,8 @@ export class JweTokenService {
    */
   async verifyRefreshToken(token: string): Promise<JwtPayload> {
     try {
+      const { jwtDecrypt } = await import('jose'); // dynamic import
+
       const { payload } = await jwtDecrypt(token, this.refreshSecret);
 
       if ((payload as any).type !== 'refresh') {
