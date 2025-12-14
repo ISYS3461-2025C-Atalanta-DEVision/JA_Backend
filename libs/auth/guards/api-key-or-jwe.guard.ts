@@ -82,6 +82,11 @@ export class ApiKeyOrJweGuard implements CanActivate {
 
     // Strategy 1: Try API Key first (faster than JWE validation)
     if (apiKey) {
+      this.logger.log(`[DEBUG] Received API Key length: ${apiKey.length}`);
+      this.logger.log(`[DEBUG] Valid API Key length: ${this.validApiKey?.length}`);
+      this.logger.log(`[DEBUG] API_KEY configured: ${!!this.validApiKey}`);
+
+
       if (!this.validApiKey) {
         this.logger.warn('API_KEY not configured, falling back to JWE');
       } else if (this.timingSafeCompare(apiKey, this.validApiKey)) {

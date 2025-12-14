@@ -1,0 +1,6 @@
+{
+  "build:job-skill-service": "nest build job-skill-service",
+  "start:job-skill-service": "nest start job-skill-service",
+  "start:job-skill-service:dev": "nest start job-skill-service --watch",
+  "start:job-skill-service:debug": "nest start job-skill-service --debug --watch"
+}

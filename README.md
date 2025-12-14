@@ -5,17 +5,18 @@ A **microservices-based** backend API system built with NestJS
 ## Quick Overview
 
 **Architecture**: Microservices with API Gateway pattern
-**Current Services**: Applicant Service (✅ Complete), Address Service (🔄 Planned)
+**Current Services**: API Gateway, Applicant Service, Admin Service, Job-Skill Service (✅ All running)
 **Transport**: TCP for inter-service, HTTP/REST for external clients
-**Authentication**: ✅ **JWE + Firebase Google Auth** with Argon2id hashing
+**Authentication**: ✅ **JWE + Firebase Google Auth** + API Key with Argon2id hashing
 
 **Key Features**:
 
 - 🏗️ Microservices architecture with NestJS + TCP
-- 🔐 **Full authentication system** (Email/Password + Firebase Google Auth)
-- 👥 Applicant management with CRUD operations + auth
-- 🗺️ Address mapping: Old → New administrative structure (planned)
+- 🔐 **Full authentication system** (JWE + Firebase Google Auth + API Key)
+- 👥 Applicant & Admin management with CRUD + auth
+- 💼 Job categories and skills management
 - 🚀 API Gateway with HTTP → TCP proxy pattern
+- 🛡️ Global JWE auth + @Public() and @ApiKeyAuth() decorators
 - 📚 Comprehensive API documentation
 
 ## Tech Stack
@@ -39,9 +40,11 @@ A **microservices-based** backend API system built with NestJS
 ```
 External Clients (HTTP)
     ↓
-API Gateway (Port 3000)
+API Gateway (Port 3000) - Global JweAuthGuard + @Public/@ApiKeyAuth
     ↓ TCP Messages (5s timeout)
-    └─→ Applicant Service (Port 3002, Health 3012) → MongoDB (applicants)
+    ├─→ Applicant Service (Port 3002, Health 3012) → MongoDB (vietnam_applicants)
+    ├─→ Admin Service (Port 3003, Health 3013) → MongoDB (vietnam_admins)
+    └─→ Job-Skill Service (Port 3004, Health 3014) → MongoDB (vietnam_job_skills)
 ```
 
 ## Installation
@@ -80,27 +83,38 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.c
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY_HERE\n-----END PRIVATE KEY-----\n"
 
 # JWE Token Encryption
-JWE_SECRET=your-jwe-secret-key-32-chars-min
-JWT_ACCESS_EXPIRY=30m
-JWT_REFRESH_EXPIRY=7d
+JWE_ACCESS_SECRET=your-jwe-access-secret-32-chars
+JWE_REFRESH_SECRET=your-jwe-refresh-secret-32-chars
+JWT_SECRET_APPLICANT=your-jwt-secret-min-32-chars
+JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
+
+# API Key for external service access
+API_KEY=your-secret-api-key-here-min-32-chars
+
+# Redis (optional - for token revocation)
+REDIS_URL=redis://localhost:6379
 ```
 
 ## Running the Services
 
 ### Development
 
-Start services in **2 separate terminals**:
-
-**Terminal 1 - Applicant Service**:
+Start services in **separate terminals** (4 services + API Gateway):
 
 ```bash
+# Terminal 1 - Applicant Service
 npm run start:applicant-service:dev
-# Listens on TCP port 3002
-```
+# TCP port 3002, Health port 3012
 
-**Terminal 2 - API Gateway**:
+# Terminal 2 - Admin Service
+npm run start:admin-service:dev
+# TCP port 3003, Health port 3013
 
-```bash
+# Terminal 3 - Job-Skill Service
+npm run start:job-skill-service:dev
+# TCP port 3004, Health port 3014
+
+# Terminal 4 - API Gateway
 npm run start:api-gateway:dev
 # HTTP server on port 3000
 ```
@@ -115,6 +129,8 @@ npm run build
 
 # Start services
 npm run start:applicant-service
+npm run start:admin-service
+npm run start:job-skill-service
 npm run start:api-gateway
 ```
 
@@ -130,33 +146,80 @@ POST /auth/applicant/login           # Login (brute force protected)
 POST /auth/applicant/refresh         # Refresh access token
 POST /auth/applicant/firebase/google # Firebase Google Sign-In
 POST /auth/applicant/logout          # Logout
-GET  /countries                      # Get list of countries
+```
+
+**Admin Auth**:
+
+```bash
+POST /auth/admin/register            # Register admin with email/password
+POST /auth/admin/login               # Admin login (brute force protected)
+POST /auth/admin/refresh             # Refresh admin access token
+POST /auth/admin/firebase/google     # Admin Firebase Google Sign-In
+POST /auth/admin/logout              # Admin logout
+```
+
+**Utility**:
+
+```bash
+GET  /countries                      # Get list of countries (@Public)
 ```
 
 ### Applicant Management
 
-**Base URL**: `http://localhost:3000`
+**Requires**: `@ApiKeyAuth()` - JWE token OR API Key (X-API-Key header)
 
 ```bash
-# Create applicant
-POST /applicants
-Body: { name, email, phone?, address?, addressProvinceCode?, country }
+POST   /applicants          # Create applicant
+GET    /applicants/:id      # Get applicant by ID
+GET    /applicants          # List applicants (paginated)
+PUT    /applicants/:id      # Update applicant
+DELETE /applicants/:id      # Soft delete applicant
+```
 
-# Get applicant by ID
-GET /applicants/:id
+### Admin Management
 
-# List applicants (paginated)
-GET /applicants?page=1&limit=10
+**Requires**: Admin role (via JWE token)
 
-# Update applicant
-PUT /applicants/:id
-Body: { name?, email?, phone?, address?, addressProvinceCode?, country?, isActive? }
+```bash
+POST   /admins              # Create admin
+GET    /admins/:id          # Get admin by ID
+GET    /admins              # List admins (paginated)
+PUT    /admins/:id          # Update admin
+DELETE /admins/:id          # Soft delete admin
+```
 
-# Delete applicant (soft delete)
-DELETE /applicants/:id
+### Job Category Management
 
-# Health check
-GET /health  # Port 3012
+**Public**: Create/Update/Delete require admin role
+
+```bash
+POST   /job-categories      # Create category (admin only)
+GET    /job-categories/:id  # Get category (@Public)
+GET    /job-categories      # List categories (@Public)
+PUT    /job-categories/:id  # Update category (admin only)
+DELETE /job-categories/:id  # Soft delete (admin only)
+```
+
+### Skill Management
+
+**Public**: Read operations; Create/Update/Delete require admin OR API Key
+
+```bash
+POST   /skills              # Create skill (@ApiKeyAuth)
+GET    /skills/:id          # Get skill (@Public)
+GET    /skills              # List skills (@Public)
+GET    /skills/category/:categoryId  # List by category (@Public)
+PUT    /skills/:id          # Update skill (@ApiKeyAuth)
+DELETE /skills/:id          # Soft delete (@ApiKeyAuth)
+```
+
+### Health Checks
+
+```bash
+GET /health                 # API Gateway health
+GET /health/applicant       # Applicant Service health (port 3012)
+GET /health/admin           # Admin Service health (port 3013)
+GET /health/job-skill       # Job-Skill Service health (port 3014)
 ```
 
 **Example - Register + Login**:
@@ -184,6 +247,47 @@ curl -X POST http://localhost:3000/auth/applicant/login \
 curl -X GET http://localhost:3000/applicants \
   -b cookies.txt
 ```
+
+## Authentication & Authorization
+
+### Global Authentication
+
+The API Gateway uses a **Global `JweAuthGuard`** that validates JWE tokens on all routes by default. Routes can opt-out using decorators:
+
+- **`@Public()`**: Skip all authentication (public endpoints)
+- **`@ApiKeyAuth()`**: Allow JWE token OR API Key authentication
+
+### JWE Token Authentication
+
+**How it works**:
+1. User logs in → Receives JWE access token (30m) + refresh token (7d)
+2. Tokens stored in HTTP-only cookies (secure)
+3. Access token contains: user ID, email, role, country
+4. Guard validates and decrypts JWE on each request
+5. User info available via `@CurrentUser()` decorator
+
+**Token Storage**:
+- Access tokens: JWE encrypted with A256GCM
+- Refresh tokens: SHA-256 hashed in database
+
+### API Key Authentication
+
+For external service-to-service communication:
+
+```bash
+# Using API Key (no user context)
+curl -X GET http://localhost:3000/applicants \
+  -H "X-API-Key: your-secret-api-key"
+
+# Using JWE token (user context available)
+curl -X GET http://localhost:3000/applicants \
+  -H "Authorization: Bearer <jwe-token>"
+```
+
+**API Key Behavior**:
+- Bypasses role checks (full access)
+- No user context (`@CurrentUser()` is undefined)
+- Use on endpoints marked with `@ApiKeyAuth()`
 
 ### Future: Address Management (Planned)
 
@@ -329,7 +433,7 @@ After running the generator, manually update:
 | API Gateway          | 3000     | -           |
 | Applicant Service    | 3002     | 3012        |
 | Admin Service        | 3003     | 3013        |
-| Auth Service         | 3004     | 3014        |
+| Job-Skill Service    | 3004     | 3014        |
 | Address Service      | 3005     | 3015        |
 | Order Service        | 3006     | 3016        |
 | Other Services       | 3007+    | +10         |

@@ -23,10 +23,6 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:8080',
-      'https://diachimoi.vn',
-      'https://beta.diachimoi.vn',
-      'https://www.diachimoi.vn',
-      'https://www.beta.diachimoi.vn',
       // Allow file:// protocol for local testing (only in development)
       ...(process.env.NODE_ENV !== 'production' ? ['null'] : []),
     ],
@@ -51,7 +47,7 @@ async function bootstrap() {
   );
 
   const port = process.env.API_GATEWAY_PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   Logger.log(`API Gateway is running on: http://localhost:${port}`);
 }
 bootstrap();

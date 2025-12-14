@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { ALLOW_API_KEY } from '../decorators/api-key-auth.decorator';
 import { JweTokenService } from '../services/jwe-token.service';
 
 /**
@@ -19,7 +20,7 @@ export class JweAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jweTokenService: JweTokenService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is marked as public
@@ -32,8 +33,21 @@ export class JweAuthGuard implements CanActivate {
       return true;
     }
 
+    // Check if route allows API key auth - let ApiKeyOrJweGuard handle it
+    const allowApiKey = this.reflector.getAllAndOverride<boolean>(ALLOW_API_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (allowApiKey) {
+      return true; // Skip JWE validation, ApiKeyOrJweGuard will handle
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
+
+
     const token = this.extractToken(request);
+
 
     if (!token) {
       throw new UnauthorizedException('No access token provided');

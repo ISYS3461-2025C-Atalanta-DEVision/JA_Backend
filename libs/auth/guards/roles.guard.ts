@@ -6,7 +6,7 @@ import { AuthenticatedUser } from '../interfaces';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
@@ -20,6 +20,12 @@ export class RolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user as AuthenticatedUser;
+
+
+    if (request.apiKeyAuth === true) {
+      return true; // API Key has full access, bypass role check
+    }
+
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');

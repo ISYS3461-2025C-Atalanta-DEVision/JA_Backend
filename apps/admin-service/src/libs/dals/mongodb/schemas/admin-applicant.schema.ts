@@ -34,7 +34,7 @@ export class AdminApplicant {
   /**
    * Email verification status
    */
-  @Prop({ default: false })
+  @Prop({ default: true })
   emailVerified: boolean;
 
   /**

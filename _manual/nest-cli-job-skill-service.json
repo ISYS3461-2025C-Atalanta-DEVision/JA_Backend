@@ -1,0 +1,11 @@
+{
+  "job-skill-service": {
+    "type": "application",
+    "root": "apps/job-skill-service",
+    "entryFile": "main",
+    "sourceRoot": "apps/job-skill-service/src",
+    "compilerOptions": {
+      "tsConfigPath": "apps/job-skill-service/tsconfig.app.json"
+    }
+  }
+}

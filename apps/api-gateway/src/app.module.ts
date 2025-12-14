@@ -5,7 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule as SharedAuthModule } from '@auth/auth.module';
 import { JweAuthGuard } from '@auth/guards';
 import { RedisModule } from '@redis/redis.module';
-import { ApplicantModule, AuthModule } from './apis';
+import { ApplicantModule, AuthModule, JobCategoryModule, SkillModule } from './apis';
 import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
 
@@ -62,6 +62,8 @@ import { HealthController } from './health.controller';
     ApplicantModule,
     AuthModule,
     CountriesModule,
+    JobCategoryModule,
+    SkillModule,
   ],
   controllers: [HealthController],
   providers: [

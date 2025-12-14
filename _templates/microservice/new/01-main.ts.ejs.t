@@ -35,7 +35,7 @@ async function bootstrap() {
 
   // Start HTTP server for health checks
   const healthPort = parseInt(process.env.HEALTH_PORT || '<%= healthPort %>', 10);
-  await app.listen(healthPort);
+  await app.listen(healthPort, '0.0.0.0');
   logger.log(`Health endpoint available at http://0.0.0.0:${healthPort}/health`);
 }
 
