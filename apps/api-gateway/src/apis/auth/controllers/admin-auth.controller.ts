@@ -1,0 +1,261 @@
+import {
+  Controller,
+  Post,
+  Body,
+  HttpStatus,
+  HttpException,
+  Inject,
+  Res,
+  Req,
+  Logger,
+  Optional,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout, catchError } from 'rxjs';
+import { Response, Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
+import { Public } from '@auth/decorators';
+import { LoginDto } from '@auth/dto';
+import { JweTokenService } from '@auth/services';
+import { Role } from '@auth/enums';
+import { createHash, randomUUID } from 'crypto';
+import { TokenRevocationService } from '@redis/services/token-revocation.service';
+
+/**
+ * Gateway Admin Auth Controller
+ * Handles all admin authentication requests
+ *
+ * Flow:
+ * 1. Receive auth request from client
+ * 2. Forward to Admin Service for data operations
+ * 3. Generate JWT tokens in Gateway
+ * 4. Store tokens in Admin Service (admin_oauth_accounts)
+ * 5. Return tokens to client
+ */
+@Controller('auth/admin')
+export class AdminAuthController {
+  private readonly logger = new Logger(AdminAuthController.name);
+  private readonly ACCESS_TOKEN_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  constructor(
+    @Inject('ADMIN_SERVICE') private readonly adminClient: ClientProxy,
+    private readonly jweTokenService: JweTokenService,
+    @Optional() private readonly tokenRevocationService?: TokenRevocationService,
+  ) {}
+
+  /**
+   * Hash refresh token for storage
+   * Using SHA-256 for consistent hashing
+   */
+  private hashRefreshToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * Generate JWE tokens and store in admin_oauth_accounts
+   * Uses A256GCM encryption for enhanced security
+   */
+  private async generateAndStoreTokens(
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: Role;
+    },
+    provider: string,
+  ) {
+    // Generate JWE encrypted tokens in Gateway
+    // Note: Admin has no country field, pass undefined
+    const tokens = await this.jweTokenService.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      undefined,
+    );
+
+    // Calculate expiration dates
+    const now = new Date();
+    const accessTokenExp = new Date(now.getTime() + this.ACCESS_TOKEN_EXPIRY_MS);
+    const refreshTokenExp = new Date(now.getTime() + this.REFRESH_TOKEN_EXPIRY_MS);
+
+    // Hash refresh token for storage
+    const refreshTokenHash = this.hashRefreshToken(tokens.refreshToken);
+
+    // Register token in Redis for revocation tracking (if available)
+    const jti = randomUUID();
+    if (this.tokenRevocationService) {
+      await this.tokenRevocationService.registerToken(jti, user.id);
+    }
+
+    // Store tokens in Admin Service (admin_oauth_accounts)
+    await firstValueFrom(
+      this.adminClient
+        .send(
+          { cmd: 'admin.auth.storeTokens' },
+          {
+            adminId: user.id,
+            provider,
+            accessToken: tokens.accessToken,
+            accessTokenExp,
+            refreshTokenHash,
+            refreshTokenExp,
+          },
+        )
+        .pipe(timeout(5000)),
+    );
+
+    this.logger.debug(`JWE tokens generated for admin ${user.id}`);
+
+    return tokens;
+  }
+
+  /**
+   * Set auth cookies
+   */
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 60 * 1000, // 30 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
+
+  @Post('login')
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      // 1. Verify credentials in Admin Service (returns user data only)
+      const result = await firstValueFrom(
+        this.adminClient
+          .send({ cmd: 'admin.auth.verify' }, loginDto)
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              throw new HttpException(
+                error.message || 'Admin service unavailable',
+                error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+              );
+            }),
+          ),
+      );
+
+      // 2. Generate tokens in Gateway (using provider from result)
+      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+
+      // 3. Set cookies
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+      return { user: result.user };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to login',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('refresh')
+  @Public()
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+      if (!refreshToken) {
+        throw new HttpException('Refresh token not found', HttpStatus.UNAUTHORIZED);
+      }
+
+      // 1. Verify and decrypt JWE refresh token in Gateway
+      const payload = await this.jweTokenService.verifyRefreshToken(refreshToken);
+
+      // Get provider from JWT payload or default to 'email'
+      const provider = (payload as any).provider || 'email';
+
+      // 2. Validate stored hash in Admin Service
+      const refreshTokenHash = this.hashRefreshToken(refreshToken);
+      const result = await firstValueFrom(
+        this.adminClient
+          .send(
+            { cmd: 'admin.auth.validateRefresh' },
+            { adminId: payload.sub, provider, refreshTokenHash },
+          )
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              throw new HttpException(
+                error.message || 'Invalid refresh token',
+                error.status || HttpStatus.UNAUTHORIZED,
+              );
+            }),
+          ),
+      );
+
+      // 3. Generate new JWE tokens in Gateway (using provider from result)
+      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+
+      // 4. Set cookies
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+      return { user: result.user };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to refresh token',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('logout')
+  async logout(
+    @Req() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const adminId = req.user?.id;
+      if (adminId) {
+        // Revoke all tokens in Redis (if available)
+        if (this.tokenRevocationService) {
+          await this.tokenRevocationService.revokeAllUserTokens(adminId);
+          this.logger.debug(`All tokens revoked for admin ${adminId}`);
+        }
+
+        // Clear tokens in Admin Service
+        await firstValueFrom(
+          this.adminClient
+            .send({ cmd: 'admin.auth.logout' }, { adminId })
+            .pipe(timeout(5000)),
+        );
+      }
+
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+
+      return { message: 'Logged out successfully' };
+    } catch (error) {
+      // Even if logout fails on backend, clear cookies
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      return { message: 'Logged out successfully' };
+    }
+  }
+}

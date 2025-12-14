@@ -5,7 +5,8 @@ export type AdminApplicantDocument = HydratedDocument<AdminApplicant>;
 
 /**
  * AdminApplicant Schema
- * Stores adminApplicant data
+ * Stores admin profile and email/password authentication info
+ * Token storage is handled by AdminOAuthAccount
  */
 @Schema({
   collection: 'admin-applicants',
@@ -17,8 +18,39 @@ export class AdminApplicant {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ required: true, unique: true })
+  email: string;
+
   @Prop()
   description?: string;
+
+  /**
+   * Password hash for email/password authentication
+   * Null if user only uses OAuth (future)
+   */
+  @Prop()
+  passwordHash?: string;
+
+  /**
+   * Email verification status
+   */
+  @Prop({ default: false })
+  emailVerified: boolean;
+
+  /**
+   * Number of failed login attempts (for brute force protection)
+   */
+  @Prop({ default: 0 })
+  loginAttempts: number;
+
+  /**
+   * Account lock expiration time (for brute force protection)
+   */
+  @Prop()
+  lockUntil?: Date;
+
+  @Prop()
+  lastLoginAt?: Date;
 
   @Prop({ default: true })
   isActive: boolean;
@@ -27,11 +59,15 @@ export class AdminApplicant {
   updatedAt: Date;
 }
 
-export const AdminApplicantSchema = SchemaFactory.createForClass(AdminApplicant);
+export const AdminApplicantSchema =
+  SchemaFactory.createForClass(AdminApplicant);
 
-// Indexes for performance
+// Indexes for performance and auth
+// Note: email unique index created via @Prop({ unique: true })
 AdminApplicantSchema.index({ name: 1 });
+AdminApplicantSchema.index({ emailVerified: 1 });
 AdminApplicantSchema.index({ isActive: 1 });
+AdminApplicantSchema.index({ lockUntil: 1 }); // Index for brute force protection queries
 AdminApplicantSchema.index({ createdAt: -1 });
 
 /**

@@ -31,7 +31,8 @@
     "gen:microservice": "hygen microservice new",
     "gen:api": "hygen gateway-api new",
     "gen:crud": "hygen crud new",
-    "gen:entity": "hygen entity new"
+    "gen:entity": "hygen entity new",
+    "seed:admin": "ts-node -r tsconfig-paths/register --project cli/tsconfig.json cli/src/main.ts seed:admin"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",
@@ -53,6 +54,7 @@
     "compression": "^1.8.0",
     "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
     "firebase-admin": "^13.6.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.8.2",

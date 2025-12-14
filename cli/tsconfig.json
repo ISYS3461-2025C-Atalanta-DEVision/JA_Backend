@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../dist/cli",
+    "baseUrl": "./",
+    "paths": {
+      "@auth/*": ["../libs/auth/*"],
+      "@auth": ["../libs/auth"],
+      "@common/*": ["../libs/common/*"],
+      "@common": ["../libs/common"],
+      "@dals/*": ["../libs/dals/*"],
+      "@dals": ["../libs/dals"],
+      "@redis/*": ["../libs/redis/*"],
+      "@redis": ["../libs/redis"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+}

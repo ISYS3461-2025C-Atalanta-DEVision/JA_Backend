@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ApplicantAuthController } from './controllers';
+import { ApplicantAuthController, AdminAuthController } from './controllers';
 
 @Module({
   imports: [
@@ -18,8 +18,20 @@ import { ApplicantAuthController } from './controllers';
         }),
         inject: [ConfigService],
       },
+      {
+        name: 'ADMIN_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('ADMIN_SERVICE_HOST') || 'localhost',
+            port: configService.get<number>('ADMIN_SERVICE_PORT') || 3003,
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
-  controllers: [ApplicantAuthController],
+  controllers: [ApplicantAuthController, AdminAuthController],
 })
 export class AuthModule {}

@@ -53,7 +53,6 @@ async function bootstrap() {
   const port = process.env.API_GATEWAY_PORT || 3000;
   await app.listen(port);
   Logger.log(`API Gateway is running on: http://localhost:${port}`);
-  Logger.log(`Applicant API: http://localhost:${port}/applicants`);
 }
 bootstrap();
 
