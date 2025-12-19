@@ -5,7 +5,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule as SharedAuthModule } from '@auth/auth.module';
 import { JweAuthGuard } from '@auth/guards';
 import { RedisModule } from '@redis/redis.module';
-import { ApplicantModule, AuthModule, JobCategoryModule, SkillModule } from './apis';
+import { StorageModule } from '@storage/storage.module';
+import { ApplicantModule, AuthModule, JobCategoryModule, SkillModule, StorageApiModule } from './apis';
 import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
 
@@ -58,12 +59,24 @@ import { HealthController } from './health.controller';
       },
       inject: [ConfigService],
     }),
+    // Storage module
+    StorageModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        s3Bucket: configService.get<string>('AWS_S3_BUCKET') || '',
+        s3Region: configService.get<string>('AWS_S3_REGION') || 'ap-southeast-1',
+        accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID') || '',
+        secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY') || '',
+        cdnBaseUrl: configService.get<string>('CDN_BASE_URL') || '',
+      }),
+      inject: [ConfigService],
+    }),
     // API modules (new structure)
     ApplicantModule,
     AuthModule,
     CountriesModule,
     JobCategoryModule,
     SkillModule,
+    StorageApiModule,
   ],
   controllers: [HealthController],
   providers: [

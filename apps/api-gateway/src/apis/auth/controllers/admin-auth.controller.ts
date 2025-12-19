@@ -11,6 +11,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -32,6 +33,7 @@ import { TokenRevocationService } from '@redis/services/token-revocation.service
  * 4. Store tokens in Admin Service (admin_oauth_accounts)
  * 5. Return tokens to client
  */
+@ApiTags('Admin Auth')
 @Controller('auth/admin')
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name);
@@ -132,6 +134,11 @@ export class AdminAuthController {
   @Post('login')
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Login admin', description: 'Authenticate admin with email/password' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -172,6 +179,10 @@ export class AdminAuthController {
 
   @Post('refresh')
   @Public()
+  @ApiOperation({ summary: 'Refresh tokens', description: 'Get new access/refresh tokens using refresh token from cookie' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -226,6 +237,9 @@ export class AdminAuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'Logout admin', description: 'Revoke tokens and clear auth cookies' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async logout(
     @Req() req: any,
     @Res({ passthrough: true }) res: Response,

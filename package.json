@@ -36,9 +36,11 @@
     "gen:api": "hygen gateway-api new",
     "gen:crud": "hygen crud new",
     "gen:entity": "hygen entity new",
-    "seed:admin": "ts-node -r tsconfig-paths/register --project cli/tsconfig.json cli/src/main.ts seed:admin"
+    "seed:admin": "ts-node -r tsconfig-paths/register --project cli/tsconfig.json cli/src/main.ts seed:admin",
+    "seed:job-skills": "ts-node -r tsconfig-paths/register --project cli/tsconfig.json cli/src/main.ts seed:job-skills"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.955.0",
     "@nestjs-modules/ioredis": "^2.0.2",
     "@nestjs/common": "^11.1.8",
     "@nestjs/config": "^4.0.2",
@@ -52,6 +54,7 @@
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "11.0.0",
     "@node-rs/argon2": "^2.0.2",
+    "@types/multer": "^2.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -67,6 +70,7 @@
     "libphonenumber-js": "^1.12.31",
     "mongodb": "6.17.0",
     "mongoose": "^8.20.2",
+    "multer": "^2.0.2",
     "nest-commander": "^3.17.0",
     "nestjs-pino": "^4.4.0",
     "passport": "^0.7.0",

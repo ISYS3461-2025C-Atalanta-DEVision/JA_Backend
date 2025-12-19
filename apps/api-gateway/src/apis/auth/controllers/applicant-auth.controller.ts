@@ -11,6 +11,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -33,6 +34,7 @@ import { TokenRevocationService } from '@redis/services/token-revocation.service
  * 4. Store tokens in Applicant Service (oauth_accounts)
  * 5. Return tokens to client
  */
+@ApiTags('Applicant Auth')
 @Controller('auth/applicant')
 export class ApplicantAuthController {
   private readonly logger = new Logger(ApplicantAuthController.name);
@@ -134,6 +136,12 @@ export class ApplicantAuthController {
   @Post('register')
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Register new applicant', description: 'Create a new applicant account with email/password' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'Registration successful, tokens set in cookies' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -175,6 +183,11 @@ export class ApplicantAuthController {
   @Post('login')
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Login applicant', description: 'Authenticate applicant with email/password' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -215,6 +228,10 @@ export class ApplicantAuthController {
 
   @Post('refresh')
   @Public()
+  @ApiOperation({ summary: 'Refresh tokens', description: 'Get new access/refresh tokens using refresh token from cookie' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -275,6 +292,11 @@ export class ApplicantAuthController {
   @Post('firebase/google')
   @Public()
   @Throttle({ default: { limit: 10, ttl: 900000 } })
+  @ApiOperation({ summary: 'Firebase Google login', description: 'Authenticate with Firebase Google ID token' })
+  @ApiBody({ type: FirebaseAuthDto })
+  @ApiResponse({ status: 200, description: 'Authentication successful, tokens set in cookies' })
+  @ApiResponse({ status: 401, description: 'Invalid Firebase token' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async firebaseGoogleLogin(
     @Body() dto: FirebaseAuthDto,
     @Res({ passthrough: true }) res: Response,
@@ -326,6 +348,9 @@ export class ApplicantAuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'Logout applicant', description: 'Revoke tokens and clear auth cookies' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async logout(
     @Req() req: any,
     @Res({ passthrough: true }) res: Response,

@@ -14,6 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CurrentUser, ApiKeyAuth } from '@auth/decorators';
 import { AuthenticatedUser } from '@auth/interfaces';
@@ -21,6 +22,7 @@ import { CreateApplicantDto } from '../dtos/requests/create-applicant.dto';
 import { UpdateApplicantDto } from '../dtos/requests/update-applicant.dto';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 
+@ApiTags('Applicants')
 @Controller('applicants')
 export class ApplicantController {
   private readonly logger = new Logger(ApplicantController.name);
@@ -30,6 +32,12 @@ export class ApplicantController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create applicant', description: 'Create a new applicant profile (requires JWE auth)' })
+  @ApiBody({ type: CreateApplicantDto })
+  @ApiResponse({ status: 201, description: 'Applicant created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() createDto: CreateApplicantDto,
@@ -63,6 +71,12 @@ export class ApplicantController {
 
   @Get(':id')
   @ApiKeyAuth()
+  @ApiOperation({ summary: 'Get applicant by ID', description: 'Retrieve a single applicant by ID (requires API key or JWE auth)' })
+  @ApiParam({ name: 'id', description: 'Applicant ID' })
+  @ApiResponse({ status: 200, description: 'Applicant retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Applicant not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async findById(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('id') id: string,
@@ -100,6 +114,12 @@ export class ApplicantController {
 
   @Get()
   @ApiKeyAuth()
+  @ApiOperation({ summary: 'Get all applicants', description: 'Retrieve paginated list of applicants (requires API key or JWE auth)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiResponse({ status: 200, description: 'List of applicants retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async findAll(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Query('page') page: number = 1,
@@ -137,6 +157,14 @@ export class ApplicantController {
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Update applicant', description: 'Update an existing applicant profile (requires JWE auth)' })
+  @ApiParam({ name: 'id', description: 'Applicant ID' })
+  @ApiBody({ type: UpdateApplicantDto })
+  @ApiResponse({ status: 200, description: 'Applicant updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Applicant not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
@@ -170,6 +198,12 @@ export class ApplicantController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete applicant', description: 'Delete an applicant profile (requires JWE auth)' })
+  @ApiParam({ name: 'id', description: 'Applicant ID' })
+  @ApiResponse({ status: 200, description: 'Applicant deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Applicant not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,

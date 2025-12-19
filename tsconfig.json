@@ -18,7 +18,8 @@
       "@common/*": ["libs/common/*"],
       "@dals/*": ["libs/dals/*"],
       "@auth/*": ["libs/auth/*"],
-      "@redis/*": ["libs/redis/*"]
+      "@redis/*": ["libs/redis/*"],
+      "@storage/*": ["libs/storage/*"]
     }
   }
 }

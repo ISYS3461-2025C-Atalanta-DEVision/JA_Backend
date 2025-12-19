@@ -91,6 +91,13 @@ JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
 # API Key for external service access
 API_KEY=your-secret-api-key-here-min-32-chars
 
+# AWS S3 Storage
+AWS_S3_BUCKET=your-bucket-name
+AWS_S3_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+CDN_BASE_URL=https://cdn.example.com
+
 # Redis (optional - for token revocation)
 REDIS_URL=redis://localhost:6379
 ```
@@ -213,6 +220,47 @@ PUT    /skills/:id          # Update skill (@ApiKeyAuth)
 DELETE /skills/:id          # Soft delete (@ApiKeyAuth)
 ```
 
+### Storage Management (S3/CDN)
+
+**Requires**: @ApiKeyAuth (JWE token OR API Key)
+
+```bash
+POST   /storage/upload      # Upload file (multipart/form-data)
+DELETE /storage?url=...     # Delete file by CDN URL
+```
+
+**File Upload Request**:
+```bash
+# Upload avatar
+curl -X POST http://localhost:3000/storage/upload \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@avatar.jpg" \
+  -F "folder=avatar"
+
+# Upload CV
+curl -X POST http://localhost:3000/storage/upload \
+  -H "Authorization: Bearer <jwe-token>" \
+  -F "file=@resume.pdf" \
+  -F "folder=cv"
+```
+
+**Response**:
+```json
+{
+  "url": "https://cdn.example.com/avatar/1734567890123_a1b2c3.jpg",
+  "key": "avatar/1734567890123_a1b2c3.jpg",
+  "folder": "avatar",
+  "size": 245678,
+  "mimeType": "image/jpeg"
+}
+```
+
+**Supported Folders & Validations**:
+- `avatar`: jpg/png/webp, max 5MB
+- `cv`: pdf/doc/docx, max 10MB
+- `job`: jpg/png, max 5MB
+- `post`: jpg/png/webp/mp4, max 25MB
+
 ### Health Checks
 
 ```bash
@@ -311,7 +359,8 @@ GET /new-provinces
 │   │   └── src/
 │   │       ├── apis/               # Feature modules
 │   │       │   ├── applicant/      # Applicant HTTP → TCP proxy
-│   │       │   └── auth/           # Auth controllers
+│   │       │   ├── auth/           # Auth controllers
+│   │       │   └── storage/        # Storage endpoints
 │   │       ├── security/           # Guards and decorators
 │   │       └── main.ts
 │   └── applicant-service/          # Applicant Microservice (Port 3002)
@@ -323,6 +372,8 @@ GET /new-provinces
 │           ├── libs/dals/mongodb/  # Mongoose schemas + repos
 │           └── main.ts
 ├── libs/                           # Shared libraries
+│   ├── auth/                       # Authentication guards & services
+│   ├── storage/                    # S3/CDN file storage
 │   ├── common/                     # Utilities, enums, interfaces
 │   └── dals/                       # Data access layer
 ├── docs/                           # Documentation
