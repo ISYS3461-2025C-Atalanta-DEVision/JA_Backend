@@ -15,7 +15,7 @@ async function bootstrap() {
     .setDescription('JA Backend Core Microservice API')
     .setVersion('1.0')
     .addBearerAuth()
-    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, process.env.API_KEY)
+    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -1,5 +1,6 @@
 import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { ApiKeyOrJweGuard } from '../guards/api-key-or-jwe.guard';
+import { ApiSecurity } from '@nestjs/swagger';
 
 export const ALLOW_API_KEY = 'allowApiKey';
 
@@ -23,5 +24,6 @@ export function ApiKeyAuth() {
   return applyDecorators(
     SetMetadata(ALLOW_API_KEY, true),
     UseGuards(ApiKeyOrJweGuard),
+    ApiSecurity('api-key'),  // <-- Add this                                                
   );
 }
