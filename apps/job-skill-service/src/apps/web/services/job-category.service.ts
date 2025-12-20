@@ -10,7 +10,7 @@ export class JobCategoryService implements IJobCategoryService {
   constructor(
     private readonly jobCategoryRepository: JobCategoryRepository,
     private readonly skillRepository: SkillRepository,
-  ) {}
+  ) { }
 
   async create(createDto: CreateJobCategoryDto): Promise<JobCategoryResponseDto> {
     try {
@@ -152,6 +152,7 @@ export class JobCategoryService implements IJobCategoryService {
       isActive: jobCategory.isActive,
       createdAt: jobCategory.createdAt,
       updatedAt: jobCategory.updatedAt,
+      icon: jobCategory.icon
     };
   }
 }
