@@ -22,8 +22,5 @@ export * from './interfaces';
 // Services
 export * from './services';
 
-// Strategies
-export * from './strategies';
-
 // Firebase
 export * from './firebase';

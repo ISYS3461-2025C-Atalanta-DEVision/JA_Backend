@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException, Logger, InternalServe
 import { ApplicantRepository, Applicant } from '../../../libs/dals/mongodb';
 import { CreateApplicantDto, UpdateApplicantDto, ApplicantResponseDto } from '../apis/applicant/dtos';
 import { IApplicantService } from '../interfaces';
+import { MailerService } from '@libs/mailer';
+import { generateEmailVerificationToken } from '@libs/auth';
 
 @Injectable()
 export class ApplicantService implements IApplicantService {
@@ -9,7 +11,8 @@ export class ApplicantService implements IApplicantService {
 
   constructor(
     private readonly applicantRepository: ApplicantRepository,
-  ) {}
+    private readonly mailerService: MailerService,
+  ) { }
 
   async create(createDto: CreateApplicantDto): Promise<ApplicantResponseDto> {
     try {
@@ -108,6 +111,37 @@ export class ApplicantService implements IApplicantService {
       this.logger.error(`Delete applicant failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException('Failed to delete applicant');
+    }
+  }
+
+  async activateEmail(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const applicant = await this.applicantRepository.findById(id);
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${id} not found`);
+      }
+
+      const { rawToken, hashedToken } =
+        generateEmailVerificationToken();
+
+      const verificationUrl =
+        `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
+
+      // 4. Send email
+      await this.mailerService.sendEmailVerification(
+        applicant.email,
+        verificationUrl,
+      );
+
+
+      return {
+        success: true,
+        message: `Email successfully activated for ${id}`
+      }
+    } catch (error) {
+      this.logger.error(`Cannot activate applicant email failed for ${id}`, error.stack);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to activate email');
     }
   }
 

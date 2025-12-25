@@ -9,7 +9,7 @@ export class ApplicantController {
   constructor(
     @Inject(APPLICANT_SERVICE_WEB_PROVIDER)
     private readonly applicantService: IApplicantService,
-  ) {}
+  ) { }
 
   @MessagePattern({ cmd: 'applicant.create' })
   async create(@Payload() createDto: CreateApplicantDto) {
@@ -35,6 +35,11 @@ export class ApplicantController {
 
   @MessagePattern({ cmd: 'applicant.delete' })
   async delete(@Payload() data: { id: string }) {
+    return await this.applicantService.delete(data.id);
+  }
+
+  @MessagePattern({ cmd: 'applicant.activateEmail' })
+  async activateEmail(@Payload() data: { id: string }) {
     return await this.applicantService.delete(data.id);
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Inject, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtPayload, AuthModuleOptions } from '../interfaces';
 import { Role } from '../enums';
-import { AUTH_MODULE_OPTIONS, JWT_CONSTANTS } from '../constants';
+import { AUTH_MODULE_OPTIONS } from '../constants';
 
 /**
  * JWE Token Service
