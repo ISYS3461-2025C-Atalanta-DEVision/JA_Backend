@@ -127,7 +127,6 @@ export class ApplicantService implements IApplicantService {
       const verificationUrl =
         `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
 
-      // 4. Send email
       await this.mailerService.sendEmailVerification(
         applicant.email,
         verificationUrl,

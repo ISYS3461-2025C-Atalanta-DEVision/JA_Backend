@@ -29,7 +29,7 @@ export class ApplicantController {
 
   constructor(
     @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Create applicant', description: 'Create a new applicant profile (requires JWE auth)' })
@@ -230,6 +230,44 @@ export class ApplicantController {
       }
       throw new HttpException(
         error.message || 'Failed to delete applicant',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('activate-email/:id')
+  @ApiOperation({ summary: 'Activate applicant email', description: 'activate the registered applicant email' })
+  @ApiParam({ name: 'id', description: 'Applicant ID' })
+  @ApiResponse({ status: 200, description: 'Applicant activated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Applicant not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async activateEmail(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    this.logger.log(`User ${user.email} activating applicant email ${id}`);
+    try {
+      const result = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.activateEmail' }, { id, userId: user.id })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              throw new HttpException(
+                error.message || 'Failed to activate applicant email',
+                error.status || HttpStatus.NOT_FOUND,
+              );
+            }),
+          ),
+      );
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to activte applicant email',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
