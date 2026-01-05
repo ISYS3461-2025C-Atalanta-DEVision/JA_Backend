@@ -124,14 +124,14 @@ export class ApplicantService implements IApplicantService {
       const { rawToken, hashedToken } =
         generateEmailVerificationToken();
 
-      const verificationUrl =
-        `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
+      const verificationUrl = process.env.FRONTEND_URL
+        ? `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`
+        : `localhost:3000/verify-email?token=${rawToken}`;
 
       await this.mailerService.sendEmailVerification(
         applicant.email,
         verificationUrl,
       );
-
 
       return {
         success: true,

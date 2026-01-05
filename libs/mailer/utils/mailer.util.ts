@@ -9,24 +9,45 @@ export interface SendEmailOptions {
 
 export async function sendEmail(
   mailer: MailerService,
-  options: SendEmailOptions,
-): Promise<void> {
-  await mailer.sendMail(options);
+  options: {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+  },
+) {
+  if (!options.to) {
+    throw new Error('Recipient email missing');
+  }
+
+  return mailer.sendMail({
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+    text: options.text,
+  });
 }
 
 export async function sendEmailVerification(
   mailer: MailerService,
-  payload: { to: string; verificationUrl: string },
-): Promise<void> {
-  await sendEmail(mailer, {
-    to: payload.to,
-    subject: 'Verify your email address',
+  options: {
+    to: string;
+    verificationUrl: string;
+  },
+) {
+  if (!options.to) {
+    throw new Error('Recipient email missing');
+  }
+
+  return mailer.sendMail({
+    to: options.to,
+    subject: 'Verify your email',
     html: `
-      <p>Welcome!</p>
-      <p>Please verify your email by clicking the link below:</p>
-      <a href="${payload.verificationUrl}">Verify Email</a>
-      <p>This link expires in 24 hours.</p>
+      <p>Please verify your email:</p>
+      <a href="${options.verificationUrl}">
+        Verify Email
+      </a>
     `,
-    text: `Verify your email: ${payload.verificationUrl}`,
+    text: `Verify your email: ${options.verificationUrl}`,
   });
 }

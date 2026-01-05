@@ -267,7 +267,7 @@ export class ApplicantController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to activte applicant email',
+        error.message || 'Failed to activate applicant email',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
