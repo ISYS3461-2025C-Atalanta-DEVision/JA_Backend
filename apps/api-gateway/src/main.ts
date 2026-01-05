@@ -5,10 +5,14 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { WsAdapter } from '@nestjs/platform-ws';
 
 async function bootstrap() {
   Logger.log('Starting API Gateway...');
   const app = await NestFactory.create(AppModule);
+
+  // Use native WebSocket adapter (not Socket.IO)
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   const config = new DocumentBuilder()
     .setTitle('JA Core API')
@@ -34,9 +38,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:8080',
+      '*',
       // Allow file:// protocol for local testing (only in development)
       ...(process.env.NODE_ENV !== 'production' ? ['null'] : []),
     ],
@@ -63,6 +65,7 @@ async function bootstrap() {
   const port = process.env.API_GATEWAY_PORT || 3000;
   await app.listen(port, '0.0.0.0');
   Logger.log(`API Gateway is running on: http://localhost:${port}`);
+  Logger.log(`WebSocket endpoint: ws://localhost:${port}/ws/notifications`);
 }
 bootstrap();
 

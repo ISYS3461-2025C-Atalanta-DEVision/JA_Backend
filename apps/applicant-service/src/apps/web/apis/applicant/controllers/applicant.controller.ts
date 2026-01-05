@@ -1,14 +1,17 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { APPLICANT_SERVICE_WEB_PROVIDER } from '../../../constants';
+import { APPLICANT_SERVICE_WEB_PROVIDER, SEARCH_PROFILE_SERVICE_PROVIDER } from '../../../constants';
 import { IApplicantService } from '../../../interfaces';
 import { CreateApplicantDto, UpdateApplicantDto } from '../dtos';
+import { SearchProfileService, UpsertSearchProfileDto } from '../../../services';
 
 @Controller()
 export class ApplicantController {
   constructor(
     @Inject(APPLICANT_SERVICE_WEB_PROVIDER)
     private readonly applicantService: IApplicantService,
+    @Inject(SEARCH_PROFILE_SERVICE_PROVIDER)
+    private readonly searchProfileService: SearchProfileService,
   ) { }
 
   @MessagePattern({ cmd: 'applicant.create' })
@@ -41,5 +44,29 @@ export class ApplicantController {
   @MessagePattern({ cmd: 'applicant.activateEmail' })
   async activateEmail(@Payload() data: { id: string }) {
     return await this.applicantService.activateEmail(data.id);
+  }
+
+  // ==================== Search Profile TCP Handlers ====================
+
+  @MessagePattern({ cmd: 'searchProfile.get' })
+  async getSearchProfile(@Payload() data: { applicantId: string }) {
+    return await this.searchProfileService.getByApplicantId(data.applicantId);
+  }
+
+  @MessagePattern({ cmd: 'searchProfile.upsert' })
+  async upsertSearchProfile(
+    @Payload() data: { applicantId: string; profile: UpsertSearchProfileDto },
+  ) {
+    return await this.searchProfileService.upsert(data.applicantId, data.profile);
+  }
+
+  @MessagePattern({ cmd: 'searchProfile.deactivate' })
+  async deactivateSearchProfile(@Payload() data: { applicantId: string }) {
+    return await this.searchProfileService.deactivate(data.applicantId);
+  }
+
+  @MessagePattern({ cmd: 'searchProfile.activate' })
+  async activateSearchProfile(@Payload() data: { applicantId: string }) {
+    return await this.searchProfileService.activate(data.applicantId);
   }
 }

@@ -5,18 +5,22 @@ A **microservices-based** backend API system built with NestJS
 ## Quick Overview
 
 **Architecture**: Microservices with API Gateway pattern
-**Current Services**: API Gateway, Applicant Service, Admin Service, Job-Skill Service (✅ All running)
-**Transport**: TCP for inter-service, HTTP/REST for external clients
+**Current Services**: API Gateway, Applicant Service, Admin Service, Job-Skill Service, Notification Service (✅ All running)
+**Transport**: TCP for inter-service, HTTP/REST for external clients, Kafka for event-driven messaging
 **Authentication**: ✅ **JWE + Firebase Google Auth** + API Key with Argon2id hashing
+**Event Streaming**: ✅ **Kafka** for asynchronous event processing
 
 **Key Features**:
 
-- 🏗️ Microservices architecture with NestJS + TCP
+- 🏗️ Microservices architecture with NestJS + TCP + Kafka
 - 🔐 **Full authentication system** (JWE + Firebase Google Auth + API Key)
 - 👥 Applicant & Admin management with CRUD + auth
 - 💼 Job categories and skills management
 - 🚀 API Gateway with HTTP → TCP proxy pattern
 - 🛡️ Global JWE auth + @Public() and @ApiKeyAuth() decorators
+- 📡 **Event-driven architecture** with Kafka for async messaging
+- 📬 Notification service with multi-channel delivery (email, push, in-app)
+- 🔍 Search profile management for job matching
 - 📚 Comprehensive API documentation
 
 ## Tech Stack
@@ -24,12 +28,14 @@ A **microservices-based** backend API system built with NestJS
 - **Architecture**: Microservices (NestJS monorepo)
 - **Framework**: NestJS 11.1.8 + @nestjs/microservices 11.1.8
 - **Language**: TypeScript 5.7.3
-- **Transport**: TCP (current), Kafka (planned)
+- **Transport**: TCP (inter-service), Kafka (event streaming)
+- **Message Broker**: Kafka via KafkaJS (event-driven communication)
 - **Database**: MongoDB 6.17.0 (per-service databases)
 - **ORM**: Mongoose 8.20.2 (@nestjs/mongoose 11.0.3)
 - **Authentication**: JWE + Firebase Admin SDK 13.6.0
 - **Password Hashing**: Argon2id (@node-rs/argon2 2.0.2)
 - **Token Encryption**: Jose library (JWE A256GCM)
+- **Email**: Nodemailer with SMTP support
 - **Validation**: class-validator + class-transformer
 - **Security**: Helmet, CORS, Throttler (rate limiting)
 - **Testing**: Jest
@@ -45,6 +51,17 @@ API Gateway (Port 3000) - Global JweAuthGuard + @Public/@ApiKeyAuth
     ├─→ Applicant Service (Port 3002, Health 3012) → MongoDB (vietnam_applicants)
     ├─→ Admin Service (Port 3003, Health 3013) → MongoDB (vietnam_admins)
     └─→ Job-Skill Service (Port 3004, Health 3014) → MongoDB (vietnam_job_skills)
+
+Kafka Event Bus (Async Communication)
+    ↓
+    ├─→ Notification Service (Health 3015) → MongoDB (vietnam_notifications)
+    │   - Consumes: job.created, matching.jm-to-ja.completed, subscription.premium.jm.created
+    │   - Sends: Email notifications via SMTP
+    │
+    └─→ Shared Kafka Module (libs/kafka)
+        - Producer service (all services can publish events)
+        - 16 topic constants (subscription, profile, job, matching, notification, dlq)
+        - Type-safe event payloads and interfaces
 ```
 
 ## Installation
@@ -76,6 +93,25 @@ MONGODB_URI=mongodb://localhost:27017/db
 
 # Server
 PORT=3000
+
+# Kafka Configuration
+KAFKA_BROKERS=localhost:9092
+KAFKA_CLIENT_ID=ja-core
+KAFKA_CONSUMER_GROUP_NOTIFICATION=ja-notification-group
+
+# Optional: Confluent Cloud / SASL Configuration
+# KAFKA_SASL_MECHANISM=plain
+# KAFKA_SASL_USERNAME=your-api-key
+# KAFKA_SASL_PASSWORD=your-api-secret
+# KAFKA_SECURITY_PROTOCOL=SASL_SSL
+
+# Email Configuration (SMTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=your-email@gmail.com
+MAIL_PASS=your-app-password
+MAIL_FROM=noreply@example.com
 
 # Firebase Admin SDK (for Google Sign-In)
 FIREBASE_PROJECT_ID=your-firebase-project-id
@@ -121,7 +157,11 @@ npm run start:admin-service:dev
 npm run start:job-skill-service:dev
 # TCP port 3004, Health port 3014
 
-# Terminal 4 - API Gateway
+# Terminal 4 - Notification Service
+npm run start:notification-service:dev
+# Kafka consumer, Health port 3015
+
+# Terminal 5 - API Gateway
 npm run start:api-gateway:dev
 # HTTP server on port 3000
 ```
@@ -268,6 +308,7 @@ GET /health                 # API Gateway health
 GET /health/applicant       # Applicant Service health (port 3012)
 GET /health/admin           # Admin Service health (port 3013)
 GET /health/job-skill       # Job-Skill Service health (port 3014)
+GET /health/notification    # Notification Service health (port 3015)
 ```
 
 **Example - Register + Login**:
@@ -363,17 +404,34 @@ GET /new-provinces
 │   │       │   └── storage/        # Storage endpoints
 │   │       ├── security/           # Guards and decorators
 │   │       └── main.ts
-│   └── applicant-service/          # Applicant Microservice (Port 3002)
+│   ├── applicant-service/          # Applicant Microservice (Port 3002)
+│   │   └── src/
+│   │       ├── apps/web/
+│   │       │   ├── apis/           # Applicant + Auth APIs
+│   │       │   ├── services/       # Business logic
+│   │       │   └── interfaces/
+│   │       ├── libs/dals/mongodb/  # Mongoose schemas + repos
+│   │       │   ├── schemas/
+│   │       │   │   └── search-profile.schema.ts  # Job search criteria
+│   │       │   └── repositories/
+│   │       └── main.ts
+│   └── notification-service/       # Notification Microservice (Health 3015)
 │       └── src/
-│           ├── apps/web/
-│           │   ├── apis/           # Applicant + Auth APIs
-│           │   ├── services/       # Business logic
-│           │   └── interfaces/
-│           ├── libs/dals/mongodb/  # Mongoose schemas + repos
-│           └── main.ts
+│           ├── notification/       # Kafka event handlers
+│           │   ├── notification.controller.ts  # Event consumers
+│           │   └── notification.service.ts     # Email sending logic
+│           ├── libs/dals/mongodb/  # Notification storage
+│           │   ├── schemas/notification.schema.ts
+│           │   └── repositories/notification.repository.ts
+│           └── main.ts             # Kafka consumer bootstrap
 ├── libs/                           # Shared libraries
 │   ├── auth/                       # Authentication guards & services
 │   ├── storage/                    # S3/CDN file storage
+│   ├── kafka/                      # Kafka event bus (NEW)
+│   │   ├── kafka.module.ts         # Global Kafka module
+│   │   ├── kafka.service.ts        # Producer service
+│   │   ├── constants/topics.constant.ts  # 16 topic constants
+│   │   └── interfaces/             # Event & payload interfaces
 │   ├── common/                     # Utilities, enums, interfaces
 │   └── dals/                       # Data access layer
 ├── docs/                           # Documentation

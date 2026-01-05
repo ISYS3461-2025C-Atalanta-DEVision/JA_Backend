@@ -1,6 +1,7 @@
 import { DynamicModule, Module, Global } from '@nestjs/common';
 import { RedisModule as IORedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { TokenRevocationService } from './services/token-revocation.service';
+import { NotificationPubSubService } from './services/notification-pubsub.service';
 
 export interface RedisModuleAsyncOptions {
   useFactory: (...args: any[]) => Promise<RedisModuleOptions> | RedisModuleOptions;
@@ -22,8 +23,8 @@ export class RedisModule {
           inject: options.inject || [],
         }),
       ],
-      providers: [TokenRevocationService],
-      exports: [IORedisModule, TokenRevocationService],
+      providers: [TokenRevocationService, NotificationPubSubService],
+      exports: [IORedisModule, TokenRevocationService, NotificationPubSubService],
     };
   }
 }

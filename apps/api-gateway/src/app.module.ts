@@ -6,9 +6,10 @@ import { AuthModule as SharedAuthModule } from '@auth/auth.module';
 import { JweAuthGuard } from '@auth/guards';
 import { RedisModule } from '@redis/redis.module';
 import { StorageModule } from '@storage/storage.module';
-import { ApplicantModule, AuthModule, JobCategoryModule, SkillModule, StorageApiModule } from './apis';
+import { ApplicantModule, AuthModule, JobCategoryModule, NotificationModule, SkillModule, StorageApiModule } from './apis';
 import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
+import { NotificationGatewayModule } from './gateways';
 
 @Module({
   imports: [
@@ -75,8 +76,11 @@ import { HealthController } from './health.controller';
     AuthModule,
     CountriesModule,
     JobCategoryModule,
+    NotificationModule,
     SkillModule,
     StorageApiModule,
+    // WebSocket Gateway for real-time notifications
+    NotificationGatewayModule,
   ],
   controllers: [HealthController],
   providers: [

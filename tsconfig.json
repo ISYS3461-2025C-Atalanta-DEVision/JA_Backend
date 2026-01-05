@@ -14,12 +14,27 @@
     "skipLibCheck": true,
     "strict": false,
     "paths": {
-      "@libs/*": ["libs/*"],
-      "@common/*": ["libs/common/*"],
-      "@dals/*": ["libs/dals/*"],
-      "@auth/*": ["libs/auth/*"],
-      "@redis/*": ["libs/redis/*"],
-      "@storage/*": ["libs/storage/*"]
+      "@auth/*": [
+        "libs/auth/*"
+      ],
+      "@common/*": [
+        "libs/common/*"
+      ],
+      "@dals/*": [
+        "libs/dals/*"
+      ],
+      "@kafka/*": [
+        "libs/kafka/*"
+      ],
+      "@libs/*": [
+        "libs/*"
+      ],
+      "@redis/*": [
+        "libs/redis/*"
+      ],
+      "@storage/*": [
+        "libs/storage/*"
+      ]
     }
   }
 }
