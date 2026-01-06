@@ -1,23 +1,23 @@
 import { Module, Logger } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MailerModule } from '@libs/mailer';
 import { RedisModule } from '@redis/redis.module';
 import { HealthController } from './health.controller';
 import { NotificationModule } from './notification/notification.module';
-import { MongodbModule } from './libs';
+import {
+  MongodbModule,
+  ConfigurationModule,
+  APP_CONFIG_SERVICE_PROVIDER,
+  IAppConfigService,
+} from './libs';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['.env', '.env.local'],
-    }),
+    ConfigurationModule,
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const dbUrl = configService.get<string>('NOTIFICATION_MONGO_URI') ||
-          configService.get<string>('DB_URL');
+      imports: [ConfigurationModule],
+      useFactory: (appConfigService: IAppConfigService) => {
+        const dbUrl = appConfigService.getDbUrl();
         Logger.log(
           `[MongooseModule] DB_URL: ${dbUrl ? 'found' : 'NOT FOUND'}`,
           'Bootstrap',
@@ -26,26 +26,26 @@ import { MongodbModule } from './libs';
           uri: dbUrl,
         };
       },
-      inject: [ConfigService],
+      inject: [APP_CONFIG_SERVICE_PROVIDER],
     }),
     // Redis for real-time notification PubSub
     RedisModule.forRootAsync({
-      useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL');
-        if (redisUrl) {
-          return { type: 'single', url: redisUrl };
+      useFactory: (appConfigService: IAppConfigService) => {
+        const redisConfig = appConfigService.getRedisConfig();
+        if (redisConfig.url) {
+          return { type: 'single', url: redisConfig.url };
         }
         return {
           type: 'single',
           options: {
-            host: configService.get<string>('REDIS_HOST') || 'localhost',
-            port: configService.get<number>('REDIS_PORT') || 6379,
-            password: configService.get<string>('REDIS_PASSWORD'),
+            host: redisConfig.host,
+            port: redisConfig.port,
+            password: redisConfig.password,
             lazyConnect: true,
           },
         };
       },
-      inject: [ConfigService],
+      inject: [APP_CONFIG_SERVICE_PROVIDER],
     }),
     MailerModule,
     MongodbModule,

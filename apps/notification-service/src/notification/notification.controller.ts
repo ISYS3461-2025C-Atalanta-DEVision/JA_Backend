@@ -15,6 +15,7 @@ import {
   TOPIC_SUBSCRIPTION_PREMIUM_JM_CREATED,
   TOPIC_SUBSCRIPTION_PREMIUM_JA_CREATED,
   TOPIC_SUBSCRIPTION_PREMIUM_JA_EXPIRED,
+  TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED,
   TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED,
 } from '@kafka/constants';
 import {
@@ -24,6 +25,7 @@ import {
   IPremiumJMCreatedPayload,
   IPremiumJACreatedPayload,
   IPremiumJAExpiredPayload,
+  ISearchProfileCreatedPayload,
   ISearchProfileUpdatedPayload,
 } from '@kafka/interfaces';
 
@@ -187,6 +189,37 @@ export class NotificationController {
   }
 
   /**
+   * Handle JA search profile created events
+   * Triggered when an applicant creates their search profile
+   */
+  @EventPattern(TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED)
+  async handleJASearchProfileCreated(
+    @Payload() message: IKafkaEvent<ISearchProfileCreatedPayload>,
+    @Ctx() context: KafkaContext,
+  ) {
+    const topic = context.getTopic();
+    const partition = context.getPartition();
+    const offset = context.getMessage().offset;
+
+    this.logger.log(
+      `Received profile.ja.search-profile.created event [topic=${topic}, partition=${partition}, offset=${offset}]`,
+    );
+
+    try {
+      await this.notificationService.handleJASearchProfileCreated(message);
+      this.logger.log(
+        `Processed profile.ja.search-profile.created event: ${message.eventId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to process profile.ja.search-profile.created event: ${message.eventId}`,
+        error.stack,
+      );
+      // TODO: Send to DLQ
+    }
+  }
+
+  /**
    * Handle JA search profile updated events
    * Triggered when an applicant updates their search profile
    */
@@ -217,43 +250,4 @@ export class NotificationController {
     }
   }
 
-  // ==================== TCP Message Handlers ====================
-
-  /**
-   * Get notifications for a user (TCP)
-   */
-  @MessagePattern(NOTIFICATION_PATTERNS.GET_NOTIFICATIONS)
-  async getNotifications(
-    @Payload() data: { recipientId: string; limit?: number; offset?: number; unreadOnly?: boolean },
-  ) {
-    this.logger.log(`TCP: Getting notifications for user ${data.recipientId}`);
-    return this.notificationService.getNotifications(data);
-  }
-
-  /**
-   * Mark a notification as read (TCP)
-   */
-  @MessagePattern(NOTIFICATION_PATTERNS.MARK_READ)
-  async markNotificationRead(@Payload() data: { notificationId: string }) {
-    this.logger.log(`TCP: Marking notification ${data.notificationId} as read`);
-    return this.notificationService.markNotificationRead(data.notificationId);
-  }
-
-  /**
-   * Mark all notifications as read for a user (TCP)
-   */
-  @MessagePattern(NOTIFICATION_PATTERNS.MARK_ALL_READ)
-  async markAllNotificationsRead(@Payload() data: { recipientId: string }) {
-    this.logger.log(`TCP: Marking all notifications read for user ${data.recipientId}`);
-    return this.notificationService.markAllNotificationsRead(data.recipientId);
-  }
-
-  /**
-   * Get unread notification count (TCP)
-   */
-  @MessagePattern(NOTIFICATION_PATTERNS.GET_UNREAD_COUNT)
-  async getUnreadCount(@Payload() data: { recipientId: string }) {
-    this.logger.log(`TCP: Getting unread count for user ${data.recipientId}`);
-    return this.notificationService.getUnreadCount(data.recipientId);
-  }
 }

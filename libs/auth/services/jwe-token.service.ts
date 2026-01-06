@@ -62,6 +62,7 @@ export class JweTokenService {
     email: string,
     role: Role,
     country?: string,
+    emailVerified?: boolean,
   ): Promise<string> {
     const { EncryptJWT } = await import('jose'); // dynamic import
 
@@ -71,6 +72,7 @@ export class JweTokenService {
       role,
       type: 'access',
       ...(country && { country }),
+      ...(emailVerified !== undefined && { emailVerified }),
     };
 
     const expiresIn = this.options.jwtExpiresIn || '30m';
@@ -122,9 +124,10 @@ export class JweTokenService {
     email: string,
     role: Role,
     country?: string,
+    emailVerified?: boolean,
   ) {
     const [accessToken, refreshToken] = await Promise.all([
-      this.generateAccessToken(userId, email, role, country),
+      this.generateAccessToken(userId, email, role, country, emailVerified),
       this.generateRefreshToken(userId, email, role),
     ]);
 
@@ -150,6 +153,7 @@ export class JweTokenService {
         role: (payload as any).role,
         type: 'access',
         country: (payload as any).country,
+        emailVerified: (payload as any).emailVerified,
         iat: payload.iat,
         exp: payload.exp,
       };

@@ -22,8 +22,12 @@ export const TOPIC_SUBSCRIPTION_PREMIUM_JM_EXPIRED =
 // ===========================================
 // Profile Topics
 // ===========================================
+export const TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED =
+  'profile.ja.search-profile.created';
 export const TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED =
   'profile.ja.search-profile.updated';
+export const TOPIC_PROFILE_JM_SEARCH_PROFILE_CREATED =
+  'profile.jm.search-profile.created';
 export const TOPIC_PROFILE_JM_SEARCH_PROFILE_UPDATED =
   'profile.jm.search-profile.updated';
 

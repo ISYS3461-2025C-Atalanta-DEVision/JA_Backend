@@ -12,18 +12,21 @@ import {
   Inject,
   Logger,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
-import { CurrentUser, ApiKeyAuth } from '@auth/decorators';
+import { CurrentUser, ApiKeyAuth, Public } from '@auth/decorators';
 import { AuthenticatedUser } from '@auth/interfaces';
+import { EmailVerifiedGuard } from '@auth/guards';
 import { CreateApplicantDto } from '../dtos/requests/create-applicant.dto';
 import { UpdateApplicantDto } from '../dtos/requests/update-applicant.dto';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 
 @ApiTags('Applicants')
 @Controller('applicants')
+@UseGuards(EmailVerifiedGuard)
 export class ApplicantController {
   private readonly logger = new Logger(ApplicantController.name);
 
@@ -236,6 +239,7 @@ export class ApplicantController {
   }
 
   @Post('activate-email')
+  @Public()
   @ApiOperation({ summary: 'Activate applicant email', description: 'activate the registered applicant email' })
   @ApiResponse({ status: 200, description: 'Applicant activated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

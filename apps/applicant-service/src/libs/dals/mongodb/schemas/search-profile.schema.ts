@@ -62,11 +62,19 @@ export class SearchProfile {
   desiredRoles: string[];
 
   /**
-   * Technical skills tags (e.g., "React", "Spring Boot", "Docker")
-   * Used for matching with job requirements (requirement 5.2.2)
+   * Skill IDs from job-skill-service
+   * References to skills collection in job-skill-service MongoDB
+   * Used for EXACT matching with job requirements (requirement 5.2.2)
    */
   @Prop({ type: [String], default: [], index: true })
-  skills: string[];
+  skillIds: string[];
+
+  /**
+   * Cached skill names for display (denormalized)
+   * Synced when skills are selected from job-skill-service picker
+   */
+  @Prop({ type: [String], default: [] })
+  skillNames: string[];
 
   /**
    * Years of experience
@@ -119,8 +127,8 @@ export const SearchProfileSchema = SchemaFactory.createForClass(SearchProfile);
 // Index for finding profiles by location (for matching)
 SearchProfileSchema.index({ isActive: 1, desiredLocations: 1 });
 
-// Index for finding profiles by skills (for matching)
-SearchProfileSchema.index({ isActive: 1, skills: 1 });
+// Index for finding profiles by skill IDs (for matching)
+SearchProfileSchema.index({ isActive: 1, skillIds: 1 });
 
 // Text index for full-text search on roles
 SearchProfileSchema.index({ desiredRoles: 'text' });

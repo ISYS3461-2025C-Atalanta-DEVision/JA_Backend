@@ -31,11 +31,11 @@ export class SearchProfileRepository
       .exec()) as SearchProfile[];
   }
 
-  async findBySkills(skills: string[]): Promise<SearchProfile[]> {
+  async findBySkillIds(skillIds: string[]): Promise<SearchProfile[]> {
     return (await this.model
       .find({
         isActive: true,
-        skills: { $in: skills },
+        skillIds: { $in: skillIds },
       })
       .lean()
       .exec()) as SearchProfile[];

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { Logger, ValidationPipe } from '@nestjs/common';
@@ -10,6 +11,11 @@ import { WsAdapter } from '@nestjs/platform-ws';
 async function bootstrap() {
   Logger.log('Starting API Gateway...');
   const app = await NestFactory.create(AppModule);
+
+  // Get config service
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('app_config.port');
+  const host = configService.get<string>('app_config.host');
 
   // Use native WebSocket adapter (not Socket.IO)
   app.useWebSocketAdapter(new WsAdapter(app));
@@ -25,8 +31,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-
-
   // Enable validation
   app.useGlobalPipes(
     new ValidationPipe({
@@ -37,11 +41,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: [
-      '*',
-      // Allow file:// protocol for local testing (only in development)
-      ...(process.env.NODE_ENV !== 'production' ? ['null'] : []),
-    ],
+    origin: true,  // reflects the requesting origin back
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   });
@@ -56,16 +56,15 @@ async function bootstrap() {
       hidePoweredBy: true,
       contentSecurityPolicy: {
         directives: {
-          upgradeInsecureRequests: null
-        }
-      }
+          upgradeInsecureRequests: null,
+        },
+      },
     }),
   );
 
-  const port = process.env.API_GATEWAY_PORT || 3000;
-  await app.listen(port, '0.0.0.0');
-  Logger.log(`API Gateway is running on: http://localhost:${port}`);
-  Logger.log(`WebSocket endpoint: ws://localhost:${port}/ws/notifications`);
+  await app.listen(port, host);
+  Logger.log(`API Gateway is running on: http://${host}:${port}`);
+  Logger.log(`WebSocket endpoint: ws://${host}:${port}/ws/notifications`);
 }
-bootstrap();
 
+bootstrap();

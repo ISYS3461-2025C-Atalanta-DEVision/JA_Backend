@@ -6,6 +6,7 @@ export interface JwtPayload {
   role: Role;
   type: 'access' | 'refresh';
   country?: string; // ISO 3166-1 alpha-2 country code
+  emailVerified?: boolean;
   iat?: number;
   exp?: number;
 }

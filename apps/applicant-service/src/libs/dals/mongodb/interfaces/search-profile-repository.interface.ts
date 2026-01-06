@@ -5,7 +5,7 @@ export interface ISearchProfileRepository
   extends IBaseMongoRepository<SearchProfile> {
   findByApplicantId(applicantId: string): Promise<SearchProfile | null>;
   findActiveProfiles(): Promise<SearchProfile[]>;
-  findBySkills(skills: string[]): Promise<SearchProfile[]>;
+  findBySkillIds(skillIds: string[]): Promise<SearchProfile[]>;
   findByLocations(locations: string[]): Promise<SearchProfile[]>;
   upsertByApplicantId(
     applicantId: string,

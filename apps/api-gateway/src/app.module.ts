@@ -10,12 +10,14 @@ import { ApplicantModule, AuthModule, JobCategoryModule, NotificationModule, Ski
 import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
 import { NotificationGatewayModule } from './gateways';
+import { configs } from './configs';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV === 'production' ? [] : '.env',
+      load: configs,
     }),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],

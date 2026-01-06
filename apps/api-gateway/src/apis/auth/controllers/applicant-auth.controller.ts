@@ -67,6 +67,7 @@ export class ApplicantAuthController {
       name: string;
       role: Role;
       country?: string;
+      emailVerified?: boolean;
     },
     provider: string,
   ) {
@@ -76,6 +77,7 @@ export class ApplicantAuthController {
       user.email,
       user.role,
       user.country,
+      user.emailVerified,
     );
 
     // Calculate expiration dates

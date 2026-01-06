@@ -38,7 +38,8 @@ export interface ISearchProfilePayload {
 
   // Matching criteria
   desiredRoles: string[];
-  skills: string[];
+  skillIds: string[];       // Skill IDs from job-skill-service
+  skillNames: string[];     // Cached skill names for display
   experienceYears: number;
   desiredLocations: string[];
   expectedSalary: ISalaryRange;
@@ -74,7 +75,8 @@ export interface IPremiumJMCreatedPayload {
   subscriptionId: string;
   subscriptionTier: SubscriptionTier;
   searchProfile: {
-    skills: string[];
+    skillIds: string[];       // Skill IDs from job-skill-service
+    skillNames: string[];     // Cached skill names for display
     experienceYears: IExperienceRange;
     locations: string[];
     salaryRange: ISalaryRange;
@@ -94,6 +96,15 @@ export interface IPremiumJMExpiredPayload {
 // ===========================================
 // Profile Event Payloads
 // ===========================================
+
+export interface ISearchProfileCreatedPayload {
+  profileId: string;
+  userId: string;
+  userType: 'APPLICANT' | 'COMPANY';
+  searchProfile: ISearchProfilePayload;
+  isPremium: boolean;
+  createdAt: string;
+}
 
 export interface ISearchProfileUpdatedPayload {
   profileId: string;
@@ -115,8 +126,10 @@ export interface IJobCreatedPayload {
   title: string;
   description?: string;
   criteria: {
-    requiredSkills: string[];
-    niceToHaveSkills?: string[];
+    requiredSkillIds: string[];       // Skill IDs from job-skill-service
+    requiredSkillNames: string[];     // Cached skill names for display
+    niceToHaveSkillIds?: string[];    // Optional nice-to-have skill IDs
+    niceToHaveSkillNames?: string[];  // Optional nice-to-have skill names
     minExperience: number;
     maxExperience?: number;
     location: string;
@@ -152,7 +165,8 @@ export interface IMatchResult {
   matchedEntityType: 'APPLICANT' | 'JOB' | 'COMPANY';
   matchScore: number;
   matchedCriteria: {
-    skills: string[];
+    skillIds: string[];       // Matched skill IDs
+    skillNames: string[];     // Matched skill names for display
     location: boolean;
     salary: boolean;
     experience: boolean;

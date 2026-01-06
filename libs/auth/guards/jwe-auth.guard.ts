@@ -63,6 +63,7 @@ export class JweAuthGuard implements CanActivate {
         email: payload.email,
         role: payload.role,
         country: payload.country,
+        emailVerified: payload.emailVerified,
       };
 
       return true;

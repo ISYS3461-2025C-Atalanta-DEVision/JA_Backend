@@ -73,12 +73,14 @@ export class ApiKeyOrJweGuard implements CanActivate {
       context.getClass(),
     ]);
 
+
     if (isPublic) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest<Request>();
     const apiKey = request.headers['x-api-key'] as string;
+
 
     // Strategy 1: Try API Key first (faster than JWE validation)
     if (apiKey) {
@@ -105,11 +107,15 @@ export class ApiKeyOrJweGuard implements CanActivate {
     if (token) {
       try {
         const payload = await this.jweTokenService.verifyAccessToken(token);
+        this.logger.debug(`JWE payload: ${JSON.stringify(payload)}`);
+
+        // Attach user to request (emailVerified check is done by EmailVerifiedGuard)
         (request as any).user = {
           id: payload.sub,
           email: payload.email,
           role: payload.role,
           country: payload.country,
+          emailVerified: payload.emailVerified,
         };
         (request as any).authType = 'jwe';
         return true;

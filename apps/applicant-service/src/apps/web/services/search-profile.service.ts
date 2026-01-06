@@ -6,7 +6,8 @@ import { ISearchProfilePayload } from '@kafka/interfaces';
 
 export interface UpsertSearchProfileDto {
   desiredRoles?: string[];
-  skills?: string[];
+  skillIds?: string[];      // Skill IDs from job-skill-service
+  skillNames?: string[];    // Cached skill names for display
   experienceYears?: number;
   desiredLocations?: string[];
   expectedSalary?: {
@@ -58,7 +59,8 @@ export class SearchProfileService {
         userId: applicantId,
         userType: 'APPLICANT',
         desiredRoles: result.desiredRoles || [],
-        skills: result.skills || [],
+        skillIds: result.skillIds || [],
+        skillNames: result.skillNames || [],
         experienceYears: result.experienceYears || 0,
         desiredLocations: result.desiredLocations || [],
         expectedSalary: result.expectedSalary || { min: 0, currency: 'USD' },
@@ -133,10 +135,10 @@ export class SearchProfileService {
       if (oldRoles !== newRoles) changedFields.push('desiredRoles');
     }
 
-    if (newData.skills !== undefined) {
-      const oldSkills = (existing.skills || []).sort().join(',');
-      const newSkills = (newData.skills || []).sort().join(',');
-      if (oldSkills !== newSkills) changedFields.push('skills');
+    if (newData.skillIds !== undefined) {
+      const oldSkillIds = (existing.skillIds || []).sort().join(',');
+      const newSkillIds = (newData.skillIds || []).sort().join(',');
+      if (oldSkillIds !== newSkillIds) changedFields.push('skillIds');
     }
 
     if (newData.experienceYears !== undefined && existing.experienceYears !== newData.experienceYears) {
