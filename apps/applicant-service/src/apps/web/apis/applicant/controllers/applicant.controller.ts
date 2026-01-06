@@ -43,7 +43,7 @@ export class ApplicantController {
 
   @MessagePattern({ cmd: 'applicant.activateEmail' })
   async activateEmail(@Payload() data: { id: string }) {
-    return await this.applicantService.activateEmail(data.id);
+    return await this.applicantService.sendVerificationEmail(data.id);
   }
 
   // ==================== Search Profile TCP Handlers ====================

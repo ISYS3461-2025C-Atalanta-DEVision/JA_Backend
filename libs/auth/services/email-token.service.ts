@@ -1,4 +1,3 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 
 export function generateEmailVerificationToken() {
@@ -10,7 +9,8 @@ export function generateEmailVerificationToken() {
 
   return {
     rawToken,
-    hashedToken
+    hashedToken,
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
   };
 }
 export function hashEmailVerificationToken(token: string) {

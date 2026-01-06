@@ -12,5 +12,6 @@ export interface IApplicantService {
   }>;
   update(id: string, updateDto: UpdateApplicantDto): Promise<ApplicantResponseDto>;
   delete(id: string): Promise<{ success: boolean; message: string }>;
-  activateEmail(id: string): Promise<{ success: boolean; message: string }>
+  sendVerificationEmail(id: string): Promise<{ success: boolean; message: string }>
+  verifyEmail(token: string): Promise<{ success: boolean; message: string }>
 }

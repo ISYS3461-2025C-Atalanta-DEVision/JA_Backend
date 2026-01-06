@@ -32,22 +32,26 @@ export async function sendEmailVerification(
   mailer: MailerService,
   options: {
     to: string;
-    verificationUrl: string;
+    rawToken: string;
   },
 ) {
   if (!options.to) {
     throw new Error('Recipient email missing');
   }
+  const verificationUrl = process.env.FRONTEND_URL
+    ? `${process.env.FRONTEND_URL}/verify-email?token=${options.rawToken}`
+    : `localhost:3000/verify-email?token=${options.rawToken}`;
 
   return mailer.sendMail({
     to: options.to,
     subject: 'Verify your email',
     html: `
       <p>Please verify your email:</p>
-      <a href="${options.verificationUrl}">
+      <p>${verificationUrl}</p>
+      <a href="${verificationUrl}">
         Verify Email
       </a>
     `,
-    text: `Verify your email: ${options.verificationUrl}`,
+    text: `Verify your email: ${options.rawToken}`,
   });
 }

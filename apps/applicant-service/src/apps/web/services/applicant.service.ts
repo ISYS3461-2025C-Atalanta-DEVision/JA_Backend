@@ -4,6 +4,8 @@ import { CreateApplicantDto, UpdateApplicantDto, ApplicantResponseDto } from '..
 import { IApplicantService } from '../interfaces';
 import { MailerService } from '@libs/mailer';
 import { generateEmailVerificationToken } from '@libs/auth';
+import { AddEmailHashDto } from '../apis/applicant/dtos/requests/add-email-verification-hash';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class ApplicantService implements IApplicantService {
@@ -22,6 +24,8 @@ export class ApplicantService implements IApplicantService {
       }
 
       const applicant = await this.applicantRepository.create(createDto);
+      this.sendVerificationEmail(applicant._id.toString())
+
       return this.toResponseDto(applicant);
     } catch (error) {
       this.logger.error(`Create applicant failed for ${createDto.email}`, error.stack);
@@ -114,31 +118,72 @@ export class ApplicantService implements IApplicantService {
     }
   }
 
-  async activateEmail(id: string): Promise<{ success: boolean; message: string }> {
+  async sendVerificationEmail(id: string): Promise<{ success: boolean; message: string }> {
     try {
       const applicant = await this.applicantRepository.findById(id);
       if (!applicant) {
         throw new NotFoundException(`Applicant with ID ${id} not found`);
       }
 
-      const { rawToken, hashedToken } =
+      const { rawToken, hashedToken, expires } =
         generateEmailVerificationToken();
-
-      const verificationUrl = process.env.FRONTEND_URL
-        ? `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`
-        : `localhost:3000/verify-email?token=${rawToken}`;
 
       await this.mailerService.sendEmailVerification(
         applicant.email,
-        verificationUrl,
+        rawToken,
       );
+
+      applicant.emailVerificationToken = hashedToken;
+      applicant.emailVerificationTokenExpires = expires;
+
+      const updateDto: AddEmailHashDto = {
+        emailVerificationToken: hashedToken,
+        emailVerificationTokenExpires: expires
+      }
+
+      await this.applicantRepository.update(id, updateDto);
 
       return {
         success: true,
-        message: `Email successfully activated for ${id}`
+        message: `Email successfully sent to ${applicant.email}`
       }
     } catch (error) {
       this.logger.error(`Cannot activate applicant email failed for ${id}`, error.stack);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to activate email');
+    }
+  }
+
+  async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+    try {
+
+      const hashedToken = createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+      const user = await this.applicantRepository.findOne({
+        emailVerificationToken: hashedToken,
+        emailVerificationTokenExpires: { $gt: new Date() },
+      });;
+
+      if (!user) {
+        throw new NotFoundException(`Applicant account not found`);
+      }
+
+      const updateDto: AddEmailHashDto = {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationTokenExpires: null
+      }
+
+      await this.applicantRepository.update(user._id.toString(), updateDto);
+
+      return {
+        success: true,
+        message: `Email successfully activated for ${user._id.toString()}`
+      }
+    } catch (error) {
+      this.logger.error(`Cannot activate applicant email`, error.stack);
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException('Failed to activate email');
     }

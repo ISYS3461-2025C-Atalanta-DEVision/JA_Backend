@@ -64,6 +64,12 @@ export class Applicant {
   @Prop({ default: false })
   emailVerified: boolean;
 
+  @Prop()
+  emailVerificationToken?: string
+
+  @Prop()
+  emailVerificationTokenExpires?: Date
+
   /**
    * Number of failed login attempts (for brute force protection)
    */

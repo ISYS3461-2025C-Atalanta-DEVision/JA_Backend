@@ -235,22 +235,19 @@ export class ApplicantController {
     }
   }
 
-  @Post('activate-email/:id')
+  @Post('activate-email')
   @ApiOperation({ summary: 'Activate applicant email', description: 'activate the registered applicant email' })
-  @ApiParam({ name: 'id', description: 'Applicant ID' })
   @ApiResponse({ status: 200, description: 'Applicant activated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Applicant not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async activateEmail(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Query('token') token: string
   ) {
-    this.logger.log(`User ${user.email} activating applicant email ${id}`);
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.activateEmail' }, { id, userId: user.id })
+          .send({ cmd: 'applicant.activateEmail' }, { token })
           .pipe(
             timeout(5000),
             catchError((error) => {

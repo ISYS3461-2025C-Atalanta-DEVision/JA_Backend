@@ -27,11 +27,11 @@ export class MailerService {
 
   async sendEmailVerification(
     to: string,
-    verificationUrl: string,
+    rawToken: string,
   ): Promise<void> {
     await sendEmailVerification(this.nestMailer, {
       to,
-      verificationUrl,
+      rawToken,
     });
   }
 }
