@@ -245,13 +245,13 @@ export class ApplicantController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Applicant not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async activateEmail(
+  async sendEmail(
     @Param('id') id: string,
   ) {
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.sendEmail' }, { token })
+          .send({ cmd: 'applicant.sendEmail' }, { id })
           .pipe(
             timeout(5000),
             catchError((error) => {

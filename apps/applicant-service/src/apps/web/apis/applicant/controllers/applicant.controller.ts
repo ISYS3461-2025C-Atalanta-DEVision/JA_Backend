@@ -43,9 +43,9 @@ export class ApplicantController {
 
   @MessagePattern({ cmd: 'applicant.sendEmail' })
   async sendVerificationEmail(
-    @Payload() data: { token: string },
+    @Payload() data: { id: string },
   ) {
-    return this.applicantService.verifyEmail(data.token);
+    return this.applicantService.sendVerificationEmail(data.id);
   }
 
   @MessagePattern({ cmd: 'applicant.activateEmail' })
