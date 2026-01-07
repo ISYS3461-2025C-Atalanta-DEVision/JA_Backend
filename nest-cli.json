@@ -53,6 +53,24 @@
       "compilerOptions": {
         "tsConfigPath": "apps/notification-service/tsconfig.app.json"
       }
+    },
+    "work-history-service": {
+      "type": "application",
+      "root": "apps/work-history-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/work-history-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/work-history-service/tsconfig.app.json"
+      }
+    },
+    "education-service": {
+      "type": "application",
+      "root": "apps/education-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/education-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/education-service/tsconfig.app.json"
+      }
     }
   }
 }

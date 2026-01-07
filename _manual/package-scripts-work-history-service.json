@@ -1,0 +1,6 @@
+{
+  "build:work-history-service": "nest build work-history-service",
+  "start:work-history-service": "nest start work-history-service",
+  "start:work-history-service:dev": "nest start work-history-service --watch",
+  "start:work-history-service:debug": "nest start work-history-service --debug --watch"
+}
