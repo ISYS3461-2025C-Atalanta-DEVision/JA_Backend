@@ -16,6 +16,11 @@ export class WorkHistoryController {
     return await this.workHistoryService.create(data.createDto, data.applicantId);
   }
 
+  @MessagePattern({ cmd: 'workHistory.findByApplicantId' })
+  async findByApplicantId(@Payload() data: { applicantId: string }) {
+    return await this.workHistoryService.findByApplicantId(data.applicantId);
+  }
+
   @MessagePattern({ cmd: 'workHistory.findById' })
   async findById(@Payload() data: { id: string }) {
     return await this.workHistoryService.findById(data.id);

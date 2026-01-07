@@ -22,7 +22,6 @@ import { AuthenticatedUser } from '@auth/interfaces';
 import { EmailVerifiedGuard } from '@auth/guards';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from '../dtos';
-import { log } from 'console';
 
 @ApiTags('Work History')
 @Controller('work-history')
@@ -115,6 +114,50 @@ export class WorkHistoryController {
       );
     }
   }
+
+  @Get('applicant/:id')
+  @ApiKeyAuth()
+  @ApiOperation({ summary: 'Get work history by applicant ID', description: 'Retrieve a list of work history by applicant ID (requires API key or JWE auth)' })
+  @ApiParam({ name: 'id', description: 'work history ID' })
+  @ApiResponse({ status: 200, description: 'work history retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'work history not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async findByApplicantId(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('applicantId') applicantId: string,
+    @Req() request: Request,
+  ) {
+    const authType = (request as any).authType || 'jwt';
+    const identifier = authType === 'jwt' && user ? user.email : 'API Key';
+    this.logger.log(`Getting Applicant ${applicantId} work history`);
+
+    try {
+      const result = await firstValueFrom(
+        this.workHistoryClient
+          .send({ cmd: 'workHistory.findByApplicantId' }, { applicantId: applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              throw new HttpException(
+                error.message || 'work history not found',
+                error.status || HttpStatus.NOT_FOUND,
+              );
+            }),
+          ),
+      );
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to fetch work history',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
 
   @Get()
   @ApiKeyAuth()

@@ -4,6 +4,7 @@ import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from '../apis/work-history
 export interface IWorkHistoryService {
   create(createDto: CreateWorkHistoryDto, applicantId: string): Promise<WorkHistoryResponseDto>;
   findById(id: string): Promise<WorkHistoryResponseDto>;
+  findByApplicantId(applicantId: string): Promise<WorkHistoryResponseDto[]>;
   findAll(page: number, limit: number): Promise<{
     data: WorkHistoryResponseDto[];
     total: number;
@@ -12,5 +13,4 @@ export interface IWorkHistoryService {
   }>;
   update(id: string, updateDto: UpdateWorkHistoryDto): Promise<WorkHistoryResponseDto>;
   delete(id: string): Promise<{ success: boolean; message: string }>;
-
 }

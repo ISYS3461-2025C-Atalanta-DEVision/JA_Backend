@@ -43,6 +43,38 @@ export class WorkHistoryService implements IWorkHistoryService {
     }
   }
 
+  async findByApplicantId(applicantId: string): Promise<WorkHistoryResponseDto[]> {
+    try {
+      const applicant = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.findById' }, { id: applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(`Failed to validate applicant ${applicantId}: ${error.message}`);
+              return of(null);
+            }),
+          ),
+      );
+
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
+      }
+
+      const workHistories = await this.workHistoryRepository.findMany({ applicantId: applicantId })
+
+      if (!workHistories.length) {
+        return [];
+      }
+
+      return workHistories.map((wh) => this.toResponseDto(wh));
+    } catch (error) {
+      this.logger.error(`Find workHistory failed for Applicant ${applicantId}`, error.stack);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to find workHistory');
+    }
+  }
+
   async findById(id: string): Promise<WorkHistoryResponseDto> {
     try {
       const workHistory = await this.workHistoryRepository.findById(id);
