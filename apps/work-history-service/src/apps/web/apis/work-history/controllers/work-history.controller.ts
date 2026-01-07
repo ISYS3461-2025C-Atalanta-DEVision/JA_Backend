@@ -9,11 +9,11 @@ export class WorkHistoryController {
   constructor(
     @Inject(WORK_HISTORY_SERVICE_WEB_PROVIDER)
     private readonly workHistoryService: IWorkHistoryService,
-  ) {}
+  ) { }
 
   @MessagePattern({ cmd: 'workHistory.create' })
-  async create(@Payload() createDto: CreateWorkHistoryDto) {
-    return await this.workHistoryService.create(createDto);
+  async create(@Payload() data: { createDto: CreateWorkHistoryDto, applicantId: string }) {
+    return await this.workHistoryService.create(data.createDto, data.applicantId);
   }
 
   @MessagePattern({ cmd: 'workHistory.findById' })

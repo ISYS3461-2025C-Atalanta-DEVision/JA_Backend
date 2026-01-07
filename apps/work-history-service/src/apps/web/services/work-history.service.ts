@@ -14,24 +14,29 @@ export class WorkHistoryService implements IWorkHistoryService {
     @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
   ) { }
 
-  async create(createDto: CreateWorkHistoryDto): Promise<WorkHistoryResponseDto> {
+  async create(createDto: CreateWorkHistoryDto, applicantId: string): Promise<WorkHistoryResponseDto> {
     try {
       const applicant = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.findById' }, { id: createDto.applicantId })
+          .send({ cmd: 'applicant.findById' }, { id: applicantId })
           .pipe(
             timeout(5000),
             catchError((error) => {
-              this.logger.warn(`Failed to validate applicant ${createDto.applicantId}: ${error.message}`);
+              this.logger.warn(`Failed to validate applicant ${applicantId}: ${error.message}`);
               return of(null);
             }),
           ),
       );
 
-      const workHistory = await this.workHistoryRepository.create(createDto);
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
+      }
+
+      const workHistory = await this.workHistoryRepository.create({ ...createDto, applicantId: applicantId });
+
       return this.toResponseDto(workHistory);
     } catch (error) {
-      this.logger.error(`Create workHistory failed for ${createDto.title}`, error.stack);
+      this.logger.error(error)
       if (error instanceof ConflictException) throw error;
       if (error.code === 11000) throw new ConflictException('WorkHistory with this name already exists');
       throw new InternalServerErrorException('Failed to create workHistory');

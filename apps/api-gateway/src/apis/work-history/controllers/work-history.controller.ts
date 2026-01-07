@@ -22,6 +22,7 @@ import { AuthenticatedUser } from '@auth/interfaces';
 import { EmailVerifiedGuard } from '@auth/guards';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from '../dtos';
+import { log } from 'console';
 
 @ApiTags('Work History')
 @Controller('work-history')
@@ -48,10 +49,11 @@ export class WorkHistoryController {
     try {
       const result = await firstValueFrom(
         this.workHistoryClient
-          .send({ cmd: 'workHistory.create' }, { ...createDto, applicantId: user.id })
+          .send({ cmd: 'workHistory.create' }, { createDto: createDto, applicantId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {
+              this.logger.error(error);
               throw new HttpException(
                 error.message || 'work history service unavailable',
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,

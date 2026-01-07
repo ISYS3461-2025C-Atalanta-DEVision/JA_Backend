@@ -11,14 +11,6 @@ export class CreateWorkHistoryDto {
   title: string;
 
   @ApiProperty({
-    example: '66c1f3b2e8f4c1a9b1234567',
-    description: 'Applicant ID (ObjectId as string)',
-  })
-  @IsOptional()
-  @IsString()
-  applicantId: string;
-
-  @ApiProperty({
     example: '66c1f3b2e8f4c1a9b7654321',
     description: 'Company ID (ObjectId as string)',
   })
