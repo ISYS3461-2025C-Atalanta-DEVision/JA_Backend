@@ -41,6 +41,13 @@ export class ApplicantController {
     return await this.applicantService.delete(data.id);
   }
 
+  @MessagePattern({ cmd: 'applicant.sendEmail' })
+  async sendVerificationEmail(
+    @Payload() data: { token: string },
+  ) {
+    return this.applicantService.verifyEmail(data.token);
+  }
+
   @MessagePattern({ cmd: 'applicant.activateEmail' })
   async activateEmail(
     @Payload() data: { token: string },
