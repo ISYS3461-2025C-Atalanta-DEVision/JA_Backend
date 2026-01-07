@@ -14,7 +14,7 @@ export class CreateWorkHistoryDto {
     example: '66c1f3b2e8f4c1a9b1234567',
     description: 'Applicant ID (ObjectId as string)',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   applicantId: string;
 

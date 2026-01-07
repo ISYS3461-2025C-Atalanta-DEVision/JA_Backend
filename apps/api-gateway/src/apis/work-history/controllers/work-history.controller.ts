@@ -116,7 +116,7 @@ export class WorkHistoryController {
 
   @Get()
   @ApiKeyAuth()
-  @ApiOperation({ summary: 'Get all work historys', description: 'Retrieve paginated list of work historys (requires API key or JWE auth)' })
+  @ApiOperation({ summary: 'Get all work histories', description: 'Retrieve paginated list of work historys (requires API key or JWE auth)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
   @ApiResponse({ status: 200, description: 'List of work historys retrieved successfully' })
@@ -140,7 +140,7 @@ export class WorkHistoryController {
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Failed to fetch work historys',
+                error.message || 'Failed to fetch work history',
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -152,7 +152,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        'Failed to fetch work historys',
+        'Failed to fetch work histories',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

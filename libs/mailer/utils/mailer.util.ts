@@ -41,7 +41,7 @@ export async function sendEmailVerification(
 
   const host = process.env.API_GATEWAY_HOST ?? 'localhost';
   const port = process.env.API_GATEWAY_PORT ?? '3000';
-  const verificationUrl = `http://${host}:${port}/verify-email?token=${options.rawToken}`;
+  const verificationUrl = `http://${host}:${port}/applicants/activate-email?token=${options.rawToken}`;
 
   const htmlTemplate = `
 <!DOCTYPE html>
