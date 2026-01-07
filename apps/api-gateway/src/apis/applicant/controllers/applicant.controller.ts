@@ -238,6 +238,42 @@ export class ApplicantController {
     }
   }
 
+  @Post('send-email/:id')
+  @Public()
+  @ApiOperation({ summary: 'Send verification email', description: 'send the verification email' })
+  @ApiResponse({ status: 200, description: 'Applicant activated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Applicant not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async sendEmail(
+    @Param('id') id: string,
+  ) {
+    try {
+      const result = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.sendEmail' }, { id })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              throw new HttpException(
+                error.message || 'Failed to activate applicant email',
+                error.status || HttpStatus.NOT_FOUND,
+              );
+            }),
+          ),
+      );
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to activate applicant email',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post('activate-email')
   @Public()
   @ApiOperation({ summary: 'Activate applicant email', description: 'activate the registered applicant email' })

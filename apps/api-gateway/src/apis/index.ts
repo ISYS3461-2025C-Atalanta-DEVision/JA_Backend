@@ -6,3 +6,4 @@ export * from './job-category';
 export * from './notification';
 export * from './skill';
 export * from './storage';
+export * from './work-history/';

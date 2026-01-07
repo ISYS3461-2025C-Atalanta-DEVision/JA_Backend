@@ -199,7 +199,7 @@ export class ApplicantService implements IApplicantService {
       addressProvinceCode: applicant.addressProvinceCode,
       addressProvinceName: applicant.addressProvinceName,
       isActive: applicant.isActive,
-      createdAt: applicant.createdAt,
+       createdAt: applicant.createdAt,
       updatedAt: applicant.updatedAt,
     };
   }

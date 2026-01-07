@@ -1,0 +1,6 @@
+{
+  "build:education-service": "nest build education-service",
+  "start:education-service": "nest start education-service",
+  "start:education-service:dev": "nest start education-service --watch",
+  "start:education-service:debug": "nest start education-service --debug --watch"
+}

@@ -1,0 +1,11 @@
+{
+  "education-service": {
+    "type": "application",
+    "root": "apps/education-service",
+    "entryFile": "main",
+    "sourceRoot": "apps/education-service/src",
+    "compilerOptions": {
+      "tsConfigPath": "apps/education-service/tsconfig.app.json"
+    }
+  }
+}

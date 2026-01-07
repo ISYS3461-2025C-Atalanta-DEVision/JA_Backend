@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { hash, verify } from '@node-rs/argon2';
 import { Role } from '@auth/enums';
@@ -21,6 +22,9 @@ import {
   RegisterData,
 } from '../interfaces';
 import { isValidCountryCode } from '@common/constants/countries';
+import { generateEmailVerificationToken } from '@auth/services';
+import { AddEmailHashDto } from '../apis/applicant/dtos/requests/add-email-verification-hash';
+import { MailerService } from '@libs/mailer';
 
 /**
  * Applicant Auth Service
@@ -32,6 +36,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
   private readonly logger = new Logger(ApplicantAuthService.name);
 
   constructor(
+    private readonly mailerService: MailerService,
     private readonly applicantRepo: ApplicantRepository,
     private readonly oauthAccountRepo: OAuthAccountRepository,
   ) { }
@@ -72,6 +77,9 @@ export class ApplicantAuthService implements IApplicantAuthService {
         emailVerified: false,
         isActive: true,
       });
+
+      //Send verification email to account
+      await this.sendVerificationEmail(applicant._id.toString())
 
       // Create email provider oauth account for token storage
       await this.oauthAccountRepo.create({
@@ -343,6 +351,43 @@ export class ApplicantAuthService implements IApplicantAuthService {
       throw new InternalServerErrorException('Logout failed');
     }
   }
+
+  private async sendVerificationEmail(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const applicant = await this.applicantRepo.findById(id);
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${id} not found`);
+      }
+
+      const { rawToken, hashedToken, expires } =
+        generateEmailVerificationToken();
+
+      await this.mailerService.sendEmailVerification(
+        applicant.email,
+        rawToken,
+      );
+
+      applicant.emailVerificationToken = hashedToken;
+      applicant.emailVerificationTokenExpires = expires;
+
+      const updateDto: AddEmailHashDto = {
+        emailVerificationToken: hashedToken,
+        emailVerificationTokenExpires: expires
+      }
+
+      await this.applicantRepo.update(id, updateDto);
+
+      return {
+        success: true,
+        message: `Email successfully sent to ${applicant.email}`
+      }
+    } catch (error) {
+      this.logger.error(`Cannot activate applicant email failed for ${id}`, error.stack);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to activate email');
+    }
+  }
+
 
   /**
    * Convert applicant to auth response
