@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { APP_CONFIG_SERVICE_PROVIDER, IAppConfigService } from './libs';
 
 async function bootstrap() {
   const logger = new Logger('WorkHistoryService');
@@ -9,12 +10,21 @@ async function bootstrap() {
   // Create HTTP application (for health checks)
   const app = await NestFactory.create(AppModule);
 
+  // Get config service
+  const appConfigService = app.get<IAppConfigService>(
+    APP_CONFIG_SERVICE_PROVIDER,
+  );
+
+  const servicePort = appConfigService.getServicePort();
+  const serviceHost = appConfigService.getServiceHost();
+  const healthPort = appConfigService.getHealthPort();
+
   // Connect TCP microservice
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: {
-      host: '0.0.0.0',
-      port: parseInt(process.env.WORK_HISTORY_SERVICE_PORT || '3088', 10),
+      host: serviceHost,
+      port: servicePort,
     },
   });
 
@@ -28,10 +38,9 @@ async function bootstrap() {
 
   // Start all microservices (TCP)
   await app.startAllMicroservices();
-  logger.log(`TCP microservice listening on port ${process.env.WORK_HISTORY_SERVICE_PORT || 3088}`);
+  logger.log(`TCP microservice listening on port ${servicePort}`);
 
   // Start HTTP server for health checks
-  const healthPort = parseInt(process.env.HEALTH_PORT || '3010', 10);
   await app.listen(healthPort, '0.0.0.0');
   logger.log(`Health endpoint available at http://0.0.0.0:${healthPort}/health`);
 }

@@ -30,7 +30,7 @@ export class WorkHistoryController {
   private readonly logger = new Logger(WorkHistoryController.name);
 
   constructor(
-    @Inject('WORK_HISTORY_SERVICE_WEB_PROVIDER') private readonly workHistoryClient: ClientProxy,
+    @Inject('WORK_HISTORY_SERVICE') private readonly workHistoryClient: ClientProxy,
   ) { }
 
   @Post()

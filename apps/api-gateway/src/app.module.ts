@@ -6,7 +6,7 @@ import { AuthModule as SharedAuthModule } from '@auth/auth.module';
 import { JweAuthGuard } from '@auth/guards';
 import { RedisModule } from '@redis/redis.module';
 import { StorageModule } from '@storage/storage.module';
-import { ApplicantModule, AuthModule, JobCategoryModule, NotificationModule, SkillModule, StorageApiModule } from './apis';
+import { ApplicantModule, AuthModule, JobCategoryModule, NotificationModule, SkillModule, StorageApiModule, WorkHistoryModule } from './apis';
 import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
 import { NotificationGatewayModule } from './gateways';
@@ -81,6 +81,7 @@ import { configs } from './configs';
     NotificationModule,
     SkillModule,
     StorageApiModule,
+    WorkHistoryModule,
     // WebSocket Gateway for real-time notifications
     NotificationGatewayModule,
   ],
