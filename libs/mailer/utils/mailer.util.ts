@@ -38,9 +38,11 @@ export async function sendEmailVerification(
   if (!options.to) {
     throw new Error('Recipient email missing');
   }
-  const verificationUrl = process.env.FRONTEND_URL
-    ? `${process.env.FRONTEND_URL}/verify-email?token=${options.rawToken}`
-    : `localhost:3000/verify-email?token=${options.rawToken}`;
+  const host = process.env.API_GATEWAY_HOST ?? 'localhost';
+  const port = process.env.API_GATEWAY_PORT ?? '3000';
+
+  const verificationUrl =
+    `http://${host}:${port}/verify-email?token=${options.rawToken}`;
 
   return mailer.sendMail({
     to: options.to,
