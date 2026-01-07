@@ -14,14 +14,14 @@ export type WorkHistoryDocument = HydratedDocument<WorkHistory>;
 export class WorkHistory {
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, required: true })
-  applicantId: Types.ObjectId;
+  @Prop({ required: true })
+  applicantId: string;
 
   @Prop({ type: String, required: true })
   title: string;
 
-  @Prop({ type: Types.ObjectId, required: true })
-  companyId: Types.ObjectId;
+  @Prop({ required: true })
+  companyId: string;
 
   @Prop({ type: String })
   description?: string;
@@ -32,8 +32,8 @@ export class WorkHistory {
   @Prop({ type: Date })
   endDate?: Date;
 
-  @Prop({ type: [Types.ObjectId], default: [] })
-  skillCategories: Types.ObjectId[];
+  @Prop({ default: [] })
+  skillCategories: string[];
 
   createdAt: Date;
   updatedAt: Date;

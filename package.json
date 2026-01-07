@@ -15,7 +15,7 @@
     "start:prod": "node dist/apps/api-gateway/main",
     "start:api-gateway": "nest start api-gateway",
     "dev-api-gateway": "nest start api-gateway --watch",
-    "start:applicant-service": "concurrently --kill-others \"nest start applicant-service\" \"nest start api-gateway\"",
+    "start:applicant-service": "concurrently \"nest start applicant-service\" \"nest start api-gateway\"",
     "dev-applicant-service": "nest start applicant-service --watch",
     "build:admin-service": "nest build admin-service",
     "start:admin-service": "nest start admin-service",

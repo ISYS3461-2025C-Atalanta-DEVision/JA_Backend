@@ -12,4 +12,5 @@ export interface IWorkHistoryService {
   }>;
   update(id: string, updateDto: UpdateWorkHistoryDto): Promise<WorkHistoryResponseDto>;
   delete(id: string): Promise<{ success: boolean; message: string }>;
+
 }

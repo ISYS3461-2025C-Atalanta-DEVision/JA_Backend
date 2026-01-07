@@ -1,8 +1,12 @@
 export class WorkHistoryResponseDto {
   id: string;
-  name: string;
+  applicantId: string;
+  companyId: string;
+  title: string;
   description?: string;
-  isActive: boolean;
+  startDate: Date;
+  endDate?: Date;
+  skillCategories: string[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException, Inject } from '@nestjs/common';
 import { WorkHistoryRepository, WorkHistory } from '../../../libs/dals/mongodb';
 import { CreateWorkHistoryDto, UpdateWorkHistoryDto, WorkHistoryResponseDto } from '../apis/work-history/dtos';
 import { IWorkHistoryService } from '../interfaces';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 
 @Injectable()
 export class WorkHistoryService implements IWorkHistoryService {
@@ -9,20 +11,27 @@ export class WorkHistoryService implements IWorkHistoryService {
 
   constructor(
     private readonly workHistoryRepository: WorkHistoryRepository,
-  ) {}
+    @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
+  ) { }
 
   async create(createDto: CreateWorkHistoryDto): Promise<WorkHistoryResponseDto> {
     try {
-      // Check for duplicate name (optional - remove if not needed)
-      const existing = await this.workHistoryRepository.findByName(createDto.name);
-      if (existing) {
-        throw new ConflictException('WorkHistory with this name already exists');
-      }
+      const applicant = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.findById' }, { id: createDto.applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(`Failed to validate applicant ${createDto.applicantId}: ${error.message}`);
+              return of(null);
+            }),
+          ),
+      );
 
       const workHistory = await this.workHistoryRepository.create(createDto);
       return this.toResponseDto(workHistory);
     } catch (error) {
-      this.logger.error(`Create workHistory failed for ${createDto.name}`, error.stack);
+      this.logger.error(`Create workHistory failed for ${createDto.title}`, error.stack);
       if (error instanceof ConflictException) throw error;
       if (error.code === 11000) throw new ConflictException('WorkHistory with this name already exists');
       throw new InternalServerErrorException('Failed to create workHistory');
@@ -75,14 +84,6 @@ export class WorkHistoryService implements IWorkHistoryService {
         throw new NotFoundException(`WorkHistory with ID ${id} not found`);
       }
 
-      // Check for duplicate name if name is being updated
-      if (updateDto.name && updateDto.name !== workHistory.name) {
-        const existing = await this.workHistoryRepository.findByName(updateDto.name);
-        if (existing) {
-          throw new ConflictException('Name already in use');
-        }
-      }
-
       const updated = await this.workHistoryRepository.update(id, updateDto);
       return this.toResponseDto(updated);
     } catch (error) {
@@ -101,7 +102,7 @@ export class WorkHistoryService implements IWorkHistoryService {
       }
 
       // Soft delete - set isActive to false
-      await this.workHistoryRepository.update(id, { isActive: false });
+      await this.workHistoryRepository.delete(id);
       return {
         success: true,
         message: 'WorkHistory deleted successfully',
@@ -116,9 +117,13 @@ export class WorkHistoryService implements IWorkHistoryService {
   private toResponseDto(workHistory: WorkHistory): WorkHistoryResponseDto {
     return {
       id: workHistory._id.toString(),
-      name: workHistory.name,
+      applicantId: workHistory.applicantId.toString(),
+      companyId: workHistory.companyId.toString(),
+      title: workHistory.title,
       description: workHistory.description,
-      isActive: workHistory.isActive,
+      startDate: workHistory.startDate,
+      endDate: workHistory.endDate,
+      skillCategories: workHistory.skillCategories.map(id => id.toString()),
       createdAt: workHistory.createdAt,
       updatedAt: workHistory.updatedAt,
     };
