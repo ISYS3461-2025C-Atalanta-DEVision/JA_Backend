@@ -13,7 +13,7 @@ import { WorkHistoryController } from './controllers';
           transport: Transport.TCP,
           options: {
             host: configService.get<string>('WORK_HISTORY_SERVICE_HOST') || 'localhost',
-            port: configService.get<number>('WORK_HISTORY_SERVICE_PORT') || 3002,
+            port: configService.get<number>('WORK_HISTORY_SERVICE_PORT') || 3006,
           },
         }),
         inject: [ConfigService],
