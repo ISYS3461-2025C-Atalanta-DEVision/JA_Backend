@@ -79,7 +79,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       });
 
       //Send verification email to account
-      this.sendVerificationEmail(applicant._id.toString())
+      await this.sendVerificationEmail(applicant._id.toString())
 
       // Create email provider oauth account for token storage
       await this.oauthAccountRepo.create({
