@@ -69,11 +69,13 @@ export class AdminAuthController {
   ) {
     // Generate JWE encrypted tokens in Gateway
     // Note: Admin has no country field, pass undefined
+    // Admin is always considered email verified (trusted user)
     const tokens = await this.jweTokenService.generateTokens(
       user.id,
       user.email,
       user.role,
       undefined,
+      true, // emailVerified - admins are always verified
     );
 
     // Calculate expiration dates
