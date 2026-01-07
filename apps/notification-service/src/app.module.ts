@@ -3,7 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MailerModule } from '@libs/mailer';
 import { RedisModule } from '@redis/redis.module';
 import { HealthController } from './health.controller';
-import { NotificationModule } from './notification/notification.module';
+import { modules as appModules } from './apps';
+import { KafkaModule } from './kafka';
 import {
   MongodbModule,
   ConfigurationModule,
@@ -49,7 +50,8 @@ import {
     }),
     MailerModule,
     MongodbModule,
-    NotificationModule,
+    KafkaModule,      // Kafka event handlers
+    ...appModules,    // TCP handlers (NotificationModule)
   ],
   controllers: [HealthController],
 })

@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
-import { Logger } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { APP_CONFIG_SERVICE_PROVIDER, IAppConfigService } from './libs';
 
@@ -16,6 +16,9 @@ async function bootstrap() {
   );
   const kafkaConfig = appConfigService.getKafkaConfig();
   const healthPort = appConfigService.getHealthPort();
+
+  const servicePort = appConfigService.getServicePort();
+  const serviceHost = appConfigService.getServiceHost();
 
   // Connect Kafka microservice for consuming events
   app.connectMicroservice<MicroserviceOptions>({
@@ -33,8 +36,25 @@ async function bootstrap() {
     },
   });
 
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.TCP,
+    options: {
+      host: serviceHost,
+      port: servicePort,
+    },
+  });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
   // Start all microservices
   await app.startAllMicroservices();
+  logger.log(`TCP microservice listening on port ${servicePort}`);
   logger.log('Kafka consumer started');
 
   // Start HTTP server for health checks

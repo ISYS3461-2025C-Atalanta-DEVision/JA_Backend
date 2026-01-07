@@ -16,14 +16,6 @@ import { CurrentUser } from '@auth/decorators';
 import { AuthenticatedUser } from '@auth/interfaces';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 
-// Message patterns matching notification-service
-const NOTIFICATION_PATTERNS = {
-  GET_NOTIFICATIONS: 'notification.get',
-  MARK_READ: 'notification.markRead',
-  MARK_ALL_READ: 'notification.markAllRead',
-  GET_UNREAD_COUNT: 'notification.unreadCount',
-} as const;
-
 @ApiTags('Notifications')
 @Controller('notifications')
 export class NotificationController {
@@ -51,7 +43,7 @@ export class NotificationController {
     try {
       const result = await firstValueFrom(
         this.notificationClient
-          .send(NOTIFICATION_PATTERNS.GET_NOTIFICATIONS, {
+          .send({ cmd: 'notification.get' }, {
             recipientId: user.id,
             limit: limit ? Number(limit) : 20,
             offset: offset ? Number(offset) : 0,
@@ -89,7 +81,7 @@ export class NotificationController {
     try {
       const count = await firstValueFrom(
         this.notificationClient
-          .send(NOTIFICATION_PATTERNS.GET_UNREAD_COUNT, { recipientId: user.id })
+          .send({ cmd: 'notification.unreadCount' }, { recipientId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {
@@ -127,7 +119,7 @@ export class NotificationController {
     try {
       const result = await firstValueFrom(
         this.notificationClient
-          .send(NOTIFICATION_PATTERNS.MARK_READ, { notificationId })
+          .send({ cmd: 'notification.markRead' }, { notificationId })
           .pipe(
             timeout(5000),
             catchError((error) => {
@@ -160,7 +152,7 @@ export class NotificationController {
     try {
       const count = await firstValueFrom(
         this.notificationClient
-          .send(NOTIFICATION_PATTERNS.MARK_ALL_READ, { recipientId: user.id })
+          .send({ cmd: 'notification.markAllRead' }, { recipientId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {

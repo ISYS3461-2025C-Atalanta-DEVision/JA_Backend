@@ -16,17 +16,19 @@ import {
   NotificationPubSubService,
   IRealtimeNotification,
 } from '@redis/services';
-import { NotificationRepository } from '../libs';
+import { NotificationRepository } from '../../../libs';
 import {
   NotificationType,
   NotificationChannel,
   NotificationStatus,
   EmploymentType,
-} from '../libs/dals/mongodb/schemas';
-import { SearchProfileProjectionRepository } from '../libs/dals/mongodb/repositories/search-profile-projection.repository';
-import { IJobMatchCriteria } from '../libs/dals/mongodb/interfaces';
+} from '../../../libs/dals/mongodb/schemas';
+import { SearchProfileProjectionRepository } from '../../../libs/dals/mongodb/repositories/search-profile-projection.repository';
+import { IJobMatchCriteria } from '../../../libs/dals/mongodb/interfaces';
 import { v4 as uuidv4 } from 'uuid';
 import { firstValueFrom, timeout, catchError, of } from 'rxjs';
+import { INotificationService } from '../interfaces';
+import { GetNotificationsDto, NotificationListResponseDto } from '../apis/notification/dtos';
 
 /**
  * Frontend notification type mapping
@@ -49,7 +51,7 @@ interface IApplicantData {
 }
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements INotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
@@ -77,7 +79,6 @@ export class NotificationService {
             }),
           ),
       );
-
 
       return result;
     } catch (error) {
@@ -349,7 +350,7 @@ export class NotificationService {
   async handlePremiumCreated(
     event: IKafkaEvent<IPremiumJMCreatedPayload>,
   ): Promise<void> {
-    const { payload, eventId } = event;
+    const { payload } = event;
 
     this.logger.log(
       `Processing company premium subscription: ${payload.companyId}`,
@@ -972,21 +973,12 @@ export class NotificationService {
     return text;
   }
 
-  // ==================== TCP Message Handlers ====================
+  // ==================== TCP Message Handlers (INotificationService) ====================
 
   /**
    * Get notifications for a user (paginated)
    */
-  async getNotifications(params: {
-    recipientId: string;
-    limit?: number;
-    offset?: number;
-    unreadOnly?: boolean;
-  }): Promise<{
-    notifications: any[];
-    total: number;
-    unreadCount: number;
-  }> {
+  async getNotifications(params: GetNotificationsDto): Promise<NotificationListResponseDto> {
     const { recipientId, limit = 20, offset = 0, unreadOnly = false } = params;
 
     const notifications = await this.notificationRepository.findByRecipient(
