@@ -23,7 +23,7 @@ export class UpdateApplicantDto {
 
   @IsOptional()
   @IsString()
-  addressProvinceCode?: string;
+  country?: string;
 
   @IsOptional()
   @IsBoolean()

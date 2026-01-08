@@ -3,10 +3,13 @@ export class ApplicantResponseDto {
   name: string;
   email: string;
   phone?: string;
+  country: string;
   address?: string;
   addressProvinceCode?: string;
   addressProvinceName?: string;
+  avatarUrl?: string;
   isActive: boolean;
+  isPremium: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

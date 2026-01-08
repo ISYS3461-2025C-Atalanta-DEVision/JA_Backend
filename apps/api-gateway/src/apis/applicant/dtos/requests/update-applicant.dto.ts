@@ -48,13 +48,13 @@ export class UpdateApplicantDto {
   avatarUrl?: string;
 
   @ApiProperty({
-    example: "HCM",
-    description: "Province/city code",
+    example: "VN",
+    description: "Country 2 letters code",
     required: false,
   })
   @IsOptional()
   @IsString()
-  addressProvinceCode?: string;
+  country?: string;
 
   @ApiProperty({
     example: true,

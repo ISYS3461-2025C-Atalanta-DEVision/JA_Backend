@@ -30,7 +30,7 @@ export class ApplicantService implements IApplicantService {
   constructor(
     private readonly applicantRepository: ApplicantRepository,
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
 
   async create(createDto: CreateApplicantDto): Promise<ApplicantResponseDto> {
     try {
@@ -240,10 +240,13 @@ export class ApplicantService implements IApplicantService {
       name: applicant.name,
       email: applicant.email,
       phone: applicant.phone,
+      country: applicant.country,
       address: applicant.address,
       addressProvinceCode: applicant.addressProvinceCode,
       addressProvinceName: applicant.addressProvinceName,
+      avatarUrl: applicant.avatarUrl,
       isActive: applicant.isActive,
+      isPremium: applicant.isPremium,
       createdAt: applicant.createdAt,
       updatedAt: applicant.updatedAt,
     };
