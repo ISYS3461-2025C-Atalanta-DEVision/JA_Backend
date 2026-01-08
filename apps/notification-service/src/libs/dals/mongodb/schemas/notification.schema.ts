@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type NotificationDocument = HydratedDocument<Notification>;
 
@@ -7,37 +7,37 @@ export type NotificationDocument = HydratedDocument<Notification>;
  * Notification types
  */
 export enum NotificationType {
-  JA_NEW_MATCHING_JOB = 'JA_NEW_MATCHING_JOB',
-  JA_PREMIUM_ACTIVATED = 'JA_PREMIUM_ACTIVATED',
-  JA_PREMIUM_EXPIRING = 'JA_PREMIUM_EXPIRING',
-  JA_PREMIUM_EXPIRED = 'JA_PREMIUM_EXPIRED',
-  JA_PROFILE_CREATED = 'JA_PROFILE_CREATED',
-  JA_PROFILE_UPDATED = 'JA_PROFILE_UPDATED',
-  JM_NEW_MATCHING_APPLICANT = 'JM_NEW_MATCHING_APPLICANT',
-  JM_PREMIUM_ACTIVATED = 'JM_PREMIUM_ACTIVATED',
-  JM_PREMIUM_EXPIRING = 'JM_PREMIUM_EXPIRING',
-  JM_PROFILE_CREATED = 'JM_PROFILE_CREATED',
-  JM_PROFILE_UPDATED = 'JM_PROFILE_UPDATED',
+  JA_NEW_MATCHING_JOB = "JA_NEW_MATCHING_JOB",
+  JA_PREMIUM_ACTIVATED = "JA_PREMIUM_ACTIVATED",
+  JA_PREMIUM_EXPIRING = "JA_PREMIUM_EXPIRING",
+  JA_PREMIUM_EXPIRED = "JA_PREMIUM_EXPIRED",
+  JA_PROFILE_CREATED = "JA_PROFILE_CREATED",
+  JA_PROFILE_UPDATED = "JA_PROFILE_UPDATED",
+  JM_NEW_MATCHING_APPLICANT = "JM_NEW_MATCHING_APPLICANT",
+  JM_PREMIUM_ACTIVATED = "JM_PREMIUM_ACTIVATED",
+  JM_PREMIUM_EXPIRING = "JM_PREMIUM_EXPIRING",
+  JM_PROFILE_CREATED = "JM_PROFILE_CREATED",
+  JM_PROFILE_UPDATED = "JM_PROFILE_UPDATED",
 }
 
 /**
  * Notification channels
  */
 export enum NotificationChannel {
-  EMAIL = 'EMAIL',
-  PUSH = 'PUSH',
-  IN_APP = 'IN_APP',
+  EMAIL = "EMAIL",
+  PUSH = "PUSH",
+  IN_APP = "IN_APP",
 }
 
 /**
  * Notification status
  */
 export enum NotificationStatus {
-  PENDING = 'PENDING',
-  SENT = 'SENT',
-  FAILED = 'FAILED',
-  DELIVERED = 'DELIVERED',
-  READ = 'READ',
+  PENDING = "PENDING",
+  SENT = "SENT",
+  FAILED = "FAILED",
+  DELIVERED = "DELIVERED",
+  READ = "READ",
 }
 
 /**
@@ -48,7 +48,11 @@ export class ChannelDelivery {
   @Prop({ type: String, enum: NotificationChannel, required: true })
   channel: NotificationChannel;
 
-  @Prop({ type: String, enum: NotificationStatus, default: NotificationStatus.PENDING })
+  @Prop({
+    type: String,
+    enum: NotificationStatus,
+    default: NotificationStatus.PENDING,
+  })
   status: NotificationStatus;
 
   @Prop()
@@ -74,7 +78,7 @@ const ChannelDeliverySchema = SchemaFactory.createForClass(ChannelDelivery);
  * Stores notification records for job applicants and companies
  */
 @Schema({
-  collection: 'notifications',
+  collection: "notifications",
   timestamps: true,
 })
 export class Notification {
@@ -95,8 +99,8 @@ export class Notification {
   /**
    * Recipient type
    */
-  @Prop({ type: String, enum: ['APPLICANT', 'COMPANY'], required: true })
-  recipientType: 'APPLICANT' | 'COMPANY';
+  @Prop({ type: String, enum: ["APPLICANT", "COMPANY"], required: true })
+  recipientType: "APPLICANT" | "COMPANY";
 
   /**
    * Recipient email address
@@ -137,8 +141,8 @@ export class Notification {
   /**
    * Priority level
    */
-  @Prop({ type: String, enum: ['LOW', 'NORMAL', 'HIGH'], default: 'NORMAL' })
-  priority: 'LOW' | 'NORMAL' | 'HIGH';
+  @Prop({ type: String, enum: ["LOW", "NORMAL", "HIGH"], default: "NORMAL" })
+  priority: "LOW" | "NORMAL" | "HIGH";
 
   /**
    * Whether notification has been read by recipient
@@ -179,4 +183,4 @@ NotificationSchema.index({ recipientId: 1, createdAt: -1 });
 NotificationSchema.index({ recipientId: 1, isRead: 1 });
 
 // Index for finding pending deliveries
-NotificationSchema.index({ 'deliveries.status': 1, 'deliveries.channel': 1 });
+NotificationSchema.index({ "deliveries.status": 1, "deliveries.channel": 1 });

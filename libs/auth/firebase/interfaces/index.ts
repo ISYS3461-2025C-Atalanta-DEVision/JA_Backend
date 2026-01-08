@@ -1,2 +1,2 @@
-export * from './firebase-module-options.interface';
-export * from './firebase-user.interface';
+export * from "./firebase-module-options.interface";
+export * from "./firebase-user.interface";

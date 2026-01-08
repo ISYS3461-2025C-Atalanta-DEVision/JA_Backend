@@ -4,18 +4,18 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Logger,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
-import { StorageModuleConfig } from './interfaces';
-import { StorageFolder } from './enums';
-import { UploadResultDto, DeleteResultDto } from './dto';
-import { FILE_VALIDATION } from './constants';
+} from "@aws-sdk/client-s3";
+import { StorageModuleConfig } from "./interfaces";
+import { StorageFolder } from "./enums";
+import { UploadResultDto, DeleteResultDto } from "./dto";
+import { FILE_VALIDATION } from "./constants";
 
-export const STORAGE_CONFIG = 'STORAGE_CONFIG';
+export const STORAGE_CONFIG = "STORAGE_CONFIG";
 
 @Injectable()
 export class StorageService {
@@ -114,7 +114,7 @@ export class StorageService {
       const url = new URL(cdnUrl);
       const key = url.pathname.substring(1); // Remove leading slash
       if (!key) {
-        throw new BadRequestException('Invalid CDN URL: no key found');
+        throw new BadRequestException("Invalid CDN URL: no key found");
       }
       return key;
     } catch (error) {
@@ -127,10 +127,10 @@ export class StorageService {
 
   private validateConfig(): void {
     const requiredFields = [
-      { key: 's3Bucket', name: 'AWS_S3_BUCKET' },
-      { key: 'accessKeyId', name: 'AWS_ACCESS_KEY_ID' },
-      { key: 'secretAccessKey', name: 'AWS_SECRET_ACCESS_KEY' },
-      { key: 'cdnBaseUrl', name: 'CDN_BASE_URL' },
+      { key: "s3Bucket", name: "AWS_S3_BUCKET" },
+      { key: "accessKeyId", name: "AWS_ACCESS_KEY_ID" },
+      { key: "secretAccessKey", name: "AWS_SECRET_ACCESS_KEY" },
+      { key: "cdnBaseUrl", name: "CDN_BASE_URL" },
     ];
 
     for (const field of requiredFields) {
@@ -152,7 +152,7 @@ export class StorageService {
     // Check MIME type
     if (!validation.mimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `Invalid file type for ${folder}. Allowed: ${validation.mimeTypes.join(', ')}`,
+        `Invalid file type for ${folder}. Allowed: ${validation.mimeTypes.join(", ")}`,
       );
     }
 
@@ -172,8 +172,8 @@ export class StorageService {
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 8);
     // Fix: handle files without extension properly
-    const parts = file.originalname.split('.');
-    const ext = parts.length > 1 ? parts.pop() : 'bin';
+    const parts = file.originalname.split(".");
+    const ext = parts.length > 1 ? parts.pop() : "bin";
     return `${folder}/${timestamp}_${randomId}.${ext}`;
   }
 }

@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type SearchProfileDocument = HydratedDocument<SearchProfile>;
 
@@ -7,11 +7,11 @@ export type SearchProfileDocument = HydratedDocument<SearchProfile>;
  * Employment types for job search
  */
 export enum EmploymentType {
-  FULL_TIME = 'FULL_TIME',
-  PART_TIME = 'PART_TIME',
-  CONTRACT = 'CONTRACT',
-  INTERNSHIP = 'INTERNSHIP',
-  FRESHER = 'FRESHER',
+  FULL_TIME = "FULL_TIME",
+  PART_TIME = "PART_TIME",
+  CONTRACT = "CONTRACT",
+  INTERNSHIP = "INTERNSHIP",
+  FRESHER = "FRESHER",
 }
 
 /**
@@ -25,7 +25,7 @@ export class SalaryRange {
   @Prop()
   max?: number;
 
-  @Prop({ required: true, default: 'USD' })
+  @Prop({ required: true, default: "USD" })
   currency: string;
 }
 
@@ -38,7 +38,7 @@ export class SalaryRange {
  * This schema only stores the search criteria.
  */
 @Schema({
-  collection: 'search_profiles',
+  collection: "search_profiles",
   timestamps: true,
 })
 export class SearchProfile {
@@ -94,7 +94,7 @@ export class SearchProfile {
    * If min is not set, defaults to 0
    * If max is not set, no upper limit
    */
-  @Prop({ type: SalaryRange, default: { min: 0, currency: 'USD' } })
+  @Prop({ type: SalaryRange, default: { min: 0, currency: "USD" } })
   expectedSalary: SalaryRange;
 
   /**
@@ -131,4 +131,4 @@ SearchProfileSchema.index({ isActive: 1, desiredLocations: 1 });
 SearchProfileSchema.index({ isActive: 1, skillIds: 1 });
 
 // Text index for full-text search on roles
-SearchProfileSchema.index({ desiredRoles: 'text' });
+SearchProfileSchema.index({ desiredRoles: "text" });

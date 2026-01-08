@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { StorageController } from './controllers';
+import { Module } from "@nestjs/common";
+import { StorageController } from "./controllers";
 
 @Module({
   controllers: [StorageController],

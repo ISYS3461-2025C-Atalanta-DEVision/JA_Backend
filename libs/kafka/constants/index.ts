@@ -1,1 +1,1 @@
-export * from './topics.constant';
+export * from "./topics.constant";

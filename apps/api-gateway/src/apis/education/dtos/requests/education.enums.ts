@@ -1,9 +1,7 @@
 export enum EducationLevel {
-  HighSchool = 'HighSchool',
-  Bachelor = 'Bachelor',
-  Master = 'Master',
-  PhD = 'PhD',
-  NoGiven = 'NoGiven',
+  HighSchool = "HighSchool",
+  Bachelor = "Bachelor",
+  Master = "Master",
+  PhD = "PhD",
+  NoGiven = "NoGiven",
 }
-
-

@@ -1,10 +1,10 @@
 import {
   SearchProfileProjection,
   EmploymentType,
-} from '../schemas/search-profile-projection.schema';
+} from "../schemas/search-profile-projection.schema";
 
 export const SEARCH_PROFILE_PROJECTION_REPO_PROVIDER = Symbol(
-  'SearchProfileProjectionRepositoryProvider',
+  "SearchProfileProjectionRepositoryProvider",
 );
 
 /**
@@ -14,8 +14,8 @@ export const SEARCH_PROFILE_PROJECTION_REPO_PROVIDER = Symbol(
 export interface IJobMatchCriteria {
   jobId: string;
   title: string;
-  requiredSkillIds: string[];       // Skill IDs from job-skill-service
-  requiredSkillNames: string[];     // Cached names for display
+  requiredSkillIds: string[]; // Skill IDs from job-skill-service
+  requiredSkillNames: string[]; // Cached names for display
   location: string;
   salaryMin?: number;
   salaryMax?: number;
@@ -32,8 +32,8 @@ export interface IProfileMatchResult {
   profile: SearchProfileProjection;
   matchScore: number;
   matchedCriteria: {
-    skillIds: string[];       // Matched skill IDs (for data)
-    skillNames: string[];     // Matched skill names (for display)
+    skillIds: string[]; // Matched skill IDs (for data)
+    skillNames: string[]; // Matched skill names (for display)
     location: boolean;
     salary: boolean;
     employmentType: boolean;
@@ -71,7 +71,9 @@ export interface ISearchProfileProjectionRepository {
    * Find active premium profiles matching job criteria
    * This is the core matching function for requirement 5.3.1
    */
-  findMatchingProfiles(criteria: IJobMatchCriteria): Promise<IProfileMatchResult[]>;
+  findMatchingProfiles(
+    criteria: IJobMatchCriteria,
+  ): Promise<IProfileMatchResult[]>;
 
   /**
    * Update premium status for a profile

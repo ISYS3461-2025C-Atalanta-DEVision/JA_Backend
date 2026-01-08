@@ -1,4 +1,4 @@
-import { SASLOptions } from 'kafkajs';
+import { SASLOptions } from "kafkajs";
 
 export interface RedisConfig {
   url?: string;

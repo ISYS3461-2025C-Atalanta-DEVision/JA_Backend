@@ -1,8 +1,13 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Kafka, Producer, ProducerRecord, RecordMetadata } from 'kafkajs';
-import { v4 as uuidv4 } from 'uuid';
-import { IKafkaEvent, IKafkaMessage } from './interfaces';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Kafka, Producer, ProducerRecord, RecordMetadata } from "kafkajs";
+import { v4 as uuidv4 } from "uuid";
+import { IKafkaEvent, IKafkaMessage } from "./interfaces";
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
@@ -12,18 +17,28 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private isConnected = false;
 
   constructor(private readonly configService: ConfigService) {
-    const brokers = this.configService.get<string>('KAFKA_BROKERS', 'localhost:9092');
-    const clientId = this.configService.get<string>('KAFKA_CLIENT_ID', 'ja-core');
+    const brokers = this.configService.get<string>(
+      "KAFKA_BROKERS",
+      "localhost:9092",
+    );
+    const clientId = this.configService.get<string>(
+      "KAFKA_CLIENT_ID",
+      "ja-core",
+    );
 
     // Check if using SASL authentication (Confluent Cloud)
-    const saslMechanism = this.configService.get<string>('KAFKA_SASL_MECHANISM');
-    const saslUsername = this.configService.get<string>('KAFKA_SASL_USERNAME');
-    const saslPassword = this.configService.get<string>('KAFKA_SASL_PASSWORD');
-    const securityProtocol = this.configService.get<string>('KAFKA_SECURITY_PROTOCOL');
+    const saslMechanism = this.configService.get<string>(
+      "KAFKA_SASL_MECHANISM",
+    );
+    const saslUsername = this.configService.get<string>("KAFKA_SASL_USERNAME");
+    const saslPassword = this.configService.get<string>("KAFKA_SASL_PASSWORD");
+    const securityProtocol = this.configService.get<string>(
+      "KAFKA_SECURITY_PROTOCOL",
+    );
 
     const kafkaConfig: any = {
       clientId,
-      brokers: brokers.split(','),
+      brokers: brokers.split(","),
       retry: {
         initialRetryTime: 100,
         retries: 8,
@@ -32,7 +47,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
     // Add SASL config if credentials are provided
     if (saslMechanism && saslUsername && saslPassword) {
-      kafkaConfig.ssl = securityProtocol === 'SASL_SSL';
+      kafkaConfig.ssl = securityProtocol === "SASL_SSL";
       kafkaConfig.sasl = {
         mechanism: saslMechanism.toLowerCase(),
         username: saslUsername,
@@ -48,9 +63,9 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.producer.connect();
       this.isConnected = true;
-      this.logger.log('Kafka producer connected');
+      this.logger.log("Kafka producer connected");
     } catch (error) {
-      this.logger.error('Failed to connect Kafka producer', error);
+      this.logger.error("Failed to connect Kafka producer", error);
       // Don't throw - allow app to start without Kafka
     }
   }
@@ -58,7 +73,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {
     if (this.isConnected) {
       await this.producer.disconnect();
-      this.logger.log('Kafka producer disconnected');
+      this.logger.log("Kafka producer disconnected");
     }
   }
 
@@ -86,7 +101,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       timestamp: new Date().toISOString(),
       payload,
       metadata: {
-        source: this.configService.get<string>('KAFKA_CLIENT_ID', 'ja-core'),
+        source: this.configService.get<string>("KAFKA_CLIENT_ID", "ja-core"),
         correlationId: options?.correlationId || uuidv4(),
       },
     };
@@ -121,7 +136,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     messages: IKafkaMessage<T>[],
   ): Promise<RecordMetadata[] | null> {
     if (!this.isConnected) {
-      this.logger.warn('Kafka not connected. Skipping batch publish');
+      this.logger.warn("Kafka not connected. Skipping batch publish");
       return null;
     }
 
@@ -164,7 +179,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       this.logger.debug(`Published batch of ${messages.length} messages`);
       return results;
     } catch (error) {
-      this.logger.error('Failed to publish batch', error);
+      this.logger.error("Failed to publish batch", error);
       throw error;
     }
   }

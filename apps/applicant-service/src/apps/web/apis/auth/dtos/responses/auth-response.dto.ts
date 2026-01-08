@@ -1,4 +1,4 @@
-import { Role } from '@auth/enums';
+import { Role } from "@auth/enums";
 
 export class AuthResponseDto {
   accessToken: string;

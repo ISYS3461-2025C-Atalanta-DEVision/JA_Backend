@@ -1,16 +1,16 @@
-import { Module, Logger } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { MailerModule } from '@libs/mailer';
-import { RedisModule } from '@redis/redis.module';
-import { HealthController } from './health.controller';
-import { modules as appModules } from './apps';
-import { KafkaModule } from './kafka';
+import { Module, Logger } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { MailerModule } from "@libs/mailer";
+import { RedisModule } from "@redis/redis.module";
+import { HealthController } from "./health.controller";
+import { modules as appModules } from "./apps";
+import { KafkaModule } from "./kafka";
 import {
   MongodbModule,
   ConfigurationModule,
   APP_CONFIG_SERVICE_PROVIDER,
   IAppConfigService,
-} from './libs';
+} from "./libs";
 
 @Module({
   imports: [
@@ -20,8 +20,8 @@ import {
       useFactory: (appConfigService: IAppConfigService) => {
         const dbUrl = appConfigService.getDbUrl();
         Logger.log(
-          `[MongooseModule] DB_URL: ${dbUrl ? 'found' : 'NOT FOUND'}`,
-          'Bootstrap',
+          `[MongooseModule] DB_URL: ${dbUrl ? "found" : "NOT FOUND"}`,
+          "Bootstrap",
         );
         return {
           uri: dbUrl,
@@ -34,10 +34,10 @@ import {
       useFactory: (appConfigService: IAppConfigService) => {
         const redisConfig = appConfigService.getRedisConfig();
         if (redisConfig.url) {
-          return { type: 'single', url: redisConfig.url };
+          return { type: "single", url: redisConfig.url };
         }
         return {
-          type: 'single',
+          type: "single",
           options: {
             host: redisConfig.host,
             port: redisConfig.port,
@@ -50,8 +50,8 @@ import {
     }),
     MailerModule,
     MongodbModule,
-    KafkaModule,      // Kafka event handlers
-    ...appModules,    // TCP handlers (NotificationModule)
+    KafkaModule, // Kafka event handlers
+    ...appModules, // TCP handlers (NotificationModule)
   ],
   controllers: [HealthController],
 })

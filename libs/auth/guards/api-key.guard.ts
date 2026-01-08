@@ -4,9 +4,9 @@ import {
   ExecutionContext,
   UnauthorizedException,
   Logger,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { timingSafeEqual } from 'crypto';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { timingSafeEqual } from "crypto";
 
 const MIN_API_KEY_LENGTH = 32;
 
@@ -20,14 +20,14 @@ export class ApiKeyGuard implements CanActivate {
   private readonly validApiKey: string | undefined;
 
   constructor(private readonly configService: ConfigService) {
-    this.validApiKey = this.configService.get<string>('API_KEY');
+    this.validApiKey = this.configService.get<string>("API_KEY");
 
     if (!this.validApiKey) {
-      this.logger.warn('API_KEY not configured in environment');
+      this.logger.warn("API_KEY not configured in environment");
     } else if (this.validApiKey.length < MIN_API_KEY_LENGTH) {
       this.logger.error(
         `API_KEY must be at least ${MIN_API_KEY_LENGTH} characters for security. ` +
-          'Generate with: openssl rand -base64 32',
+          "Generate with: openssl rand -base64 32",
       );
     }
   }
@@ -41,8 +41,8 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     try {
-      const bufA = Buffer.from(a, 'utf-8');
-      const bufB = Buffer.from(b, 'utf-8');
+      const bufA = Buffer.from(a, "utf-8");
+      const bufB = Buffer.from(b, "utf-8");
       return timingSafeEqual(bufA, bufB);
     } catch {
       return false;
@@ -51,15 +51,15 @@ export class ApiKeyGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-api-key'];
+    const apiKey = request.headers["x-api-key"];
 
     if (!apiKey) {
       return false; // No API Key provided
     }
 
     if (!this.validApiKey) {
-      this.logger.error('API_KEY not configured, rejecting request');
-      throw new UnauthorizedException('API Key authentication not configured');
+      this.logger.error("API_KEY not configured, rejecting request");
+      throw new UnauthorizedException("API Key authentication not configured");
     }
 
     const isValid = this.timingSafeCompare(apiKey, this.validApiKey);
@@ -67,7 +67,7 @@ export class ApiKeyGuard implements CanActivate {
     if (isValid) {
       // Mark request as API Key authenticated
       request.apiKeyAuth = true;
-      request.authType = 'apiKey';
+      request.authType = "apiKey";
       this.logger.log(`[API_KEY_AUTH] Valid access from ${request.ip}`);
       return true;
     }

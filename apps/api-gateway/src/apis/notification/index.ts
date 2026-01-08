@@ -1,2 +1,2 @@
-export * from './notification.module';
-export * from './controllers';
+export * from "./notification.module";
+export * from "./controllers";

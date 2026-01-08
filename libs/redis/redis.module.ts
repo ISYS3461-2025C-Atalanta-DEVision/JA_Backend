@@ -1,10 +1,15 @@
-import { DynamicModule, Module, Global } from '@nestjs/common';
-import { RedisModule as IORedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
-import { TokenRevocationService } from './services/token-revocation.service';
-import { NotificationPubSubService } from './services/notification-pubsub.service';
+import { DynamicModule, Module, Global } from "@nestjs/common";
+import {
+  RedisModule as IORedisModule,
+  RedisModuleOptions,
+} from "@nestjs-modules/ioredis";
+import { TokenRevocationService } from "./services/token-revocation.service";
+import { NotificationPubSubService } from "./services/notification-pubsub.service";
 
 export interface RedisModuleAsyncOptions {
-  useFactory: (...args: any[]) => Promise<RedisModuleOptions> | RedisModuleOptions;
+  useFactory: (
+    ...args: any[]
+  ) => Promise<RedisModuleOptions> | RedisModuleOptions;
   inject?: any[];
 }
 
@@ -24,7 +29,11 @@ export class RedisModule {
         }),
       ],
       providers: [TokenRevocationService, NotificationPubSubService],
-      exports: [IORedisModule, TokenRevocationService, NotificationPubSubService],
+      exports: [
+        IORedisModule,
+        TokenRevocationService,
+        NotificationPubSubService,
+      ],
     };
   }
 }

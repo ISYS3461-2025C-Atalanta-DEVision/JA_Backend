@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsOptional } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional } from "class-validator";
 
 export class AddEmailHashDto {
   @IsOptional()
@@ -12,5 +12,3 @@ export class AddEmailHashDto {
   @IsDate()
   emailVerificationTokenExpires?: Date;
 }
-
-

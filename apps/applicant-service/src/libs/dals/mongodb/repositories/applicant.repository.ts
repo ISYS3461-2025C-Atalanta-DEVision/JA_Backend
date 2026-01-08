@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { BaseMongoRepository } from './base.repository';
-import { Applicant } from '../schemas';
-import { IApplicantRepository } from '../interfaces';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { BaseMongoRepository } from "./base.repository";
+import { Applicant } from "../schemas";
+import { IApplicantRepository } from "../interfaces";
 
 @Injectable()
 export class ApplicantRepository
   extends BaseMongoRepository<Applicant>
-  implements IApplicantRepository {
+  implements IApplicantRepository
+{
   constructor(
     @InjectModel(Applicant.name)
     model: Model<Applicant>,

@@ -1,4 +1,4 @@
-import { Role } from '@auth/enums';
+import { Role } from "@auth/enums";
 
 /**
  * Admin data returned by auth operations
@@ -36,7 +36,10 @@ export interface IAdminAuthService {
    * Verify email/password credentials
    * Returns user data (Gateway generates tokens)
    */
-  verifyCredentials(email: string, password: string): Promise<AdminAuthResponse>;
+  verifyCredentials(
+    email: string,
+    password: string,
+  ): Promise<AdminAuthResponse>;
 
   /**
    * Validate refresh token hash and return user data

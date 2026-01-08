@@ -1,4 +1,4 @@
 export enum NewProvinceLevel {
-  PROVINCE = 'Tỉnh',
-  CITY = 'Thành phố',
+  PROVINCE = "Tỉnh",
+  CITY = "Thành phố",
 }

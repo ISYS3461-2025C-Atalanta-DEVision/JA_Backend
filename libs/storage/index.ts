@@ -1,17 +1,17 @@
 // Module
-export * from './storage.module';
+export * from "./storage.module";
 
 // Service
-export * from './storage.service';
+export * from "./storage.service";
 
 // Enums
-export * from './enums';
+export * from "./enums";
 
 // Interfaces
-export * from './interfaces';
+export * from "./interfaces";
 
 // DTOs
-export * from './dto';
+export * from "./dto";
 
 // Constants
-export * from './constants';
+export * from "./constants";

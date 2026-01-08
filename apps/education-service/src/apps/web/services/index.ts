@@ -1,1 +1,1 @@
-export * from './education.service';
+export * from "./education.service";

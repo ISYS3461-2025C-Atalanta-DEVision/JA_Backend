@@ -1,6 +1,6 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { MailerService } from '@libs/mailer';
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { ClientProxy } from "@nestjs/microservices";
+import { MailerService } from "@libs/mailer";
 import {
   IKafkaEvent,
   IJobCreatedPayload,
@@ -11,34 +11,37 @@ import {
   ISearchProfileCreatedPayload,
   ISearchProfileUpdatedPayload,
   ISearchProfilePayload,
-} from '@kafka/interfaces';
+} from "@kafka/interfaces";
 import {
   NotificationPubSubService,
   IRealtimeNotification,
-} from '@redis/services';
-import { NotificationRepository } from '../../../libs';
+} from "@redis/services";
+import { NotificationRepository } from "../../../libs";
 import {
   NotificationType,
   NotificationChannel,
   NotificationStatus,
   EmploymentType,
-} from '../../../libs/dals/mongodb/schemas';
-import { SearchProfileProjectionRepository } from '../../../libs/dals/mongodb/repositories/search-profile-projection.repository';
-import { IJobMatchCriteria } from '../../../libs/dals/mongodb/interfaces';
-import { v4 as uuidv4 } from 'uuid';
-import { firstValueFrom, timeout, catchError, of } from 'rxjs';
-import { INotificationService } from '../interfaces';
-import { GetNotificationsDto, NotificationListResponseDto } from '../apis/notification/dtos';
+} from "../../../libs/dals/mongodb/schemas";
+import { SearchProfileProjectionRepository } from "../../../libs/dals/mongodb/repositories/search-profile-projection.repository";
+import { IJobMatchCriteria } from "../../../libs/dals/mongodb/interfaces";
+import { v4 as uuidv4 } from "uuid";
+import { firstValueFrom, timeout, catchError, of } from "rxjs";
+import { INotificationService } from "../interfaces";
+import {
+  GetNotificationsDto,
+  NotificationListResponseDto,
+} from "../apis/notification/dtos";
 
 /**
  * Frontend notification type mapping
  */
 type FrontendNotificationType =
-  | 'ApplicationAlert_Pass'
-  | 'ApplicationAlert_Reject'
-  | 'JobMatchingAlert'
-  | 'ProfileUpdateAlert'
-  | 'PremiumExpiredAlert';
+  | "ApplicationAlert_Pass"
+  | "ApplicationAlert_Reject"
+  | "JobMatchingAlert"
+  | "ProfileUpdateAlert"
+  | "PremiumExpiredAlert";
 
 /**
  * Applicant data returned from applicant-service
@@ -59,22 +62,26 @@ export class NotificationService implements INotificationService {
     private readonly searchProfileRepo: SearchProfileProjectionRepository,
     private readonly mailerService: MailerService,
     private readonly notificationPubSub: NotificationPubSubService,
-    @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
-  ) { }
+    @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
+  ) {}
 
   /**
    * Validates applicant exists in applicant-service and returns applicant data including email.
    * Returns null if applicant not found or service unavailable.
    */
-  private async validateAndGetApplicant(applicantId: string): Promise<IApplicantData | null> {
+  private async validateAndGetApplicant(
+    applicantId: string,
+  ): Promise<IApplicantData | null> {
     try {
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.findById' }, { id: applicantId })
+          .send({ cmd: "applicant.findById" }, { id: applicantId })
           .pipe(
             timeout(5000),
             catchError((error) => {
-              this.logger.warn(`Failed to validate applicant ${applicantId}: ${error.message}`);
+              this.logger.warn(
+                `Failed to validate applicant ${applicantId}: ${error.message}`,
+              );
               return of(null);
             }),
           ),
@@ -82,7 +89,9 @@ export class NotificationService implements INotificationService {
 
       return result;
     } catch (error) {
-      this.logger.error(`Applicant validation error for ${applicantId}: ${error.message}`);
+      this.logger.error(
+        `Applicant validation error for ${applicantId}: ${error.message}`,
+      );
       return null;
     }
   }
@@ -92,7 +101,9 @@ export class NotificationService implements INotificationService {
    * Instantly evaluate new job posts against active premium subscribers
    * and deliver real-time notifications to matching applicants
    */
-  async handleJobCreated(event: IKafkaEvent<IJobCreatedPayload>): Promise<void> {
+  async handleJobCreated(
+    event: IKafkaEvent<IJobCreatedPayload>,
+  ): Promise<void> {
     const { payload, eventId } = event;
 
     this.logger.log(
@@ -108,7 +119,7 @@ export class NotificationService implements INotificationService {
       location: payload.criteria.location,
       salaryMin: payload.criteria.salaryRange?.min,
       salaryMax: payload.criteria.salaryRange?.max,
-      currency: payload.criteria.salaryRange?.currency || 'USD',
+      currency: payload.criteria.salaryRange?.currency || "USD",
       employmentType: this.mapEmploymentType(payload.criteria.employmentType),
       isFresherFriendly: payload.criteria.isFresherFriendly || false,
     };
@@ -171,7 +182,14 @@ export class NotificationService implements INotificationService {
     premiumExpiresAt?: Date;
     applicantEmail?: string;
   }): Promise<void> {
-    const { profileId, applicantId, searchProfile, isPremium, premiumExpiresAt, applicantEmail } = params;
+    const {
+      profileId,
+      applicantId,
+      searchProfile,
+      isPremium,
+      premiumExpiresAt,
+      applicantEmail,
+    } = params;
 
     try {
       await this.searchProfileRepo.upsertByProfileId(profileId, {
@@ -185,13 +203,13 @@ export class NotificationService implements INotificationService {
         desiredLocations: searchProfile.desiredLocations || [],
         expectedSalary: searchProfile.expectedSalary
           ? {
-            min: searchProfile.expectedSalary.min,
-            max: searchProfile.expectedSalary.max,
-            currency: searchProfile.expectedSalary.currency || 'USD',
-          }
-          : { min: 0, currency: 'USD' },
-        employmentTypes: (searchProfile.employmentTypes || []).map(
-          (t) => this.mapEmploymentType(t),
+              min: searchProfile.expectedSalary.min,
+              max: searchProfile.expectedSalary.max,
+              currency: searchProfile.expectedSalary.currency || "USD",
+            }
+          : { min: 0, currency: "USD" },
+        employmentTypes: (searchProfile.employmentTypes || []).map((t) =>
+          this.mapEmploymentType(t),
         ),
         isActive: searchProfile.isActive ?? true,
         isPremium,
@@ -231,12 +249,14 @@ export class NotificationService implements INotificationService {
     // Validate applicant exists before sending notification
     const applicant = await this.validateAndGetApplicant(params.applicantId);
     if (!applicant) {
-      this.logger.warn(`[SKIP] Applicant not found: ${params.applicantId}, skipping job match notification`);
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${params.applicantId}, skipping job match notification`,
+      );
       return;
     }
 
     const notificationId = uuidv4();
-    const title = 'New Job Match Found!';
+    const title = "New Job Match Found!";
     const message = `A new job "${params.job.title}" at ${params.job.companyName} matches your search profile! Match score: ${params.matchScore}%`;
 
     // Use validated email from applicant-service
@@ -246,7 +266,7 @@ export class NotificationService implements INotificationService {
     await this.notificationRepository.create({
       notificationId,
       recipientId: params.applicantId,
-      recipientType: 'APPLICANT',
+      recipientType: "APPLICANT",
       recipientEmail,
       type: NotificationType.JA_NEW_MATCHING_JOB,
       title,
@@ -270,15 +290,15 @@ export class NotificationService implements INotificationService {
         },
         ...(recipientEmail
           ? [
-            {
-              channel: NotificationChannel.EMAIL,
-              status: NotificationStatus.PENDING,
-              retryCount: 0,
-            },
-          ]
+              {
+                channel: NotificationChannel.EMAIL,
+                status: NotificationStatus.PENDING,
+                retryCount: 0,
+              },
+            ]
           : []),
       ],
-      priority: params.matchScore >= 70 ? 'HIGH' : 'NORMAL',
+      priority: params.matchScore >= 70 ? "HIGH" : "NORMAL",
       sourceEventId: params.sourceEventId,
     });
 
@@ -319,11 +339,11 @@ export class NotificationService implements INotificationService {
 
     // Process each match and create notifications
     for (const match of payload.matches) {
-      if (match.matchedEntityType === 'APPLICANT') {
+      if (match.matchedEntityType === "APPLICANT") {
         try {
           await this.createAndSendMatchNotification({
             recipientId: match.matchedEntityId,
-            recipientType: 'APPLICANT',
+            recipientType: "APPLICANT",
             companyId: payload.companyId,
             matchScore: match.matchScore,
             matchedCriteria: match.matchedCriteria,
@@ -378,7 +398,9 @@ export class NotificationService implements INotificationService {
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.applicantId);
     if (!applicant) {
-      this.logger.warn(`[SKIP] Applicant not found: ${payload.applicantId}, skipping premium activation`);
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${payload.applicantId}, skipping premium activation`,
+      );
       return;
     }
 
@@ -387,14 +409,14 @@ export class NotificationService implements INotificationService {
     );
 
     const notificationId = uuidv4();
-    const title = 'Premium Subscription Activated!';
+    const title = "Premium Subscription Activated!";
     const message = `Congratulations! Your premium subscription is now active until ${new Date(payload.endDate).toLocaleDateString()}. Enjoy enhanced job matching features!`;
 
     // Create notification record (with validated email)
     await this.notificationRepository.create({
       notificationId,
       recipientId: payload.applicantId,
-      recipientType: 'APPLICANT',
+      recipientType: "APPLICANT",
       recipientEmail: applicant.email,
       type: NotificationType.JA_PREMIUM_ACTIVATED,
       title,
@@ -417,7 +439,7 @@ export class NotificationService implements INotificationService {
           retryCount: 0,
         },
       ],
-      priority: 'HIGH',
+      priority: "HIGH",
       sourceEventId: eventId,
     });
 
@@ -474,23 +496,23 @@ export class NotificationService implements INotificationService {
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.applicantId);
     if (!applicant) {
-      this.logger.warn(`[SKIP] Applicant not found: ${payload.applicantId}, skipping premium expiry`);
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${payload.applicantId}, skipping premium expiry`,
+      );
       return;
     }
 
-    this.logger.log(
-      `Processing JA premium expiration: ${payload.applicantId}`,
-    );
+    this.logger.log(`Processing JA premium expiration: ${payload.applicantId}`);
 
     const notificationId = uuidv4();
-    const title = 'Premium Subscription Expired';
+    const title = "Premium Subscription Expired";
     const message = `Your premium subscription has expired on ${new Date(payload.expiredAt).toLocaleDateString()}. Renew now to continue enjoying enhanced job matching features!`;
 
     // Create notification record (with validated email)
     await this.notificationRepository.create({
       notificationId,
       recipientId: payload.applicantId,
-      recipientType: 'APPLICANT',
+      recipientType: "APPLICANT",
       recipientEmail: applicant.email,
       type: NotificationType.JA_PREMIUM_EXPIRED,
       title,
@@ -511,7 +533,7 @@ export class NotificationService implements INotificationService {
           retryCount: 0,
         },
       ],
-      priority: 'HIGH',
+      priority: "HIGH",
       sourceEventId: eventId,
     });
 
@@ -552,7 +574,7 @@ export class NotificationService implements INotificationService {
   ): Promise<void> {
     const { payload, eventId } = event;
 
-    if (payload.userType !== 'APPLICANT') {
+    if (payload.userType !== "APPLICANT") {
       this.logger.log(
         `Skipping non-applicant profile creation: ${payload.userId}`,
       );
@@ -562,7 +584,9 @@ export class NotificationService implements INotificationService {
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.userId);
     if (!applicant) {
-      this.logger.warn(`[SKIP] Applicant not found: ${payload.userId}, skipping profile creation`);
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${payload.userId}, skipping profile creation`,
+      );
       return;
     }
 
@@ -578,7 +602,7 @@ export class NotificationService implements INotificationService {
     });
 
     const notificationId = uuidv4();
-    const title = 'Search Profile Created!';
+    const title = "Search Profile Created!";
     const message = payload.isPremium
       ? "Your search profile has been created. As a premium member, you'll receive instant notifications when matching jobs are posted!"
       : "Your search profile has been created. Upgrade to premium to receive instant job match notifications!";
@@ -587,7 +611,7 @@ export class NotificationService implements INotificationService {
     await this.notificationRepository.create({
       notificationId,
       recipientId: payload.userId,
-      recipientType: 'APPLICANT',
+      recipientType: "APPLICANT",
       recipientEmail: applicant.email,
       type: NotificationType.JA_PROFILE_CREATED,
       title,
@@ -603,7 +627,7 @@ export class NotificationService implements INotificationService {
           retryCount: 0,
         },
       ],
-      priority: 'NORMAL',
+      priority: "NORMAL",
       sourceEventId: eventId,
     });
 
@@ -637,21 +661,23 @@ export class NotificationService implements INotificationService {
     const { payload, eventId } = event;
 
     // Only process if this is an APPLICANT profile update
-    if (payload.userType !== 'APPLICANT') {
-      this.logger.log(`Skipping non-applicant profile update: ${payload.userId}`);
+    if (payload.userType !== "APPLICANT") {
+      this.logger.log(
+        `Skipping non-applicant profile update: ${payload.userId}`,
+      );
       return;
     }
 
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.userId);
     if (!applicant) {
-      this.logger.warn(`[SKIP] Applicant not found: ${payload.userId}, skipping profile update`);
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${payload.userId}, skipping profile update`,
+      );
       return;
     }
 
-    this.logger.log(
-      `Processing JA profile update: ${payload.userId}`,
-    );
+    this.logger.log(`Processing JA profile update: ${payload.userId}`);
 
     // Sync the search profile to our projection for matching (requirement 3.3.1)
     await this.syncSearchProfileProjection({
@@ -663,15 +689,15 @@ export class NotificationService implements INotificationService {
     });
 
     const notificationId = uuidv4();
-    const changedFieldsText = payload.changedFields.join(', ');
-    const title = 'Profile Updated Successfully';
+    const changedFieldsText = payload.changedFields.join(", ");
+    const title = "Profile Updated Successfully";
     const message = `Your search profile has been updated. Changed fields: ${changedFieldsText}. We'll notify you when new matching jobs are found!`;
 
     // Create notification record (with validated email)
     await this.notificationRepository.create({
       notificationId,
       recipientId: payload.userId,
-      recipientType: 'APPLICANT',
+      recipientType: "APPLICANT",
       recipientEmail: applicant.email,
       type: NotificationType.JA_PROFILE_UPDATED,
       title,
@@ -688,7 +714,7 @@ export class NotificationService implements INotificationService {
           retryCount: 0,
         },
       ],
-      priority: 'NORMAL',
+      priority: "NORMAL",
       sourceEventId: eventId,
     });
 
@@ -709,9 +735,7 @@ export class NotificationService implements INotificationService {
       { deliveredAt: new Date() },
     );
 
-    this.logger.log(
-      `JA profile update notification sent: ${payload.userId}`,
-    );
+    this.logger.log(`JA profile update notification sent: ${payload.userId}`);
   }
 
   /**
@@ -719,7 +743,7 @@ export class NotificationService implements INotificationService {
    */
   private async createAndSendMatchNotification(params: {
     recipientId: string;
-    recipientType: 'APPLICANT' | 'COMPANY';
+    recipientType: "APPLICANT" | "COMPANY";
     companyId: string;
     matchScore: number;
     matchedCriteria: {
@@ -732,18 +756,20 @@ export class NotificationService implements INotificationService {
     sourceEventId: string;
   }): Promise<void> {
     // Validate applicant exists before sending notification (only for APPLICANT recipients)
-    let recipientEmail = '';
-    if (params.recipientType === 'APPLICANT') {
+    let recipientEmail = "";
+    if (params.recipientType === "APPLICANT") {
       const applicant = await this.validateAndGetApplicant(params.recipientId);
       if (!applicant) {
-        this.logger.warn(`[SKIP] Applicant not found: ${params.recipientId}, skipping match notification`);
+        this.logger.warn(
+          `[SKIP] Applicant not found: ${params.recipientId}, skipping match notification`,
+        );
         return;
       }
       recipientEmail = applicant.email;
     }
 
     const notificationId = uuidv4();
-    const title = 'New Job Match Found!';
+    const title = "New Job Match Found!";
     const message = `You've been matched with a company based on your profile! Match score: ${params.matchScore}%`;
 
     // Create notification record (with validated email)
@@ -772,7 +798,7 @@ export class NotificationService implements INotificationService {
           retryCount: 0,
         },
       ],
-      priority: 'NORMAL',
+      priority: "NORMAL",
       sourceEventId: params.sourceEventId,
     });
 
@@ -828,10 +854,15 @@ export class NotificationService implements INotificationService {
         read: false,
       };
 
-      await this.notificationPubSub.publishNotification(userId, realtimeNotification);
+      await this.notificationPubSub.publishNotification(
+        userId,
+        realtimeNotification,
+      );
       this.logger.log(`Published real-time notification for user: ${userId}`);
     } catch (error) {
-      this.logger.error(`Failed to publish real-time notification: ${error.message}`);
+      this.logger.error(
+        `Failed to publish real-time notification: ${error.message}`,
+      );
       // Don't throw - real-time delivery failure shouldn't block the rest
     }
   }
@@ -842,17 +873,17 @@ export class NotificationService implements INotificationService {
   private mapToFrontendType(type: NotificationType): FrontendNotificationType {
     switch (type) {
       case NotificationType.JA_NEW_MATCHING_JOB:
-        return 'JobMatchingAlert';
+        return "JobMatchingAlert";
       case NotificationType.JA_PREMIUM_ACTIVATED:
-        return 'ApplicationAlert_Pass';
+        return "ApplicationAlert_Pass";
       case NotificationType.JA_PREMIUM_EXPIRING:
-        return 'ApplicationAlert_Reject';
+        return "ApplicationAlert_Reject";
       case NotificationType.JA_PREMIUM_EXPIRED:
-        return 'PremiumExpiredAlert';
+        return "PremiumExpiredAlert";
       case NotificationType.JA_PROFILE_UPDATED:
-        return 'ProfileUpdateAlert';
+        return "ProfileUpdateAlert";
       default:
-        return 'JobMatchingAlert';
+        return "JobMatchingAlert";
     }
   }
 
@@ -928,16 +959,20 @@ export class NotificationService implements INotificationService {
     </div>
     <div class="content">
       <p>${message}</p>
-      ${data?.matchScore ? `<p class="match-score">Match Score: ${data.matchScore}%</p>` : ''}
-      ${data?.matchedCriteria ? `
+      ${data?.matchScore ? `<p class="match-score">Match Score: ${data.matchScore}%</p>` : ""}
+      ${
+        data?.matchedCriteria
+          ? `
       <div class="criteria">
         <h3>Matched Criteria:</h3>
-        <div class="criteria-item">Skills: ${data.matchedCriteria.skillNames?.join(', ') || 'N/A'}</div>
-        <div class="criteria-item">Location: ${data.matchedCriteria.location ? 'Yes' : 'No'}</div>
-        <div class="criteria-item">Salary: ${data.matchedCriteria.salary ? 'Yes' : 'No'}</div>
-        <div class="criteria-item">Experience: ${data.matchedCriteria.experience ? 'Yes' : 'No'}</div>
+        <div class="criteria-item">Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}</div>
+        <div class="criteria-item">Location: ${data.matchedCriteria.location ? "Yes" : "No"}</div>
+        <div class="criteria-item">Salary: ${data.matchedCriteria.salary ? "Yes" : "No"}</div>
+        <div class="criteria-item">Experience: ${data.matchedCriteria.experience ? "Yes" : "No"}</div>
       </div>
-      ` : ''}
+      `
+          : ""
+      }
     </div>
     <div class="footer">
       <p>This is an automated message from DEVision Job Matching System.</p>
@@ -961,14 +996,15 @@ export class NotificationService implements INotificationService {
     }
 
     if (data?.matchedCriteria) {
-      text += '\n\nMatched Criteria:';
-      text += `\n- Skills: ${data.matchedCriteria.skillNames?.join(', ') || 'N/A'}`;
-      text += `\n- Location: ${data.matchedCriteria.location ? 'Yes' : 'No'}`;
-      text += `\n- Salary: ${data.matchedCriteria.salary ? 'Yes' : 'No'}`;
-      text += `\n- Experience: ${data.matchedCriteria.experience ? 'Yes' : 'No'}`;
+      text += "\n\nMatched Criteria:";
+      text += `\n- Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}`;
+      text += `\n- Location: ${data.matchedCriteria.location ? "Yes" : "No"}`;
+      text += `\n- Salary: ${data.matchedCriteria.salary ? "Yes" : "No"}`;
+      text += `\n- Experience: ${data.matchedCriteria.experience ? "Yes" : "No"}`;
     }
 
-    text += '\n\n---\nThis is an automated message from DEVision Job Matching System.';
+    text +=
+      "\n\n---\nThis is an automated message from DEVision Job Matching System.";
 
     return text;
   }
@@ -978,7 +1014,9 @@ export class NotificationService implements INotificationService {
   /**
    * Get notifications for a user (paginated)
    */
-  async getNotifications(params: GetNotificationsDto): Promise<NotificationListResponseDto> {
+  async getNotifications(
+    params: GetNotificationsDto,
+  ): Promise<NotificationListResponseDto> {
     const { recipientId, limit = 20, offset = 0, unreadOnly = false } = params;
 
     const notifications = await this.notificationRepository.findByRecipient(
@@ -986,7 +1024,8 @@ export class NotificationService implements INotificationService {
       { limit, offset, unreadOnly },
     );
 
-    const unreadCount = await this.notificationRepository.countUnread(recipientId);
+    const unreadCount =
+      await this.notificationRepository.countUnread(recipientId);
 
     // Transform to frontend format
     const transformedNotifications = notifications.map((n) => ({

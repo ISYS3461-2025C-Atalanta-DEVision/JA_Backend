@@ -1,1 +1,1 @@
-export * from './storage-config.interface';
+export * from "./storage-config.interface";

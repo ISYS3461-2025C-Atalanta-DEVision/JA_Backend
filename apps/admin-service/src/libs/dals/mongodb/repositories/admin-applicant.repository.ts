@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { BaseMongoRepository } from './base.repository';
-import { AdminApplicant } from '../schemas';
-import { IAdminApplicantRepository } from '../interfaces';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { BaseMongoRepository } from "./base.repository";
+import { AdminApplicant } from "../schemas";
+import { IAdminApplicantRepository } from "../interfaces";
 
 @Injectable()
 export class AdminApplicantRepository
   extends BaseMongoRepository<AdminApplicant>
-  implements IAdminApplicantRepository {
+  implements IAdminApplicantRepository
+{
   constructor(
     @InjectModel(AdminApplicant.name)
     model: Model<AdminApplicant>,
@@ -49,9 +50,7 @@ export class AdminApplicantRepository
    * Lock account until specified time
    */
   async lockAccount(id: string, lockUntil: Date): Promise<void> {
-    await this.model
-      .updateOne({ _id: id }, { $set: { lockUntil } })
-      .exec();
+    await this.model.updateOne({ _id: id }, { $set: { lockUntil } }).exec();
   }
 
   /**
@@ -59,10 +58,7 @@ export class AdminApplicantRepository
    */
   async resetLoginAttempts(id: string): Promise<void> {
     await this.model
-      .updateOne(
-        { _id: id },
-        { $set: { loginAttempts: 0, lockUntil: null } },
-      )
+      .updateOne({ _id: id }, { $set: { loginAttempts: 0, lockUntil: null } })
       .exec();
   }
 

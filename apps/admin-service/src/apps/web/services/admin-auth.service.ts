@@ -3,19 +3,19 @@ import {
   UnauthorizedException,
   Logger,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { verify } from '@node-rs/argon2';
-import { Role } from '@auth/enums';
+} from "@nestjs/common";
+import { verify } from "@node-rs/argon2";
+import { Role } from "@auth/enums";
 import {
   AdminApplicantRepository,
   AdminOAuthAccountRepository,
   AdminApplicant,
-} from '../../../libs/dals/mongodb';
+} from "../../../libs/dals/mongodb";
 import {
   IAdminAuthService,
   AdminAuthResponse,
   TokenStorageData,
-} from '../interfaces';
+} from "../interfaces";
 
 /**
  * Admin Auth Service
@@ -48,7 +48,7 @@ export class AdminAuthService implements IAdminAuthService {
     try {
       const admin = await this.adminRepo.findByEmail(normalizedEmail);
       if (!admin || !admin.isActive) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException("Invalid credentials");
       }
 
       // Check if account is locked (brute force protection)
@@ -62,7 +62,7 @@ export class AdminAuthService implements IAdminAuthService {
       }
 
       if (!admin.passwordHash) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException("Invalid credentials");
       }
 
       const isPasswordValid = await verify(admin.passwordHash, password);
@@ -83,7 +83,7 @@ export class AdminAuthService implements IAdminAuthService {
           );
         }
 
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException("Invalid credentials");
       }
 
       // Reset login attempts on successful login
@@ -92,11 +92,11 @@ export class AdminAuthService implements IAdminAuthService {
       // Update last login
       await this.adminRepo.updateLastLogin(admin._id.toString());
 
-      return this.toAuthResponse(admin, 'email');
+      return this.toAuthResponse(admin, "email");
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       this.logger.error(`Login failed`, error.stack);
-      throw new InternalServerErrorException('Login failed');
+      throw new InternalServerErrorException("Login failed");
     }
   }
 
@@ -112,7 +112,7 @@ export class AdminAuthService implements IAdminAuthService {
     try {
       const admin = await this.adminRepo.findById(adminId);
       if (!admin || !admin.isActive) {
-        throw new UnauthorizedException('User not found or inactive');
+        throw new UnauthorizedException("User not found or inactive");
       }
 
       // Get stored refresh token hash from oauth_accounts
@@ -121,12 +121,12 @@ export class AdminAuthService implements IAdminAuthService {
         provider,
       );
       if (!storedHash) {
-        throw new UnauthorizedException('No active session');
+        throw new UnauthorizedException("No active session");
       }
 
       // Compare stored hash with provided hash
       if (storedHash !== refreshTokenHash) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException("Invalid refresh token");
       }
 
       return this.toAuthResponse(admin, provider);
@@ -136,7 +136,7 @@ export class AdminAuthService implements IAdminAuthService {
         error.stack,
       );
       if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException('Token validation failed');
+      throw new InternalServerErrorException("Token validation failed");
     }
   }
 
@@ -155,7 +155,7 @@ export class AdminAuthService implements IAdminAuthService {
       return { success: true };
     } catch (error) {
       this.logger.error(`Store tokens failed for ${data.adminId}`, error.stack);
-      throw new InternalServerErrorException('Failed to store tokens');
+      throw new InternalServerErrorException("Failed to store tokens");
     }
   }
 
@@ -174,10 +174,10 @@ export class AdminAuthService implements IAdminAuthService {
       } else {
         await this.oauthAccountRepo.clearAllTokens(adminId);
       }
-      return { message: 'Logged out successfully' };
+      return { message: "Logged out successfully" };
     } catch (error) {
       this.logger.error(`Logout failed for ${adminId}`, error.stack);
-      throw new InternalServerErrorException('Logout failed');
+      throw new InternalServerErrorException("Logout failed");
     }
   }
 

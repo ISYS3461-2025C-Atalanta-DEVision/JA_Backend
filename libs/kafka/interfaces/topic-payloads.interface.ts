@@ -8,13 +8,13 @@
 // ===========================================
 
 export type EmploymentType =
-  | 'FULL_TIME'
-  | 'PART_TIME'
-  | 'CONTRACT'
-  | 'INTERNSHIP'
-  | 'FRESHER';
+  | "FULL_TIME"
+  | "PART_TIME"
+  | "CONTRACT"
+  | "INTERNSHIP"
+  | "FRESHER";
 
-export type SubscriptionTier = 'NORMAL' | 'PREMIUM';
+export type SubscriptionTier = "NORMAL" | "PREMIUM";
 
 export interface ISalaryRange {
   min: number;
@@ -34,12 +34,12 @@ export interface IExperienceRange {
 export interface ISearchProfilePayload {
   profileId: string;
   userId: string;
-  userType: 'APPLICANT' | 'COMPANY';
+  userType: "APPLICANT" | "COMPANY";
 
   // Matching criteria
   desiredRoles: string[];
-  skillIds: string[];       // Skill IDs from job-skill-service
-  skillNames: string[];     // Cached skill names for display
+  skillIds: string[]; // Skill IDs from job-skill-service
+  skillNames: string[]; // Cached skill names for display
   experienceYears: number;
   desiredLocations: string[];
   expectedSalary: ISalaryRange;
@@ -75,8 +75,8 @@ export interface IPremiumJMCreatedPayload {
   subscriptionId: string;
   subscriptionTier: SubscriptionTier;
   searchProfile: {
-    skillIds: string[];       // Skill IDs from job-skill-service
-    skillNames: string[];     // Cached skill names for display
+    skillIds: string[]; // Skill IDs from job-skill-service
+    skillNames: string[]; // Cached skill names for display
     experienceYears: IExperienceRange;
     locations: string[];
     salaryRange: ISalaryRange;
@@ -100,7 +100,7 @@ export interface IPremiumJMExpiredPayload {
 export interface ISearchProfileCreatedPayload {
   profileId: string;
   userId: string;
-  userType: 'APPLICANT' | 'COMPANY';
+  userType: "APPLICANT" | "COMPANY";
   searchProfile: ISearchProfilePayload;
   isPremium: boolean;
   createdAt: string;
@@ -109,7 +109,7 @@ export interface ISearchProfileCreatedPayload {
 export interface ISearchProfileUpdatedPayload {
   profileId: string;
   userId: string;
-  userType: 'APPLICANT' | 'COMPANY';
+  userType: "APPLICANT" | "COMPANY";
   searchProfile: ISearchProfilePayload;
   changedFields: string[];
   isPremium: boolean;
@@ -126,10 +126,10 @@ export interface IJobCreatedPayload {
   title: string;
   description?: string;
   criteria: {
-    requiredSkillIds: string[];       // Skill IDs from job-skill-service
-    requiredSkillNames: string[];     // Cached skill names for display
-    niceToHaveSkillIds?: string[];    // Optional nice-to-have skill IDs
-    niceToHaveSkillNames?: string[];  // Optional nice-to-have skill names
+    requiredSkillIds: string[]; // Skill IDs from job-skill-service
+    requiredSkillNames: string[]; // Cached skill names for display
+    niceToHaveSkillIds?: string[]; // Optional nice-to-have skill IDs
+    niceToHaveSkillNames?: string[]; // Optional nice-to-have skill names
     minExperience: number;
     maxExperience?: number;
     location: string;
@@ -144,7 +144,7 @@ export interface IJobCreatedPayload {
 export interface IJobUpdatedPayload {
   jobId: string;
   companyId: string;
-  criteria: IJobCreatedPayload['criteria'];
+  criteria: IJobCreatedPayload["criteria"];
   changedFields: string[];
   updatedAt: string;
 }
@@ -152,7 +152,7 @@ export interface IJobUpdatedPayload {
 export interface IJobClosedPayload {
   jobId: string;
   companyId: string;
-  reason: 'EXPIRED' | 'FILLED' | 'CANCELLED' | 'MANUAL';
+  reason: "EXPIRED" | "FILLED" | "CANCELLED" | "MANUAL";
   closedAt: string;
 }
 
@@ -162,11 +162,11 @@ export interface IJobClosedPayload {
 
 export interface IMatchResult {
   matchedEntityId: string;
-  matchedEntityType: 'APPLICANT' | 'JOB' | 'COMPANY';
+  matchedEntityType: "APPLICANT" | "JOB" | "COMPANY";
   matchScore: number;
   matchedCriteria: {
-    skillIds: string[];       // Matched skill IDs
-    skillNames: string[];     // Matched skill names for display
+    skillIds: string[]; // Matched skill IDs
+    skillNames: string[]; // Matched skill names for display
     location: boolean;
     salary: boolean;
     experience: boolean;
@@ -175,7 +175,7 @@ export interface IMatchResult {
 
 export interface IMatchingJMToJACompletedPayload {
   companyId: string;
-  triggeredBy: 'PREMIUM_SUBSCRIPTION' | 'PROFILE_UPDATE' | 'JOB_CREATED';
+  triggeredBy: "PREMIUM_SUBSCRIPTION" | "PROFILE_UPDATE" | "JOB_CREATED";
   matches: IMatchResult[];
   totalMatches: number;
   processedAt: string;
@@ -183,9 +183,8 @@ export interface IMatchingJMToJACompletedPayload {
 
 export interface IMatchingJAToJMCompletedPayload {
   applicantId: string;
-  triggeredBy: 'PREMIUM_SUBSCRIPTION' | 'PROFILE_UPDATE';
+  triggeredBy: "PREMIUM_SUBSCRIPTION" | "PROFILE_UPDATE";
   matches: IMatchResult[];
   totalMatches: number;
   processedAt: string;
 }
-

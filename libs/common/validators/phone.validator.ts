@@ -2,12 +2,12 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
-} from 'class-validator';
+} from "class-validator";
 import {
   parsePhoneNumber,
   isValidPhoneNumber,
   CountryCode,
-} from 'libphonenumber-js';
+} from "libphonenumber-js";
 
 /**
  * Phone validation options
@@ -27,16 +27,16 @@ export function validatePhone(
 ): { valid: boolean; errors: string[]; formatted?: string; country?: string } {
   const errors: string[] = [];
 
-  if (!phone || typeof phone !== 'string') {
-    return { valid: false, errors: ['Phone number is required'] };
+  if (!phone || typeof phone !== "string") {
+    return { valid: false, errors: ["Phone number is required"] };
   }
 
   // Clean phone number
   const cleanedPhone = phone.trim();
 
   // Check if country code is required
-  if (options.requireCountryCode && !cleanedPhone.startsWith('+')) {
-    errors.push('Phone number must start with country code (e.g., +84)');
+  if (options.requireCountryCode && !cleanedPhone.startsWith("+")) {
+    errors.push("Phone number must start with country code (e.g., +84)");
     return { valid: false, errors };
   }
 
@@ -44,17 +44,17 @@ export function validatePhone(
     // Try to parse with default country
     const phoneNumber = parsePhoneNumber(
       cleanedPhone,
-      options.defaultCountry || 'VN',
+      options.defaultCountry || "VN",
     );
 
     if (!phoneNumber) {
-      errors.push('Invalid phone number format');
+      errors.push("Invalid phone number format");
       return { valid: false, errors };
     }
 
     // Validate the parsed number
-    if (!isValidPhoneNumber(cleanedPhone, options.defaultCountry || 'VN')) {
-      errors.push('Phone number is not valid');
+    if (!isValidPhoneNumber(cleanedPhone, options.defaultCountry || "VN")) {
+      errors.push("Phone number is not valid");
       return { valid: false, errors };
     }
 
@@ -66,7 +66,7 @@ export function validatePhone(
       !options.allowedCountries.includes(country)
     ) {
       errors.push(
-        `Phone number from ${country} is not allowed. Allowed: ${options.allowedCountries.join(', ')}`,
+        `Phone number from ${country} is not allowed. Allowed: ${options.allowedCountries.join(", ")}`,
       );
       return { valid: false, errors };
     }
@@ -78,7 +78,7 @@ export function validatePhone(
       country: country,
     };
   } catch (error) {
-    errors.push('Invalid phone number format');
+    errors.push("Invalid phone number format");
     return { valid: false, errors };
   }
 }
@@ -89,12 +89,12 @@ export function validatePhone(
  */
 export function formatPhoneE164(
   phone: string,
-  defaultCountry: CountryCode = 'VN',
+  defaultCountry: CountryCode = "VN",
 ): string | null {
   try {
     const phoneNumber = parsePhoneNumber(phone, defaultCountry);
     if (phoneNumber && phoneNumber.isValid()) {
-      return phoneNumber.format('E.164');
+      return phoneNumber.format("E.164");
     }
     return null;
   } catch {
@@ -107,7 +107,7 @@ export function formatPhoneE164(
  */
 export function formatPhoneInternational(
   phone: string,
-  defaultCountry: CountryCode = 'VN',
+  defaultCountry: CountryCode = "VN",
 ): string | null {
   try {
     const phoneNumber = parsePhoneNumber(phone, defaultCountry);
@@ -129,7 +129,7 @@ export function IsValidPhone(
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: 'isValidPhone',
+      name: "isValidPhone",
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
@@ -141,7 +141,7 @@ export function IsValidPhone(
         },
         defaultMessage(args: ValidationArguments) {
           const result = validatePhone(args.value, options);
-          return result.errors.join(', ');
+          return result.errors.join(", ");
         },
       },
     });

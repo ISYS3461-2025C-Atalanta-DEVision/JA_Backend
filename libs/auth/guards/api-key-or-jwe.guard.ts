@@ -4,13 +4,13 @@ import {
   UnauthorizedException,
   CanActivate,
   Logger,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
-import { timingSafeEqual } from 'crypto';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { JweTokenService } from '../services/jwe-token.service';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { ConfigService } from "@nestjs/config";
+import { Request } from "express";
+import { timingSafeEqual } from "crypto";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { JweTokenService } from "../services/jwe-token.service";
 
 /**
  * Guard that allows authentication via JWE OR API Key.
@@ -30,7 +30,7 @@ export class ApiKeyOrJweGuard implements CanActivate {
     private readonly configService: ConfigService,
     private readonly jweTokenService: JweTokenService,
   ) {
-    this.validApiKey = this.configService.get<string>('API_KEY');
+    this.validApiKey = this.configService.get<string>("API_KEY");
   }
 
   /**
@@ -42,8 +42,8 @@ export class ApiKeyOrJweGuard implements CanActivate {
     }
 
     try {
-      const bufA = Buffer.from(a, 'utf-8');
-      const bufB = Buffer.from(b, 'utf-8');
+      const bufA = Buffer.from(a, "utf-8");
+      const bufB = Buffer.from(b, "utf-8");
       return timingSafeEqual(bufA, bufB);
     } catch {
       return false;
@@ -59,7 +59,7 @@ export class ApiKeyOrJweGuard implements CanActivate {
     }
 
     const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       return authHeader.substring(7);
     }
 
@@ -73,32 +73,31 @@ export class ApiKeyOrJweGuard implements CanActivate {
       context.getClass(),
     ]);
 
-
     if (isPublic) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const apiKey = request.headers['x-api-key'] as string;
-
+    const apiKey = request.headers["x-api-key"] as string;
 
     // Strategy 1: Try API Key first (faster than JWE validation)
     if (apiKey) {
       this.logger.log(`[DEBUG] Received API Key length: ${apiKey.length}`);
-      this.logger.log(`[DEBUG] Valid API Key length: ${this.validApiKey?.length}`);
+      this.logger.log(
+        `[DEBUG] Valid API Key length: ${this.validApiKey?.length}`,
+      );
       this.logger.log(`[DEBUG] API_KEY configured: ${!!this.validApiKey}`);
 
-
       if (!this.validApiKey) {
-        this.logger.warn('API_KEY not configured, falling back to JWE');
+        this.logger.warn("API_KEY not configured, falling back to JWE");
       } else if (this.timingSafeCompare(apiKey, this.validApiKey)) {
         (request as any).apiKeyAuth = true;
-        (request as any).authType = 'apiKey';
+        (request as any).authType = "apiKey";
         this.logger.log(`[API_KEY_AUTH] Access from ${request.ip}`);
         return true;
       } else {
         this.logger.warn(`[API_KEY_AUTH] Invalid attempt from ${request.ip}`);
-        throw new UnauthorizedException('Invalid API Key');
+        throw new UnauthorizedException("Invalid API Key");
       }
     }
 
@@ -117,13 +116,13 @@ export class ApiKeyOrJweGuard implements CanActivate {
           country: payload.country,
           emailVerified: payload.emailVerified,
         };
-        (request as any).authType = 'jwe';
+        (request as any).authType = "jwe";
         return true;
       } catch (error) {
-        this.logger.debug('JWE validation failed', error.message);
+        this.logger.debug("JWE validation failed", error.message);
       }
     }
 
-    throw new UnauthorizedException('Authentication required (JWE or API Key)');
+    throw new UnauthorizedException("Authentication required (JWE or API Key)");
   }
 }

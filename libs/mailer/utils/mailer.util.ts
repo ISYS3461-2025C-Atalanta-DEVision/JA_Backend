@@ -1,4 +1,4 @@
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailerService } from "@nestjs-modules/mailer";
 
 export interface SendEmailOptions {
   to: string;
@@ -17,7 +17,7 @@ export async function sendEmail(
   },
 ) {
   if (!options.to) {
-    throw new Error('Recipient email missing');
+    throw new Error("Recipient email missing");
   }
 
   return mailer.sendMail({
@@ -36,11 +36,11 @@ export async function sendEmailVerification(
   },
 ) {
   if (!options.to) {
-    throw new Error('Recipient email missing');
+    throw new Error("Recipient email missing");
   }
 
-  const host = process.env.API_GATEWAY_HOST ?? 'localhost';
-  const port = process.env.API_GATEWAY_PORT ?? '3000';
+  const host = process.env.API_GATEWAY_HOST ?? "localhost";
+  const port = process.env.API_GATEWAY_PORT ?? "3000";
   const verificationUrl = `http://${host}:${port}/applicants/activate-email?token=${options.rawToken}`;
 
   const htmlTemplate = `
@@ -150,9 +150,8 @@ If you didn't create an account, please ignore this email.
 
   return mailer.sendMail({
     to: options.to,
-    subject: '✉️ Verify Your Email - DEVision',
+    subject: "✉️ Verify Your Email - DEVision",
     html: htmlTemplate,
     text: textContent,
   });
 }
-

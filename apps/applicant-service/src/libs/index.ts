@@ -25,7 +25,7 @@ export {
   IAppConfigService,
   AppConfigService,
   AppConfigServiceProvider,
-} from './dals';
+} from "./dals";
 
 // Export dal modules
-export { modules } from './imports'
+export { modules } from "./imports";

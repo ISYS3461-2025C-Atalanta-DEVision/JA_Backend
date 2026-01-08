@@ -2,7 +2,7 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
-} from 'class-validator';
+} from "class-validator";
 
 /**
  * Password validation rules
@@ -36,8 +36,8 @@ export function validatePassword(
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const errors: string[] = [];
 
-  if (!password || typeof password !== 'string') {
-    return { valid: false, errors: ['Password is required'] };
+  if (!password || typeof password !== "string") {
+    return { valid: false, errors: ["Password is required"] };
   }
 
   if (password.length < opts.minLength) {
@@ -49,34 +49,34 @@ export function validatePassword(
   }
 
   if (opts.requireUppercase && !/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
+    errors.push("Password must contain at least one uppercase letter");
   }
 
   if (opts.requireLowercase && !/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
+    errors.push("Password must contain at least one lowercase letter");
   }
 
   if (opts.requireNumber && !/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
+    errors.push("Password must contain at least one number");
   }
 
   if (opts.requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Password must contain at least one special character');
+    errors.push("Password must contain at least one special character");
   }
 
   // Check for common weak passwords
   const commonWeakPasswords = [
-    'password',
-    '12345678',
-    'qwerty',
-    'abc123',
-    'password123',
-    'admin123',
-    'letmein',
-    'welcome',
+    "password",
+    "12345678",
+    "qwerty",
+    "abc123",
+    "password123",
+    "admin123",
+    "letmein",
+    "welcome",
   ];
   if (commonWeakPasswords.includes(password.toLowerCase())) {
-    errors.push('Password is too common');
+    errors.push("Password is too common");
   }
 
   return { valid: errors.length === 0, errors };
@@ -91,7 +91,7 @@ export function IsStrongPassword(
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: 'isStrongPassword',
+      name: "isStrongPassword",
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
@@ -102,7 +102,7 @@ export function IsStrongPassword(
         },
         defaultMessage(args: ValidationArguments) {
           const result = validatePassword(args.value, options);
-          return result.errors.join(', ');
+          return result.errors.join(", ");
         },
       },
     });

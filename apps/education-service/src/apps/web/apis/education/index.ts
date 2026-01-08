@@ -1,3 +1,3 @@
-export * from './education.module';
-export * from './controllers';
-export * from './dtos';
+export * from "./education.module";
+export * from "./controllers";
+export * from "./dtos";

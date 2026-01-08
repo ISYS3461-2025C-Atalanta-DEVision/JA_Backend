@@ -13,6 +13,8 @@ export interface AuthModuleOptions {
 }
 
 export interface AuthModuleAsyncOptions {
-  useFactory: (...args: any[]) => Promise<AuthModuleOptions> | AuthModuleOptions;
+  useFactory: (
+    ...args: any[]
+  ) => Promise<AuthModuleOptions> | AuthModuleOptions;
   inject?: any[];
 }

@@ -1,6 +1,11 @@
 import { Module, Logger } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { modules as dalModules, ConfigurationModule, APP_CONFIG_SERVICE_PROVIDER, IAppConfigService } from "./libs";
+import {
+  modules as dalModules,
+  ConfigurationModule,
+  APP_CONFIG_SERVICE_PROVIDER,
+  IAppConfigService,
+} from "./libs";
 import { modules } from "./apps";
 import { HealthController } from "./health.controller";
 import { KafkaModule } from "@kafka/kafka.module";
@@ -12,7 +17,10 @@ import { KafkaModule } from "@kafka/kafka.module";
       imports: [ConfigurationModule],
       useFactory: (appConfigService: IAppConfigService) => {
         const dbUrl = appConfigService.getDbUrl();
-        Logger.log(`[MongooseModule] DB_URL: ${dbUrl ? 'found' : 'NOT FOUND'}`, 'Bootstrap');
+        Logger.log(
+          `[MongooseModule] DB_URL: ${dbUrl ? "found" : "NOT FOUND"}`,
+          "Bootstrap",
+        );
         return {
           uri: dbUrl,
         };
@@ -20,8 +28,8 @@ import { KafkaModule } from "@kafka/kafka.module";
       inject: [APP_CONFIG_SERVICE_PROVIDER],
     }),
     KafkaModule,
-    ...modules
+    ...modules,
   ],
   controllers: [HealthController],
 })
-export class AppModule { }
+export class AppModule {}

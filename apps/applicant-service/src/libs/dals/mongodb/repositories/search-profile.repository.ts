@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { BaseMongoRepository } from './base.repository';
-import { SearchProfile } from '../schemas';
-import { ISearchProfileRepository } from '../interfaces';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { BaseMongoRepository } from "./base.repository";
+import { SearchProfile } from "../schemas";
+import { ISearchProfileRepository } from "../interfaces";
 
 @Injectable()
 export class SearchProfileRepository

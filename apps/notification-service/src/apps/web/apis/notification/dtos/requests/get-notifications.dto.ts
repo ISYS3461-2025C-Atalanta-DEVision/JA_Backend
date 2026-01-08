@@ -1,5 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min, Max, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  IsBoolean,
+} from "class-validator";
+import { Type } from "class-transformer";
 
 export class GetNotificationsDto {
   @IsString()

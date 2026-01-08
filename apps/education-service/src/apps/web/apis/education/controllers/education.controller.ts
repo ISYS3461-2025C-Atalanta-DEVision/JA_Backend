@@ -1,44 +1,52 @@
-import { Controller, Inject } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { EDUCATION_SERVICE_WEB_PROVIDER } from '../../../constants';
-import { IEducationService } from '../../../interfaces';
-import { CreateEducationDto, UpdateEducationDto } from '../dtos';
+import { Controller, Inject } from "@nestjs/common";
+import { MessagePattern, Payload } from "@nestjs/microservices";
+import { EDUCATION_SERVICE_WEB_PROVIDER } from "../../../constants";
+import { IEducationService } from "../../../interfaces";
+import { CreateEducationDto, UpdateEducationDto } from "../dtos";
+import { FindAllQueryParams } from "@common/dtos/filter.dto";
 
 @Controller()
 export class EducationController {
   constructor(
     @Inject(EDUCATION_SERVICE_WEB_PROVIDER)
     private readonly educationService: IEducationService,
-  ) { }
+  ) {}
 
-  @MessagePattern({ cmd: 'education.create' })
-  async create(@Payload() data: { createDto: CreateEducationDto, applicantId: string }) {
+  @MessagePattern({ cmd: "education.create" })
+  async create(
+    @Payload() data: { createDto: CreateEducationDto; applicantId: string },
+  ) {
     return await this.educationService.create(data.createDto, data.applicantId);
   }
 
-  @MessagePattern({ cmd: 'education.findByApplicantId' })
+  @MessagePattern({ cmd: "education.findByApplicantId" })
   async findByApplicantId(@Payload() data: { applicantId: string }) {
     return await this.educationService.findByApplicantId(data.applicantId);
   }
 
-  @MessagePattern({ cmd: 'education.findById' })
+  @MessagePattern({ cmd: "education.findById" })
   async findById(@Payload() data: { id: string }) {
     return await this.educationService.findById(data.id);
   }
 
-  @MessagePattern({ cmd: 'education.findAll' })
-  async findAll(@Payload() data: { page?: number; limit?: number }) {
+  @MessagePattern({ cmd: "education.findAll" })
+  async findAll(@Payload() data: FindAllQueryParams) {
     const page = data.page || 1;
     const limit = data.limit || 10;
-    return await this.educationService.findAll(page, limit);
+    return await this.educationService.findAll(
+      page,
+      limit,
+      data.filters,
+      data.sorting,
+    );
   }
 
-  @MessagePattern({ cmd: 'education.update' })
+  @MessagePattern({ cmd: "education.update" })
   async update(@Payload() data: { id: string; updates: UpdateEducationDto }) {
     return await this.educationService.update(data.id, data.updates);
   }
 
-  @MessagePattern({ cmd: 'education.delete' })
+  @MessagePattern({ cmd: "education.delete" })
   async delete(@Payload() data: { id: string }) {
     return await this.educationService.delete(data.id);
   }

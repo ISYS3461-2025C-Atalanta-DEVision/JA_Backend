@@ -1,7 +1,10 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { FirebaseService } from './firebase.service';
-import { FIREBASE_OPTIONS } from './firebase.constants';
-import { FirebaseModuleOptions, FirebaseModuleAsyncOptions } from './interfaces';
+import { DynamicModule, Module } from "@nestjs/common";
+import { FirebaseService } from "./firebase.service";
+import { FIREBASE_OPTIONS } from "./firebase.constants";
+import {
+  FirebaseModuleOptions,
+  FirebaseModuleAsyncOptions,
+} from "./interfaces";
 
 @Module({})
 export class FirebaseModule {

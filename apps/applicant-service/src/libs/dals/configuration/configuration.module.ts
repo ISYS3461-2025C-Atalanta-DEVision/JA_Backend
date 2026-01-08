@@ -6,11 +6,9 @@ import { configs } from "apps/applicant-service/src/configs";
 import { AppConfigServiceProvider } from "./providers";
 
 // App root: apps/applicant-service/ (relative to project root)
-const APP_ROOT = join(process.cwd(), 'apps/applicant-service');
+const APP_ROOT = join(process.cwd(), "apps/applicant-service");
 
-const providers: Provider[] = [
-  AppConfigServiceProvider
-]
+const providers: Provider[] = [AppConfigServiceProvider];
 
 @Global()
 @Module({
@@ -21,9 +19,9 @@ const providers: Provider[] = [
       expandVariables: true,
       load: configs,
       envFilePath: EnvUtil.getPathEnv(APP_ROOT),
-    })
+    }),
   ],
   providers,
-  exports: providers
+  exports: providers,
 })
-export class ConfigurationModule { }
+export class ConfigurationModule {}

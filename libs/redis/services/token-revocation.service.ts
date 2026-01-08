@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { InjectRedis } from '@nestjs-modules/ioredis';
-import Redis from 'ioredis';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { InjectRedis } from "@nestjs-modules/ioredis";
+import Redis from "ioredis";
 
 /**
  * Token Revocation Service
@@ -16,9 +16,9 @@ export class TokenRevocationService implements OnModuleDestroy {
   private readonly logger = new Logger(TokenRevocationService.name);
 
   // Key prefixes
-  private readonly REVOKED_ACCESS_PREFIX = 'revoked:access:';
-  private readonly REVOKED_REFRESH_PREFIX = 'revoked:refresh:';
-  private readonly USER_TOKENS_PREFIX = 'user:tokens:';
+  private readonly REVOKED_ACCESS_PREFIX = "revoked:access:";
+  private readonly REVOKED_REFRESH_PREFIX = "revoked:refresh:";
+  private readonly USER_TOKENS_PREFIX = "user:tokens:";
 
   // TTLs (in seconds)
   private readonly ACCESS_TOKEN_TTL = 30 * 60; // 30 minutes
@@ -39,7 +39,7 @@ export class TokenRevocationService implements OnModuleDestroy {
   async revokeAccessToken(jti: string, userId?: string): Promise<void> {
     try {
       const key = `${this.REVOKED_ACCESS_PREFIX}${jti}`;
-      await this.redis.setex(key, this.ACCESS_TOKEN_TTL, '1');
+      await this.redis.setex(key, this.ACCESS_TOKEN_TTL, "1");
 
       if (userId) {
         const userKey = `${this.USER_TOKENS_PREFIX}${userId}`;
@@ -61,7 +61,7 @@ export class TokenRevocationService implements OnModuleDestroy {
   async revokeRefreshToken(jti: string, userId?: string): Promise<void> {
     try {
       const key = `${this.REVOKED_REFRESH_PREFIX}${jti}`;
-      await this.redis.setex(key, this.REFRESH_TOKEN_TTL, '1');
+      await this.redis.setex(key, this.REFRESH_TOKEN_TTL, "1");
 
       if (userId) {
         const userKey = `${this.USER_TOKENS_PREFIX}${userId}`;
@@ -126,12 +126,12 @@ export class TokenRevocationService implements OnModuleDestroy {
           pipeline.setex(
             `${this.REVOKED_ACCESS_PREFIX}${jti}`,
             this.ACCESS_TOKEN_TTL,
-            '1',
+            "1",
           );
           pipeline.setex(
             `${this.REVOKED_REFRESH_PREFIX}${jti}`,
             this.REFRESH_TOKEN_TTL,
-            '1',
+            "1",
           );
         }
 
@@ -139,9 +139,7 @@ export class TokenRevocationService implements OnModuleDestroy {
         pipeline.del(userKey);
 
         await pipeline.exec();
-        this.logger.debug(
-          `Revoked ${jtis.length} tokens for user: ${userId}`,
-        );
+        this.logger.debug(`Revoked ${jtis.length} tokens for user: ${userId}`);
       }
     } catch (error) {
       this.logger.error(`Failed to revoke all user tokens: ${error.message}`);
@@ -174,9 +172,7 @@ export class TokenRevocationService implements OnModuleDestroy {
       const userKey = `${this.USER_TOKENS_PREFIX}${userId}`;
       return await this.redis.scard(userKey);
     } catch (error) {
-      this.logger.error(
-        `Failed to get active token count: ${error.message}`,
-      );
+      this.logger.error(`Failed to get active token count: ${error.message}`);
       return 0;
     }
   }

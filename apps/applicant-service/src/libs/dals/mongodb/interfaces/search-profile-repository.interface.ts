@@ -1,5 +1,5 @@
-import { IBaseMongoRepository } from './base-repository.interface';
-import { SearchProfile } from '../schemas';
+import { IBaseMongoRepository } from "./base-repository.interface";
+import { SearchProfile } from "../schemas";
 
 export interface ISearchProfileRepository
   extends IBaseMongoRepository<SearchProfile> {

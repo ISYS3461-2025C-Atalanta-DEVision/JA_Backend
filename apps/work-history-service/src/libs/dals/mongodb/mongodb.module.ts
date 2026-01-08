@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { WorkHistory, WorkHistorySchema } from './schemas';
-import { WorkHistoryRepositoryProvider } from './providers';
-import { WorkHistoryRepository } from './repositories';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { WorkHistory, WorkHistorySchema } from "./schemas";
+import { WorkHistoryRepositoryProvider } from "./providers";
+import { WorkHistoryRepository } from "./repositories";
 
 @Module({
   imports: [
@@ -10,10 +10,7 @@ import { WorkHistoryRepository } from './repositories';
       { name: WorkHistory.name, schema: WorkHistorySchema },
     ]),
   ],
-  providers: [
-    WorkHistoryRepository,
-    WorkHistoryRepositoryProvider,
-  ],
+  providers: [WorkHistoryRepository, WorkHistoryRepositoryProvider],
   exports: [
     MongooseModule,
     WorkHistoryRepository,

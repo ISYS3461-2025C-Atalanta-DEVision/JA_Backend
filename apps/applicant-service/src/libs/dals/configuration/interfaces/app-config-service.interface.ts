@@ -4,7 +4,7 @@ export interface KafkaConfig {
   consumerGroup: string;
   ssl?: boolean;
   sasl?: {
-    mechanism: 'plain' | 'scram-sha-256' | 'scram-sha-512';
+    mechanism: "plain" | "scram-sha-256" | "scram-sha-512";
     username: string;
     password: string;
   };

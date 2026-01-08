@@ -1,7 +1,12 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { InjectRedis } from '@nestjs-modules/ioredis';
-import Redis from 'ioredis';
-import { REDIS_CHANNELS } from '../constants';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from "@nestjs/common";
+import { InjectRedis } from "@nestjs-modules/ioredis";
+import Redis from "ioredis";
+import { REDIS_CHANNELS } from "../constants";
 
 /**
  * Notification message structure for real-time delivery
@@ -20,14 +25,19 @@ export interface INotificationMessage {
   notification: IRealtimeNotification;
 }
 
-export type NotificationCallback = (userId: string, notification: IRealtimeNotification) => void;
+export type NotificationCallback = (
+  userId: string,
+  notification: IRealtimeNotification,
+) => void;
 
 /**
  * Notification PubSub Service
  * Handles Redis Pub/Sub for real-time notification delivery
  */
 @Injectable()
-export class NotificationPubSubService implements OnModuleInit, OnModuleDestroy {
+export class NotificationPubSubService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(NotificationPubSubService.name);
   private subscriber: Redis | null = null;
   private notificationCallback: NotificationCallback | null = null;
@@ -40,26 +50,30 @@ export class NotificationPubSubService implements OnModuleInit, OnModuleDestroy 
       // (ioredis requires separate connection for pub/sub)
       this.subscriber = this.redis.duplicate();
 
-      this.subscriber.on('error', (err) => {
+      this.subscriber.on("error", (err) => {
         this.logger.error(`Redis subscriber error: ${err.message}`);
       });
 
-      this.subscriber.on('connect', () => {
-        this.logger.log('Redis subscriber connected');
+      this.subscriber.on("connect", () => {
+        this.logger.log("Redis subscriber connected");
       });
 
       // Subscribe to notification channel
       await this.subscriber.subscribe(REDIS_CHANNELS.NOTIFICATION_REALTIME);
-      this.logger.log(`Subscribed to channel: ${REDIS_CHANNELS.NOTIFICATION_REALTIME}`);
+      this.logger.log(
+        `Subscribed to channel: ${REDIS_CHANNELS.NOTIFICATION_REALTIME}`,
+      );
 
       // Handle incoming messages
-      this.subscriber.on('message', (channel, message) => {
+      this.subscriber.on("message", (channel, message) => {
         if (channel === REDIS_CHANNELS.NOTIFICATION_REALTIME) {
           this.handleNotificationMessage(message);
         }
       });
     } catch (error) {
-      this.logger.error(`Failed to initialize notification pubsub: ${error.message}`);
+      this.logger.error(
+        `Failed to initialize notification pubsub: ${error.message}`,
+      );
     }
   }
 
@@ -77,14 +91,17 @@ export class NotificationPubSubService implements OnModuleInit, OnModuleDestroy 
    */
   onNotification(callback: NotificationCallback): void {
     this.notificationCallback = callback;
-    this.logger.log('Notification callback registered');
+    this.logger.log("Notification callback registered");
   }
 
   /**
    * Publish notification for real-time delivery
    * Called by notification-service when creating notifications
    */
-  async publishNotification(userId: string, notification: IRealtimeNotification): Promise<void> {
+  async publishNotification(
+    userId: string,
+    notification: IRealtimeNotification,
+  ): Promise<void> {
     try {
       const message: INotificationMessage = { userId, notification };
       await this.redis.publish(
@@ -108,7 +125,9 @@ export class NotificationPubSubService implements OnModuleInit, OnModuleDestroy 
         this.notificationCallback(parsed.userId, parsed.notification);
       }
     } catch (error) {
-      this.logger.error(`Failed to parse notification message: ${error.message}`);
+      this.logger.error(
+        `Failed to parse notification message: ${error.message}`,
+      );
     }
   }
 }

@@ -1,1 +1,1 @@
-export * from './app-config-service.interface';
+export * from "./app-config-service.interface";

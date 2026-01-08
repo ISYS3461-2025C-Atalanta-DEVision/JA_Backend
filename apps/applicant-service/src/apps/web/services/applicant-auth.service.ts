@@ -6,26 +6,26 @@ import {
   InternalServerErrorException,
   NotFoundException,
   HttpStatus,
-} from '@nestjs/common';
-import { hash, verify } from '@node-rs/argon2';
-import { Role } from '@auth/enums';
+} from "@nestjs/common";
+import { hash, verify } from "@node-rs/argon2";
+import { Role } from "@auth/enums";
 import {
   ApplicantRepository,
   OAuthAccountRepository,
   Applicant,
   OAuthAccount,
-} from '../../../libs/dals/mongodb';
+} from "../../../libs/dals/mongodb";
 import {
   IApplicantAuthService,
   ApplicantAuthResponse,
   TokenStorageData,
   RegisterData,
-} from '../interfaces';
-import { isValidCountryCode } from '@common/constants/countries';
-import { generateEmailVerificationToken } from '@auth/services';
-import { AddEmailHashDto } from '../apis/applicant/dtos/requests/add-email-verification-hash';
-import { MailerService } from '@libs/mailer';
-import { RpcException } from '@nestjs/microservices';
+} from "../interfaces";
+import { isValidCountryCode } from "@common/constants/countries";
+import { generateEmailVerificationToken } from "@auth/services";
+import { AddEmailHashDto } from "../apis/applicant/dtos/requests/add-email-verification-hash";
+import { MailerService } from "@libs/mailer";
+import { RpcException } from "@nestjs/microservices";
 
 /**
  * Applicant Auth Service
@@ -40,7 +40,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
     private readonly mailerService: MailerService,
     private readonly applicantRepo: ApplicantRepository,
     private readonly oauthAccountRepo: OAuthAccountRepository,
-  ) { }
+  ) {}
 
   /**
    * Register new applicant with email/password
@@ -53,7 +53,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!isValidCountryCode(country)) {
         throw new RpcException({
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Invalid country code',
+          message: "Invalid country code",
         });
       }
 
@@ -61,7 +61,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (existingApplicant) {
         throw new RpcException({
           statusCode: HttpStatus.CONFLICT,
-          message: 'Email already registered',
+          message: "Email already registered",
         });
       }
 
@@ -88,13 +88,13 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       await this.oauthAccountRepo.create({
         applicantId: applicant._id.toString(),
-        provider: 'email',
+        provider: "email",
         providerId: email.toLowerCase(),
         email: email.toLowerCase(),
         name,
       });
 
-      return this.toAuthResponse(applicant, 'email');
+      return this.toAuthResponse(applicant, "email");
     } catch (error) {
       this.logger.error(`Register failed for ${email}`, error.stack);
 
@@ -105,13 +105,13 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (error?.code === 11000) {
         throw new RpcException({
           statusCode: HttpStatus.CONFLICT,
-          message: 'Email already registered',
+          message: "Email already registered",
         });
       }
 
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Registration failed',
+        message: "Registration failed",
       });
     }
   }
@@ -135,7 +135,8 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!applicant || !applicant.isActive) {
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid credentials, please check your email and/or password',
+          message:
+            "Invalid credentials, please check your email and/or password",
         });
       }
 
@@ -154,7 +155,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!applicant.passwordHash) {
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Please use OAuth login (Google)',
+          message: "Please use OAuth login (Google)",
         });
       }
 
@@ -162,7 +163,9 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       if (!isPasswordValid) {
         const newAttempts = (applicant.loginAttempts || 0) + 1;
-        await this.applicantRepo.incrementLoginAttempts(applicant._id.toString());
+        await this.applicantRepo.incrementLoginAttempts(
+          applicant._id.toString(),
+        );
 
         if (newAttempts >= this.MAX_LOGIN_ATTEMPTS) {
           const lockUntil = new Date(Date.now() + this.LOCK_DURATION_MS);
@@ -178,13 +181,14 @@ export class ApplicantAuthService implements IApplicantAuthService {
           throw new RpcException({
             statusCode: HttpStatus.UNAUTHORIZED,
             message:
-              'Account locked due to too many failed attempts. Try again in 60 seconds.',
+              "Account locked due to too many failed attempts. Try again in 60 seconds.",
           });
         }
 
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid credentials, please check your email and/or password',
+          message:
+            "Invalid credentials, please check your email and/or password",
         });
       }
 
@@ -192,7 +196,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       await this.applicantRepo.resetLoginAttempts(applicant._id.toString());
       await this.applicantRepo.updateLastLogin(applicant._id.toString());
 
-      return this.toAuthResponse(applicant, 'email');
+      return this.toAuthResponse(applicant, "email");
     } catch (error) {
       this.logger.error(`Login failed for ${email}`, error.stack);
 
@@ -202,7 +206,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Login failed',
+        message: "Login failed",
       });
     }
   }
@@ -225,7 +229,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       if (applicant) {
         if (!applicant.isActive) {
-          throw new UnauthorizedException('User account is inactive');
+          throw new UnauthorizedException("User account is inactive");
         }
 
         // 2. Find existing oauth account for this applicant+provider
@@ -271,8 +275,8 @@ export class ApplicantAuthService implements IApplicantAuthService {
         applicant = await this.applicantRepo.create({
           name,
           email: email.toLowerCase(),
-          country: 'VN', // Default country for SSO users, can be updated later
-          emailVerified: provider === 'google', // Google verifies email
+          country: "VN", // Default country for SSO users, can be updated later
+          emailVerified: provider === "google", // Google verifies email
           isActive: true,
         });
 
@@ -294,17 +298,22 @@ export class ApplicantAuthService implements IApplicantAuthService {
       this.logger.error(`OAuth login failed for ${email}`, error.stack);
 
       // Re-throw known exceptions
-      if (error instanceof UnauthorizedException || error instanceof ConflictException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
 
       // Handle duplicate key error (unique index violation)
       if (error.code === 11000) {
-        this.logger.warn(`Duplicate oauth account attempt: ${email}, ${provider}`);
-        throw new ConflictException('OAuth account already exists');
+        this.logger.warn(
+          `Duplicate oauth account attempt: ${email}, ${provider}`,
+        );
+        throw new ConflictException("OAuth account already exists");
       }
 
-      throw new InternalServerErrorException('Authentication failed');
+      throw new InternalServerErrorException("Authentication failed");
     }
   }
 
@@ -320,25 +329,31 @@ export class ApplicantAuthService implements IApplicantAuthService {
     try {
       const applicant = await this.applicantRepo.findById(applicantId);
       if (!applicant || !applicant.isActive) {
-        throw new UnauthorizedException('User not found or inactive');
+        throw new UnauthorizedException("User not found or inactive");
       }
 
       // Get stored refresh token hash from oauth_accounts
-      const storedHash = await this.oauthAccountRepo.getRefreshTokenHash(applicantId, provider);
+      const storedHash = await this.oauthAccountRepo.getRefreshTokenHash(
+        applicantId,
+        provider,
+      );
       if (!storedHash) {
-        throw new UnauthorizedException('No active session');
+        throw new UnauthorizedException("No active session");
       }
 
       // Compare stored hash with provided hash
       if (storedHash !== refreshTokenHash) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException("Invalid refresh token");
       }
 
       return this.toAuthResponse(applicant, provider);
     } catch (error) {
-      this.logger.error(`Refresh token validation failed for ${applicantId}`, error.stack);
+      this.logger.error(
+        `Refresh token validation failed for ${applicantId}`,
+        error.stack,
+      );
       if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException('Token validation failed');
+      throw new InternalServerErrorException("Token validation failed");
     }
   }
 
@@ -356,8 +371,11 @@ export class ApplicantAuthService implements IApplicantAuthService {
       });
       return { success: true };
     } catch (error) {
-      this.logger.error(`Store tokens failed for ${data.applicantId}`, error.stack);
-      throw new InternalServerErrorException('Failed to store tokens');
+      this.logger.error(
+        `Store tokens failed for ${data.applicantId}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException("Failed to store tokens");
     }
   }
 
@@ -366,21 +384,26 @@ export class ApplicantAuthService implements IApplicantAuthService {
    * If provider specified, clear only that provider's tokens
    * Otherwise clear all tokens
    */
-  async logout(applicantId: string, provider?: string): Promise<{ message: string }> {
+  async logout(
+    applicantId: string,
+    provider?: string,
+  ): Promise<{ message: string }> {
     try {
       if (provider) {
         await this.oauthAccountRepo.clearTokens(applicantId, provider);
       } else {
         await this.oauthAccountRepo.clearAllTokens(applicantId);
       }
-      return { message: 'Logged out successfully' };
+      return { message: "Logged out successfully" };
     } catch (error) {
       this.logger.error(`Logout failed for ${applicantId}`, error.stack);
-      throw new InternalServerErrorException('Logout failed');
+      throw new InternalServerErrorException("Logout failed");
     }
   }
 
-  private async sendVerificationEmail(id: string): Promise<{ success: boolean; message: string }> {
+  private async sendVerificationEmail(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const applicant = await this.applicantRepo.findById(id);
       if (!applicant) {
@@ -390,32 +413,31 @@ export class ApplicantAuthService implements IApplicantAuthService {
       const { rawToken, hashedToken, expires } =
         generateEmailVerificationToken();
 
-      await this.mailerService.sendEmailVerification(
-        applicant.email,
-        rawToken,
-      );
+      await this.mailerService.sendEmailVerification(applicant.email, rawToken);
 
       applicant.emailVerificationToken = hashedToken;
       applicant.emailVerificationTokenExpires = expires;
 
       const updateDto: AddEmailHashDto = {
         emailVerificationToken: hashedToken,
-        emailVerificationTokenExpires: expires
-      }
+        emailVerificationTokenExpires: expires,
+      };
 
       await this.applicantRepo.update(id, updateDto);
 
       return {
         success: true,
-        message: `Email successfully sent to ${applicant.email}`
-      }
+        message: `Email successfully sent to ${applicant.email}`,
+      };
     } catch (error) {
-      this.logger.error(`Cannot activate applicant email failed for ${id}`, error.stack);
+      this.logger.error(
+        `Cannot activate applicant email failed for ${id}`,
+        error.stack,
+      );
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to activate email');
+      throw new InternalServerErrorException("Failed to activate email");
     }
   }
-
 
   /**
    * Convert applicant to auth response

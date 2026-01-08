@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
 import {
   Applicant,
   ApplicantSchema,
@@ -7,17 +7,17 @@ import {
   OAuthAccountSchema,
   SearchProfile,
   SearchProfileSchema,
-} from './schemas';
+} from "./schemas";
 import {
   ApplicantRepositoryProvider,
   OAuthAccountRepositoryProvider,
   SearchProfileRepositoryProvider,
-} from './providers';
+} from "./providers";
 import {
   ApplicantRepository,
   OAuthAccountRepository,
   SearchProfileRepository,
-} from './repositories';
+} from "./repositories";
 
 @Module({
   imports: [

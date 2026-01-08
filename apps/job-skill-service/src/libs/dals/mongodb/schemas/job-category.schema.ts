@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type JobCategoryDocument = HydratedDocument<JobCategory>;
 
@@ -8,7 +8,7 @@ export type JobCategoryDocument = HydratedDocument<JobCategory>;
  * Stores jobCategory data
  */
 @Schema({
-  collection: 'job-categories',
+  collection: "job-categories",
   timestamps: true,
 })
 export class JobCategory {

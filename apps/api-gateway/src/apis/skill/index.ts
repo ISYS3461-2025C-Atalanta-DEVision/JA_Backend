@@ -1,3 +1,3 @@
-export * from './skill.module';
-export * from './controllers';
-export * from './dtos';
+export * from "./skill.module";
+export * from "./controllers";
+export * from "./dtos";

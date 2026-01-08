@@ -1,2 +1,2 @@
-export * from './job-category.service';
-export * from './skill.service';
+export * from "./job-category.service";
+export * from "./skill.service";

@@ -1,4 +1,4 @@
-import { EducationLevel } from 'apps/education-service/src/libs/dals';
+import { EducationLevel } from "apps/education-service/src/libs/dals";
 import {
   IsEnum,
   IsMongoId,
@@ -8,7 +8,7 @@ import {
   IsDateString,
   Min,
   Max,
-} from 'class-validator';
+} from "class-validator";
 
 export class UpdateEducationDto {
   @IsOptional()

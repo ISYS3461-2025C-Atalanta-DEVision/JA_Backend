@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsBoolean, IsArray, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsArray,
+  IsDateString,
+} from "class-validator";
 
 export class UpdateWorkHistoryDto {
   @IsOptional()

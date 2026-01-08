@@ -1,2 +1,2 @@
-export * from './admin-applicant';
-export * from './auth';
+export * from "./admin-applicant";
+export * from "./auth";

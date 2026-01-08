@@ -1,2 +1,2 @@
-export * from './job-category.schema';
-export * from './skill.schema';
+export * from "./job-category.schema";
+export * from "./skill.schema";

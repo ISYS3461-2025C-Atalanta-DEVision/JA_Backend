@@ -1,15 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
-import {
-  sendEmail,
-  sendEmailVerification,
-} from './utils/mailer.util';
+import { Injectable } from "@nestjs/common";
+import { MailerService as NestMailerService } from "@nestjs-modules/mailer";
+import { sendEmail, sendEmailVerification } from "./utils/mailer.util";
 
 @Injectable()
 export class MailerService {
-  constructor(
-    private readonly nestMailer: NestMailerService,
-  ) { }
+  constructor(private readonly nestMailer: NestMailerService) {}
 
   async sendRawEmail(
     to: string,
@@ -25,10 +20,7 @@ export class MailerService {
     });
   }
 
-  async sendEmailVerification(
-    to: string,
-    rawToken: string,
-  ): Promise<void> {
+  async sendEmailVerification(to: string, rawToken: string): Promise<void> {
     await sendEmailVerification(this.nestMailer, {
       to,
       rawToken,

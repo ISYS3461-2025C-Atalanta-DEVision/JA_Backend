@@ -3,9 +3,9 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 /**
  * Email Verified Guard
@@ -48,7 +48,7 @@ export class EmailVerifiedGuard implements CanActivate {
     // Check email verification status
     if (!user.emailVerified) {
       throw new ForbiddenException(
-        'Email verification required. Please verify your email to access this resource.',
+        "Email verification required. Please verify your email to access this resource.",
       );
     }
 

@@ -1,4 +1,8 @@
-import { Notification, NotificationChannel, NotificationStatus } from '../schemas';
+import {
+  Notification,
+  NotificationChannel,
+  NotificationStatus,
+} from "../schemas";
 
 export interface INotificationRepository {
   findById(id: string): Promise<Notification | null>;
@@ -33,4 +37,6 @@ export interface INotificationRepository {
   ): Promise<Notification[]>;
 }
 
-export const NOTIFICATION_REPO_PROVIDER = Symbol('NotificationRepositoryProvider');
+export const NOTIFICATION_REPO_PROVIDER = Symbol(
+  "NotificationRepositoryProvider",
+);

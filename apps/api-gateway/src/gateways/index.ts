@@ -1,2 +1,2 @@
-export * from './notification.gateway';
-export * from './notification.gateway.module';
+export * from "./notification.gateway";
+export * from "./notification.gateway.module";

@@ -1,6 +1,3 @@
-import { ConfigurationModule, MongodbModule } from './';
+import { ConfigurationModule, MongodbModule } from "./";
 
-export const modules = [
-  ConfigurationModule,
-  MongodbModule
-];
+export const modules = [ConfigurationModule, MongodbModule];

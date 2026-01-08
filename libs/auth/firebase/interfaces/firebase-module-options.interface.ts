@@ -5,6 +5,8 @@ export interface FirebaseModuleOptions {
 }
 
 export interface FirebaseModuleAsyncOptions {
-  useFactory: (...args: any[]) => Promise<FirebaseModuleOptions> | FirebaseModuleOptions;
+  useFactory: (
+    ...args: any[]
+  ) => Promise<FirebaseModuleOptions> | FirebaseModuleOptions;
   inject?: any[];
 }

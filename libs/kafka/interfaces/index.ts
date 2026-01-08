@@ -1,2 +1,2 @@
-export * from './kafka-event.interface';
-export * from './topic-payloads.interface';
+export * from "./kafka-event.interface";
+export * from "./topic-payloads.interface";

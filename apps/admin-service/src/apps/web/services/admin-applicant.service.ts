@@ -1,31 +1,63 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { AdminApplicantRepository, AdminApplicant } from '../../../libs/dals/mongodb';
-import { CreateAdminApplicantDto, UpdateAdminApplicantDto, AdminApplicantResponseDto } from '../apis/admin-applicant/dtos';
-import { IAdminApplicantService } from '../interfaces';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import {
+  AdminApplicantRepository,
+  AdminApplicant,
+} from "../../../libs/dals/mongodb";
+import {
+  CreateAdminApplicantDto,
+  UpdateAdminApplicantDto,
+  AdminApplicantResponseDto,
+} from "../apis/admin-applicant/dtos";
+import { IAdminApplicantService } from "../interfaces";
+import { FilterBuilder } from "@common/filters";
+import { FilterItem, SortItem } from "@common/dtos/filter.dto";
+import { ADMIN_APPLICANT_FILTER_CONFIG } from "../../../configs";
 
 @Injectable()
 export class AdminApplicantService implements IAdminApplicantService {
   private readonly logger = new Logger(AdminApplicantService.name);
+  private readonly filterBuilder = new FilterBuilder<AdminApplicant>(
+    ADMIN_APPLICANT_FILTER_CONFIG,
+  );
 
   constructor(
     private readonly adminApplicantRepository: AdminApplicantRepository,
   ) {}
 
-  async create(createDto: CreateAdminApplicantDto): Promise<AdminApplicantResponseDto> {
+  async create(
+    createDto: CreateAdminApplicantDto,
+  ): Promise<AdminApplicantResponseDto> {
     try {
       // Check for duplicate name (optional - remove if not needed)
-      const existing = await this.adminApplicantRepository.findByName(createDto.name);
+      const existing = await this.adminApplicantRepository.findByName(
+        createDto.name,
+      );
       if (existing) {
-        throw new ConflictException('AdminApplicant with this name already exists');
+        throw new ConflictException(
+          "AdminApplicant with this name already exists",
+        );
       }
 
-      const adminApplicant = await this.adminApplicantRepository.create(createDto);
+      const adminApplicant =
+        await this.adminApplicantRepository.create(createDto);
       return this.toResponseDto(adminApplicant);
     } catch (error) {
-      this.logger.error(`Create adminApplicant failed for ${createDto.name}`, error.stack);
+      this.logger.error(
+        `Create adminApplicant failed for ${createDto.name}`,
+        error.stack,
+      );
       if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('AdminApplicant with this name already exists');
-      throw new InternalServerErrorException('Failed to create adminApplicant');
+      if (error.code === 11000)
+        throw new ConflictException(
+          "AdminApplicant with this name already exists",
+        );
+      throw new InternalServerErrorException("Failed to create adminApplicant");
     }
   }
 
@@ -39,36 +71,53 @@ export class AdminApplicantService implements IAdminApplicantService {
     } catch (error) {
       this.logger.error(`Find adminApplicant failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to find adminApplicant');
+      throw new InternalServerErrorException("Failed to find adminApplicant");
     }
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    filters?: FilterItem[],
+    sorting?: SortItem[],
+  ): Promise<{
     data: AdminApplicantResponseDto[];
     total: number;
     page: number;
     limit: number;
+    totalPages: number;
   }> {
     try {
       const skip = (page - 1) * limit;
-      const [adminApplicants, total] = await this.adminApplicantRepository.findManyAndCount(
-        {},
-        { skip, limit, sort: { createdAt: -1 } },
-      );
+      const query = this.filterBuilder.buildQuery(filters);
+      const sort = this.filterBuilder.buildSort(sorting);
+
+      const [adminApplicants, total] =
+        await this.adminApplicantRepository.findManyAndCount(query, {
+          skip,
+          limit,
+          sort,
+        });
 
       return {
-        data: adminApplicants.map(c => this.toResponseDto(c)),
+        data: adminApplicants.map((c) => this.toResponseDto(c)),
         total,
         page,
         limit,
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
       this.logger.error(`Find all admin-applicants failed`, error.stack);
-      throw new InternalServerErrorException('Failed to fetch admin-applicants');
+      throw new InternalServerErrorException(
+        "Failed to fetch admin-applicants",
+      );
     }
   }
 
-  async update(id: string, updateDto: UpdateAdminApplicantDto): Promise<AdminApplicantResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateAdminApplicantDto,
+  ): Promise<AdminApplicantResponseDto> {
     try {
       const adminApplicant = await this.adminApplicantRepository.findById(id);
       if (!adminApplicant) {
@@ -77,9 +126,11 @@ export class AdminApplicantService implements IAdminApplicantService {
 
       // Check for duplicate name if name is being updated
       if (updateDto.name && updateDto.name !== adminApplicant.name) {
-        const existing = await this.adminApplicantRepository.findByName(updateDto.name);
+        const existing = await this.adminApplicantRepository.findByName(
+          updateDto.name,
+        );
         if (existing) {
-          throw new ConflictException('Name already in use');
+          throw new ConflictException("Name already in use");
         }
       }
 
@@ -87,9 +138,14 @@ export class AdminApplicantService implements IAdminApplicantService {
       return this.toResponseDto(updated);
     } catch (error) {
       this.logger.error(`Update adminApplicant failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Name already in use');
-      throw new InternalServerErrorException('Failed to update adminApplicant');
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      )
+        throw error;
+      if (error.code === 11000)
+        throw new ConflictException("Name already in use");
+      throw new InternalServerErrorException("Failed to update adminApplicant");
     }
   }
 
@@ -104,16 +160,18 @@ export class AdminApplicantService implements IAdminApplicantService {
       await this.adminApplicantRepository.update(id, { isActive: false });
       return {
         success: true,
-        message: 'AdminApplicant deleted successfully',
+        message: "AdminApplicant deleted successfully",
       };
     } catch (error) {
       this.logger.error(`Delete adminApplicant failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to delete adminApplicant');
+      throw new InternalServerErrorException("Failed to delete adminApplicant");
     }
   }
 
-  private toResponseDto(adminApplicant: AdminApplicant): AdminApplicantResponseDto {
+  private toResponseDto(
+    adminApplicant: AdminApplicant,
+  ): AdminApplicantResponseDto {
     return {
       id: adminApplicant._id.toString(),
       name: adminApplicant.name,

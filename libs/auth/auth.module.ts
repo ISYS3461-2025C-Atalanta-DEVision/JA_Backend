@@ -1,15 +1,15 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { AuthModuleOptions, AuthModuleAsyncOptions } from './interfaces';
-import { AUTH_MODULE_OPTIONS } from './constants';
-import { JweTokenService } from './services';
+import { DynamicModule, Module, Provider } from "@nestjs/common";
+import { AuthModuleOptions, AuthModuleAsyncOptions } from "./interfaces";
+import { AUTH_MODULE_OPTIONS } from "./constants";
+import { JweTokenService } from "./services";
 import {
   JweAuthGuard,
   RolesGuard,
   ApiKeyGuard,
   ApiKeyOrJweGuard,
-} from './guards';
-import { FirebaseService } from './firebase/firebase.service';
-import { FIREBASE_OPTIONS } from './firebase/firebase.constants';
+} from "./guards";
+import { FirebaseService } from "./firebase/firebase.service";
+import { FIREBASE_OPTIONS } from "./firebase/firebase.constants";
 
 @Module({})
 export class AuthModule {
@@ -28,9 +28,9 @@ export class AuthModule {
       {
         provide: FIREBASE_OPTIONS,
         useFactory: (authOptions: AuthModuleOptions) => ({
-          projectId: authOptions.firebaseProjectId || '',
-          clientEmail: authOptions.firebaseClientEmail || '',
-          privateKey: authOptions.firebasePrivateKey || '',
+          projectId: authOptions.firebaseProjectId || "",
+          clientEmail: authOptions.firebaseClientEmail || "",
+          privateKey: authOptions.firebasePrivateKey || "",
         }),
         inject: [AUTH_MODULE_OPTIONS],
       },
@@ -72,9 +72,9 @@ export class AuthModule {
         {
           provide: FIREBASE_OPTIONS,
           useValue: {
-            projectId: options.firebaseProjectId || '',
-            clientEmail: options.firebaseClientEmail || '',
-            privateKey: options.firebasePrivateKey || '',
+            projectId: options.firebaseProjectId || "",
+            clientEmail: options.firebaseClientEmail || "",
+            privateKey: options.firebasePrivateKey || "",
           },
         },
         JweTokenService,

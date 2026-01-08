@@ -3,7 +3,7 @@ import { Environments } from "../enums/environment.enum";
 
 export class EnvUtil {
   static getNodeEnv(): string {
-    return process.env.NODE_ENV ?? 'development';
+    return process.env.NODE_ENV ?? "development";
   }
   static isProduction(): boolean {
     return this.getNodeEnv() === Environments.Production;
@@ -20,7 +20,7 @@ export class EnvUtil {
    * @returns Path to .env.{environment} file
    */
   static getPathEnv(appRoot?: string): string {
-    const envFileName = '.env.' + this.getNodeEnv();
+    const envFileName = ".env." + this.getNodeEnv();
     if (appRoot) {
       return join(appRoot, envFileName);
     }

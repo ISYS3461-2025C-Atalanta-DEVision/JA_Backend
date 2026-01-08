@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type AdminApplicantDocument = HydratedDocument<AdminApplicant>;
 
@@ -9,7 +9,7 @@ export type AdminApplicantDocument = HydratedDocument<AdminApplicant>;
  * Token storage is handled by AdminOAuthAccount
  */
 @Schema({
-  collection: 'admin-applicants',
+  collection: "admin-applicants",
   timestamps: true,
 })
 export class AdminApplicant {

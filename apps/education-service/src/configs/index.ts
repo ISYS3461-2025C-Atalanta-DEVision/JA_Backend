@@ -1,9 +1,7 @@
-import { appConfig } from './app.config';
+import { appConfig } from "./app.config";
 
-export const configs = [
-  appConfig
-];
+export const configs = [appConfig];
 
-export {
-  appConfig
-};
+export { appConfig };
+
+export * from "./education-filter.config";

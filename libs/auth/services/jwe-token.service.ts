@@ -1,7 +1,12 @@
-import { Injectable, Inject, UnauthorizedException, Logger } from '@nestjs/common';
-import { JwtPayload, AuthModuleOptions } from '../interfaces';
-import { Role } from '../enums';
-import { AUTH_MODULE_OPTIONS } from '../constants';
+import {
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  Logger,
+} from "@nestjs/common";
+import { JwtPayload, AuthModuleOptions } from "../interfaces";
+import { Role } from "../enums";
+import { AUTH_MODULE_OPTIONS } from "../constants";
 
 /**
  * JWE Token Service
@@ -64,22 +69,22 @@ export class JweTokenService {
     country?: string,
     emailVerified?: boolean,
   ): Promise<string> {
-    const { EncryptJWT } = await import('jose'); // dynamic import
+    const { EncryptJWT } = await import("jose"); // dynamic import
 
     const payload = {
       sub: userId,
       email,
       role,
-      type: 'access',
+      type: "access",
       ...(country && { country }),
       ...(emailVerified !== undefined && { emailVerified }),
     };
 
-    const expiresIn = this.options.jwtExpiresIn || '30m';
+    const expiresIn = this.options.jwtExpiresIn || "30m";
     const expirationTime = this.parseExpiresIn(expiresIn);
 
     const jwt = await new EncryptJWT(payload as any)
-      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+      .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
       .setIssuedAt()
       .setExpirationTime(expirationTime)
       .encrypt(this.accessSecret);
@@ -95,20 +100,20 @@ export class JweTokenService {
     email: string,
     role: Role,
   ): Promise<string> {
-    const { EncryptJWT } = await import('jose'); // dynamic import
+    const { EncryptJWT } = await import("jose"); // dynamic import
 
     const payload = {
       sub: userId,
       email,
       role,
-      type: 'refresh',
+      type: "refresh",
     };
 
-    const expiresIn = this.options.jwtRefreshExpiresIn || '7d';
+    const expiresIn = this.options.jwtRefreshExpiresIn || "7d";
     const expirationTime = this.parseExpiresIn(expiresIn);
 
     const jwt = await new EncryptJWT(payload as any)
-      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+      .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
       .setIssuedAt()
       .setExpirationTime(expirationTime)
       .encrypt(this.refreshSecret);
@@ -139,19 +144,19 @@ export class JweTokenService {
    */
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     try {
-      const { jwtDecrypt } = await import('jose'); // dynamic import
+      const { jwtDecrypt } = await import("jose"); // dynamic import
 
       const { payload } = await jwtDecrypt(token, this.accessSecret);
 
-      if ((payload as any).type !== 'access') {
-        throw new UnauthorizedException('Invalid token type');
+      if ((payload as any).type !== "access") {
+        throw new UnauthorizedException("Invalid token type");
       }
 
       return {
-        sub: payload.sub as string,
+        sub: payload.sub,
         email: (payload as any).email,
         role: (payload as any).role,
-        type: 'access',
+        type: "access",
         country: (payload as any).country,
         emailVerified: (payload as any).emailVerified,
         iat: payload.iat,
@@ -159,7 +164,7 @@ export class JweTokenService {
       };
     } catch (error) {
       this.logger.debug(`Access token verification failed: ${error.message}`);
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException("Invalid or expired token");
     }
   }
 
@@ -168,25 +173,25 @@ export class JweTokenService {
    */
   async verifyRefreshToken(token: string): Promise<JwtPayload> {
     try {
-      const { jwtDecrypt } = await import('jose'); // dynamic import
+      const { jwtDecrypt } = await import("jose"); // dynamic import
 
       const { payload } = await jwtDecrypt(token, this.refreshSecret);
 
-      if ((payload as any).type !== 'refresh') {
-        throw new UnauthorizedException('Invalid token type');
+      if ((payload as any).type !== "refresh") {
+        throw new UnauthorizedException("Invalid token type");
       }
 
       return {
-        sub: payload.sub as string,
+        sub: payload.sub,
         email: (payload as any).email,
         role: (payload as any).role,
-        type: 'refresh',
+        type: "refresh",
         iat: payload.iat,
         exp: payload.exp,
       };
     } catch (error) {
       this.logger.debug(`Refresh token verification failed: ${error.message}`);
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException("Invalid or expired refresh token");
     }
   }
 

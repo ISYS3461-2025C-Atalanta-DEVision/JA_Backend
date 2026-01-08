@@ -1,1 +1,1 @@
-export * from './admin-applicant.controller';
+export * from "./admin-applicant.controller";

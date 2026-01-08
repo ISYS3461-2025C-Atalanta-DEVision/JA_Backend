@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { JobCategory, JobCategorySchema, Skill, SkillSchema } from './schemas';
-import { JobCategoryRepositoryProvider, SkillRepositoryProvider } from './providers';
-import { JobCategoryRepository, SkillRepository } from './repositories';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { JobCategory, JobCategorySchema, Skill, SkillSchema } from "./schemas";
+import {
+  JobCategoryRepositoryProvider,
+  SkillRepositoryProvider,
+} from "./providers";
+import { JobCategoryRepository, SkillRepository } from "./repositories";
 
 @Module({
   imports: [

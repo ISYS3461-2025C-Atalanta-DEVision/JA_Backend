@@ -1,1 +1,1 @@
-export * from './skill.controller';
+export * from "./skill.controller";

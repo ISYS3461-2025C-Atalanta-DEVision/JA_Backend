@@ -1,4 +1,4 @@
-import { Role } from '@auth/enums';
+import { Role } from "@auth/enums";
 
 /**
  * Applicant data returned by auth operations
@@ -56,7 +56,10 @@ export interface IApplicantAuthService {
    * Verify email/password credentials
    * Returns user data (Gateway generates tokens)
    */
-  verifyCredentials(email: string, password: string): Promise<ApplicantAuthResponse>;
+  verifyCredentials(
+    email: string,
+    password: string,
+  ): Promise<ApplicantAuthResponse>;
 
   /**
    * Find or create applicant for OAuth login

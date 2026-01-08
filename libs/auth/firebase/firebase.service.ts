@@ -1,7 +1,12 @@
-import { Injectable, Inject, OnModuleInit, UnauthorizedException } from '@nestjs/common';
-import * as admin from 'firebase-admin';
-import { FIREBASE_OPTIONS } from './firebase.constants';
-import { FirebaseModuleOptions, FirebaseUser } from './interfaces';
+import {
+  Injectable,
+  Inject,
+  OnModuleInit,
+  UnauthorizedException,
+} from "@nestjs/common";
+import * as admin from "firebase-admin";
+import { FIREBASE_OPTIONS } from "./firebase.constants";
+import { FirebaseModuleOptions, FirebaseUser } from "./interfaces";
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -21,8 +26,14 @@ export class FirebaseService implements OnModuleInit {
     if (this.initialized) return;
 
     // Check if Firebase credentials are provided
-    if (!this.options.projectId || !this.options.clientEmail || !this.options.privateKey) {
-      console.warn('Firebase credentials not configured. Firebase auth will not work.');
+    if (
+      !this.options.projectId ||
+      !this.options.clientEmail ||
+      !this.options.privateKey
+    ) {
+      console.warn(
+        "Firebase credentials not configured. Firebase auth will not work.",
+      );
       return;
     }
 
@@ -32,7 +43,7 @@ export class FirebaseService implements OnModuleInit {
           credential: admin.credential.cert({
             projectId: this.options.projectId,
             clientEmail: this.options.clientEmail,
-            privateKey: this.options.privateKey.replace(/\\n/g, '\n'),
+            privateKey: this.options.privateKey.replace(/\\n/g, "\n"),
           }),
         });
       } else {
@@ -40,7 +51,7 @@ export class FirebaseService implements OnModuleInit {
       }
       this.initialized = true;
     } catch (error) {
-      console.error('Failed to initialize Firebase:', error.message);
+      console.error("Failed to initialize Firebase:", error.message);
     }
   }
 
@@ -49,7 +60,7 @@ export class FirebaseService implements OnModuleInit {
    */
   async verifyIdToken(idToken: string): Promise<FirebaseUser> {
     if (!this.initialized || !this.app) {
-      throw new UnauthorizedException('Firebase is not configured');
+      throw new UnauthorizedException("Firebase is not configured");
     }
 
     try {
@@ -57,22 +68,22 @@ export class FirebaseService implements OnModuleInit {
 
       return {
         uid: decodedToken.uid,
-        email: decodedToken.email || '',
-        name: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
+        email: decodedToken.email || "",
+        name: decodedToken.name || decodedToken.email?.split("@")[0] || "User",
         picture: decodedToken.picture,
         emailVerified: decodedToken.email_verified || false,
       };
     } catch (error) {
-      if (error.code === 'auth/id-token-expired') {
-        throw new UnauthorizedException('Firebase token expired');
+      if (error.code === "auth/id-token-expired") {
+        throw new UnauthorizedException("Firebase token expired");
       }
-      if (error.code === 'auth/id-token-revoked') {
-        throw new UnauthorizedException('Firebase token revoked');
+      if (error.code === "auth/id-token-revoked") {
+        throw new UnauthorizedException("Firebase token revoked");
       }
-      if (error.code === 'auth/argument-error') {
-        throw new UnauthorizedException('Invalid Firebase token');
+      if (error.code === "auth/argument-error") {
+        throw new UnauthorizedException("Invalid Firebase token");
       }
-      throw new UnauthorizedException('Firebase authentication failed');
+      throw new UnauthorizedException("Firebase authentication failed");
     }
   }
 

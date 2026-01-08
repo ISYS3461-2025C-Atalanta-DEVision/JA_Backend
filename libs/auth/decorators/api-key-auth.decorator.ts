@@ -1,9 +1,9 @@
-import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
-import { ApiKeyOrJweGuard } from '../guards/api-key-or-jwe.guard';
-import { EmailVerifiedGuard } from '../guards/email-verified.guard';
-import { ApiSecurity } from '@nestjs/swagger';
+import { applyDecorators, SetMetadata, UseGuards } from "@nestjs/common";
+import { ApiKeyOrJweGuard } from "../guards/api-key-or-jwe.guard";
+import { EmailVerifiedGuard } from "../guards/email-verified.guard";
+import { ApiSecurity } from "@nestjs/swagger";
 
-export const ALLOW_API_KEY = 'allowApiKey';
+export const ALLOW_API_KEY = "allowApiKey";
 
 /**
  * Allows authentication via JWE (Bearer token/cookie) OR API Key (X-API-Key header).
@@ -28,6 +28,6 @@ export function ApiKeyAuth() {
   return applyDecorators(
     SetMetadata(ALLOW_API_KEY, true),
     UseGuards(ApiKeyOrJweGuard, EmailVerifiedGuard),
-    ApiSecurity('api-key'),
+    ApiSecurity("api-key"),
   );
 }

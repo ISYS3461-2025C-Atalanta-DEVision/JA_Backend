@@ -1,1 +1,1 @@
-export * from './work-history.schema';
+export * from "./work-history.schema";

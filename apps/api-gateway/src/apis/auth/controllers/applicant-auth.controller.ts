@@ -9,19 +9,19 @@ import {
   Req,
   Logger,
   Optional,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { firstValueFrom, timeout, catchError } from 'rxjs';
-import { Response, Request } from 'express';
-import { Throttle } from '@nestjs/throttler';
-import { Public } from '@auth/decorators';
-import { LoginDto, RegisterDto, FirebaseAuthDto } from '@auth/dto';
-import { FirebaseService } from '@auth/firebase';
-import { JweTokenService } from '@auth/services';
-import { Role } from '@auth/enums';
-import { createHash, randomUUID } from 'crypto';
-import { TokenRevocationService } from '@redis/services/token-revocation.service';
+} from "@nestjs/common";
+import { ClientProxy } from "@nestjs/microservices";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { firstValueFrom, timeout, catchError } from "rxjs";
+import { Response, Request } from "express";
+import { Throttle } from "@nestjs/throttler";
+import { Public } from "@auth/decorators";
+import { LoginDto, RegisterDto, FirebaseAuthDto } from "@auth/dto";
+import { FirebaseService } from "@auth/firebase";
+import { JweTokenService } from "@auth/services";
+import { Role } from "@auth/enums";
+import { createHash, randomUUID } from "crypto";
+import { TokenRevocationService } from "@redis/services/token-revocation.service";
 
 /**
  * Gateway Auth Controller
@@ -34,26 +34,27 @@ import { TokenRevocationService } from '@redis/services/token-revocation.service
  * 4. Store tokens in Applicant Service (oauth_accounts)
  * 5. Return tokens to client
  */
-@ApiTags('Applicant Auth')
-@Controller('auth/applicant')
+@ApiTags("Applicant Auth")
+@Controller("auth/applicant")
 export class ApplicantAuthController {
   private readonly logger = new Logger(ApplicantAuthController.name);
   private readonly ACCESS_TOKEN_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
   private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(
-    @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
+    @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
     private readonly firebaseService: FirebaseService,
     private readonly jweTokenService: JweTokenService,
-    @Optional() private readonly tokenRevocationService?: TokenRevocationService,
-  ) { }
+    @Optional()
+    private readonly tokenRevocationService?: TokenRevocationService,
+  ) {}
 
   /**
    * Hash refresh token for storage
    * Using SHA-256 for consistent hashing
    */
   private hashRefreshToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+    return createHash("sha256").update(token).digest("hex");
   }
 
   /**
@@ -82,8 +83,12 @@ export class ApplicantAuthController {
 
     // Calculate expiration dates
     const now = new Date();
-    const accessTokenExp = new Date(now.getTime() + this.ACCESS_TOKEN_EXPIRY_MS);
-    const refreshTokenExp = new Date(now.getTime() + this.REFRESH_TOKEN_EXPIRY_MS);
+    const accessTokenExp = new Date(
+      now.getTime() + this.ACCESS_TOKEN_EXPIRY_MS,
+    );
+    const refreshTokenExp = new Date(
+      now.getTime() + this.REFRESH_TOKEN_EXPIRY_MS,
+    );
 
     // Hash refresh token for storage
     const refreshTokenHash = this.hashRefreshToken(tokens.refreshToken);
@@ -98,7 +103,7 @@ export class ApplicantAuthController {
     await firstValueFrom(
       this.applicantClient
         .send(
-          { cmd: 'applicant.auth.storeTokens' },
+          { cmd: "applicant.auth.storeTokens" },
           {
             applicantId: user.id,
             provider,
@@ -119,31 +124,41 @@ export class ApplicantAuthController {
   /**
    * Set auth cookies
    */
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-    res.cookie('accessToken', accessToken, {
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 30 * 60 * 1000, // 30 minutes
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
 
-  @Post('register')
+  @Post("register")
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  @ApiOperation({ summary: 'Register new applicant', description: 'Create a new applicant account with email/password' })
+  @ApiOperation({
+    summary: "Register new applicant",
+    description: "Create a new applicant account with email/password",
+  })
   @ApiBody({ type: RegisterDto })
-  @ApiResponse({ status: 201, description: 'Registration successful, tokens set in cookies' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: 201,
+    description: "Registration successful, tokens set in cookies",
+  })
+  @ApiResponse({ status: 400, description: "Invalid input data" })
+  @ApiResponse({ status: 409, description: "Email already exists" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -152,18 +167,18 @@ export class ApplicantAuthController {
       // 1. Register applicant in Applicant Service (returns user data only)
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.auth.register' }, registerDto)
+          .send({ cmd: "applicant.auth.register" }, registerDto)
           .pipe(
             timeout(5000),
             catchError((error) => {
-              if (error?.message === 'Email already registered') {
+              if (error?.message === "Email already registered") {
                 throw new HttpException(
-                  'Email already registered',
+                  "Email already registered",
                   HttpStatus.CONFLICT,
                 );
               }
               throw new HttpException(
-                'Applicant service unavailable',
+                "Applicant service unavailable",
                 HttpStatus.SERVICE_UNAVAILABLE,
               );
             }),
@@ -171,7 +186,10 @@ export class ApplicantAuthController {
       );
 
       // 2. Generate tokens in Gateway (using provider from result)
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 3. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -182,20 +200,26 @@ export class ApplicantAuthController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to register',
+        error.message || "Failed to register",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Post('login')
+  @Post("login")
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  @ApiOperation({ summary: 'Login applicant', description: 'Authenticate applicant with email/password' })
+  @ApiOperation({
+    summary: "Login applicant",
+    description: "Authenticate applicant with email/password",
+  })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: 200,
+    description: "Login successful, tokens set in cookies",
+  })
+  @ApiResponse({ status: 401, description: "Invalid credentials" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -204,12 +228,12 @@ export class ApplicantAuthController {
       // 1. Verify credentials in Applicant Service (returns user data only)
       const result = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: 'applicant.auth.verify' }, loginDto)
+          .send({ cmd: "applicant.auth.verify" }, loginDto)
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Applicant service unavailable',
+                error.message || "Applicant service unavailable",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -217,7 +241,10 @@ export class ApplicantAuthController {
       );
 
       // 2. Generate tokens in Gateway (using provider from result)
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 3. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -228,18 +255,22 @@ export class ApplicantAuthController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to login',
+        error.message || "Failed to login",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Post('refresh')
+  @Post("refresh")
   @Public()
-  @ApiOperation({ summary: 'Refresh tokens', description: 'Get new access/refresh tokens using refresh token from cookie' })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiOperation({
+    summary: "Refresh tokens",
+    description:
+      "Get new access/refresh tokens using refresh token from cookie",
+  })
+  @ApiResponse({ status: 200, description: "Tokens refreshed successfully" })
+  @ApiResponse({ status: 401, description: "Invalid or expired refresh token" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -247,28 +278,32 @@ export class ApplicantAuthController {
     try {
       const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) {
-        throw new HttpException('Refresh token not found', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          "Refresh token not found",
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       // 1. Verify and decrypt JWE refresh token in Gateway
-      const payload = await this.jweTokenService.verifyRefreshToken(refreshToken);
+      const payload =
+        await this.jweTokenService.verifyRefreshToken(refreshToken);
 
       // Get provider from JWT payload or default to 'email'
-      const provider = (payload as any).provider || 'email';
+      const provider = (payload as any).provider || "email";
 
       // 2. Validate stored hash in Applicant Service
       const refreshTokenHash = this.hashRefreshToken(refreshToken);
       const result = await firstValueFrom(
         this.applicantClient
           .send(
-            { cmd: 'applicant.auth.validateRefresh' },
+            { cmd: "applicant.auth.validateRefresh" },
             { applicantId: payload.sub, provider, refreshTokenHash },
           )
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Invalid refresh token',
+                error.message || "Invalid refresh token",
                 error.status || HttpStatus.UNAUTHORIZED,
               );
             }),
@@ -276,7 +311,10 @@ export class ApplicantAuthController {
       );
 
       // 3. Generate new JWE tokens in Gateway (using provider from result)
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 4. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -287,7 +325,7 @@ export class ApplicantAuthController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to refresh token',
+        error.message || "Failed to refresh token",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -297,28 +335,36 @@ export class ApplicantAuthController {
    * Firebase Google Authentication
    * Frontend sends Firebase ID token, Gateway verifies and generates JWT
    */
-  @Post('firebase/google')
+  @Post("firebase/google")
   @Public()
   @Throttle({ default: { limit: 10, ttl: 900000 } })
-  @ApiOperation({ summary: 'Firebase Google login', description: 'Authenticate with Firebase Google ID token' })
+  @ApiOperation({
+    summary: "Firebase Google login",
+    description: "Authenticate with Firebase Google ID token",
+  })
   @ApiBody({ type: FirebaseAuthDto })
-  @ApiResponse({ status: 200, description: 'Authentication successful, tokens set in cookies' })
-  @ApiResponse({ status: 401, description: 'Invalid Firebase token' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: 200,
+    description: "Authentication successful, tokens set in cookies",
+  })
+  @ApiResponse({ status: 401, description: "Invalid Firebase token" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async firebaseGoogleLogin(
     @Body() dto: FirebaseAuthDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
       // 1. Verify Firebase ID token in Gateway
-      const firebaseUser = await this.firebaseService.verifyIdToken(dto.idToken);
+      const firebaseUser = await this.firebaseService.verifyIdToken(
+        dto.idToken,
+      );
 
-      Logger.debug(`firebaseUser`, firebaseUser)
+      Logger.debug(`firebaseUser`, firebaseUser);
       // 2. Find or create applicant in Applicant Service
       const result = await firstValueFrom(
         this.applicantClient
           .send(
-            { cmd: 'applicant.auth.firebase' },
+            { cmd: "applicant.auth.firebase" },
             {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
@@ -330,7 +376,7 @@ export class ApplicantAuthController {
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Applicant service unavailable',
+                error.message || "Applicant service unavailable",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -338,7 +384,10 @@ export class ApplicantAuthController {
       );
 
       // 3. Generate tokens in Gateway (using provider from result - 'google')
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 4. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -349,20 +398,20 @@ export class ApplicantAuthController {
         throw error;
       }
       throw new HttpException(
-        'Firebase authentication failed',
+        "Firebase authentication failed",
         HttpStatus.UNAUTHORIZED,
       );
     }
   }
 
-  @Post('logout')
-  @ApiOperation({ summary: 'Logout applicant', description: 'Revoke tokens and clear auth cookies' })
-  @ApiResponse({ status: 200, description: 'Logout successful' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async logout(
-    @Req() req: any,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  @Post("logout")
+  @ApiOperation({
+    summary: "Logout applicant",
+    description: "Revoke tokens and clear auth cookies",
+  })
+  @ApiResponse({ status: 200, description: "Logout successful" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     try {
       const applicantId = req.user?.id;
       if (applicantId) {
@@ -375,20 +424,20 @@ export class ApplicantAuthController {
         // Clear tokens in Applicant Service
         await firstValueFrom(
           this.applicantClient
-            .send({ cmd: 'applicant.auth.logout' }, { applicantId })
+            .send({ cmd: "applicant.auth.logout" }, { applicantId })
             .pipe(timeout(5000)),
         );
       }
 
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
 
-      return { message: 'Logged out successfully' };
+      return { message: "Logged out successfully" };
     } catch (error) {
       // Even if logout fails on backend, clear cookies
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
-      return { message: 'Logged out successfully' };
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      return { message: "Logged out successfully" };
     }
   }
 }

@@ -1,12 +1,12 @@
-import { join } from 'path';
-import { EnvUtil } from '@libs/common/utils/environment.util';
-import { Global, Module, Provider } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { configs } from 'apps/notification-service/src/configs';
-import { AppConfigServiceProvider } from './providers';
+import { join } from "path";
+import { EnvUtil } from "@libs/common/utils/environment.util";
+import { Global, Module, Provider } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { configs } from "apps/notification-service/src/configs";
+import { AppConfigServiceProvider } from "./providers";
 
 // App root: apps/notification-service/ (relative to project root)
-const APP_ROOT = join(process.cwd(), 'apps/notification-service');
+const APP_ROOT = join(process.cwd(), "apps/notification-service");
 
 const providers: Provider[] = [AppConfigServiceProvider];
 

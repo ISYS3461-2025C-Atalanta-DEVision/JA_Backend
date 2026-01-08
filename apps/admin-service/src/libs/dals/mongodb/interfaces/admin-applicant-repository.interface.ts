@@ -1,7 +1,8 @@
-import { IBaseMongoRepository } from './base-repository.interface';
-import { AdminApplicant } from '../schemas';
+import { IBaseMongoRepository } from "./base-repository.interface";
+import { AdminApplicant } from "../schemas";
 
-export interface IAdminApplicantRepository extends IBaseMongoRepository<AdminApplicant> {
+export interface IAdminApplicantRepository
+  extends IBaseMongoRepository<AdminApplicant> {
   findByName(name: string): Promise<AdminApplicant | null>;
   findByEmail(email: string): Promise<AdminApplicant | null>;
   incrementLoginAttempts(id: string): Promise<void>;

@@ -1,1 +1,1 @@
-export * from './work-history-response.dto';
+export * from "./work-history-response.dto";

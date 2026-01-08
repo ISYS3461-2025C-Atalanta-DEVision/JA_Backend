@@ -1,1 +1,1 @@
-export * from './file-validation.constants';
+export * from "./file-validation.constants";

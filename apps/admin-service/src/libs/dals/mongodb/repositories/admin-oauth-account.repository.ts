@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { BaseMongoRepository } from './base.repository';
-import { AdminOAuthAccount } from '../schemas';
-import { IAdminOAuthAccountRepository, TokenData } from '../interfaces';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { BaseMongoRepository } from "./base.repository";
+import { AdminOAuthAccount } from "../schemas";
+import { IAdminOAuthAccountRepository, TokenData } from "../interfaces";
 
 @Injectable()
 export class AdminOAuthAccountRepository
@@ -167,9 +167,7 @@ export class AdminOAuthAccountRepository
     provider: string,
     providerId: string,
   ): Promise<boolean> {
-    const result = await this.model
-      .deleteOne({ provider, providerId })
-      .exec();
+    const result = await this.model.deleteOne({ provider, providerId }).exec();
     return result.deletedCount > 0;
   }
 }

@@ -1,1 +1,1 @@
-export * from './education-service.interface';
+export * from "./education-service.interface";

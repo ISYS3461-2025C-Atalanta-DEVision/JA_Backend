@@ -1,37 +1,59 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { ApplicantRepository, Applicant } from '../../../libs/dals/mongodb';
-import { CreateApplicantDto, UpdateApplicantDto, ApplicantResponseDto } from '../apis/applicant/dtos';
-import { IApplicantService } from '../interfaces';
-import { MailerService } from '@libs/mailer';
-import { generateEmailVerificationToken } from '@libs/auth';
-import { AddEmailHashDto } from '../apis/applicant/dtos/requests/add-email-verification-hash';
-import { createHash } from 'crypto';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import { ApplicantRepository, Applicant } from "../../../libs/dals/mongodb";
+import {
+  CreateApplicantDto,
+  UpdateApplicantDto,
+  ApplicantResponseDto,
+} from "../apis/applicant/dtos";
+import { IApplicantService } from "../interfaces";
+import { MailerService } from "@libs/mailer";
+import { generateEmailVerificationToken } from "@libs/auth";
+import { AddEmailHashDto } from "../apis/applicant/dtos/requests/add-email-verification-hash";
+import { createHash } from "crypto";
+import { FilterBuilder } from "@common/filters";
+import { FilterItem, SortItem } from "@common/dtos/filter.dto";
+import { APPLICANT_FILTER_CONFIG } from "../../../configs";
 
 @Injectable()
 export class ApplicantService implements IApplicantService {
   private readonly logger = new Logger(ApplicantService.name);
+  private readonly filterBuilder = new FilterBuilder<Applicant>(
+    APPLICANT_FILTER_CONFIG,
+  );
 
   constructor(
     private readonly applicantRepository: ApplicantRepository,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
 
   async create(createDto: CreateApplicantDto): Promise<ApplicantResponseDto> {
     try {
-      const existing = await this.applicantRepository.findByEmail(createDto.email);
+      const existing = await this.applicantRepository.findByEmail(
+        createDto.email,
+      );
       if (existing) {
-        throw new ConflictException('Applicant with this email already exists');
+        throw new ConflictException("Applicant with this email already exists");
       }
 
       const applicant = await this.applicantRepository.create(createDto);
-      this.sendVerificationEmail(applicant._id.toString())
+      this.sendVerificationEmail(applicant._id.toString());
 
       return this.toResponseDto(applicant);
     } catch (error) {
-      this.logger.error(`Create applicant failed for ${createDto.email}`, error.stack);
+      this.logger.error(
+        `Create applicant failed for ${createDto.email}`,
+        error.stack,
+      );
       if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Applicant with this email already exists');
-      throw new InternalServerErrorException('Failed to create applicant');
+      if (error.code === 11000)
+        throw new ConflictException("Applicant with this email already exists");
+      throw new InternalServerErrorException("Failed to create applicant");
     }
   }
 
@@ -45,36 +67,51 @@ export class ApplicantService implements IApplicantService {
     } catch (error) {
       this.logger.error(`Find applicant failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to find applicant');
+      throw new InternalServerErrorException("Failed to find applicant");
     }
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    filters?: FilterItem[],
+    sorting?: SortItem[],
+  ): Promise<{
     data: ApplicantResponseDto[];
     total: number;
     page: number;
     limit: number;
+    totalPages: number;
   }> {
     try {
       const skip = (page - 1) * limit;
-      const [applicants, total] = await this.applicantRepository.findManyAndCount(
-        {},
-        { skip, limit, sort: { createdAt: -1 } },
-      );
+      const query = this.filterBuilder.buildQuery(filters);
+      const sort = this.filterBuilder.buildSort(sorting);
+
+      const [applicants, total] =
+        await this.applicantRepository.findManyAndCount(query, {
+          skip,
+          limit,
+          sort,
+        });
 
       return {
-        data: applicants.map(c => this.toResponseDto(c)),
+        data: applicants.map((c) => this.toResponseDto(c)),
         total,
         page,
         limit,
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
       this.logger.error(`Find all applicants failed`, error.stack);
-      throw new InternalServerErrorException('Failed to fetch applicants');
+      throw new InternalServerErrorException("Failed to fetch applicants");
     }
   }
 
-  async update(id: string, updateDto: UpdateApplicantDto): Promise<ApplicantResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateApplicantDto,
+  ): Promise<ApplicantResponseDto> {
     try {
       const applicant = await this.applicantRepository.findById(id);
       if (!applicant) {
@@ -82,9 +119,11 @@ export class ApplicantService implements IApplicantService {
       }
 
       if (updateDto.email && updateDto.email !== applicant.email) {
-        const existing = await this.applicantRepository.findByEmail(updateDto.email);
+        const existing = await this.applicantRepository.findByEmail(
+          updateDto.email,
+        );
         if (existing) {
-          throw new ConflictException('Email already in use');
+          throw new ConflictException("Email already in use");
         }
       }
 
@@ -92,9 +131,14 @@ export class ApplicantService implements IApplicantService {
       return this.toResponseDto(updated);
     } catch (error) {
       this.logger.error(`Update applicant failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Email already in use');
-      throw new InternalServerErrorException('Failed to update applicant');
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      )
+        throw error;
+      if (error.code === 11000)
+        throw new ConflictException("Email already in use");
+      throw new InternalServerErrorException("Failed to update applicant");
     }
   }
 
@@ -109,16 +153,18 @@ export class ApplicantService implements IApplicantService {
       await this.applicantRepository.update(id, { isActive: false });
       return {
         success: true,
-        message: 'Applicant deleted successfully',
+        message: "Applicant deleted successfully",
       };
     } catch (error) {
       this.logger.error(`Delete applicant failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to delete applicant');
+      throw new InternalServerErrorException("Failed to delete applicant");
     }
   }
 
-  async sendVerificationEmail(id: string): Promise<{ success: boolean; message: string }> {
+  async sendVerificationEmail(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const applicant = await this.applicantRepository.findById(id);
       if (!applicant) {
@@ -128,43 +174,42 @@ export class ApplicantService implements IApplicantService {
       const { rawToken, hashedToken, expires } =
         generateEmailVerificationToken();
 
-      await this.mailerService.sendEmailVerification(
-        applicant.email,
-        rawToken,
-      );
+      await this.mailerService.sendEmailVerification(applicant.email, rawToken);
 
       applicant.emailVerificationToken = hashedToken;
       applicant.emailVerificationTokenExpires = expires;
 
       const updateDto: AddEmailHashDto = {
         emailVerificationToken: hashedToken,
-        emailVerificationTokenExpires: expires
-      }
+        emailVerificationTokenExpires: expires,
+      };
 
       await this.applicantRepository.update(id, updateDto);
 
       return {
         success: true,
-        message: `Email successfully sent to ${applicant.email}`
-      }
+        message: `Email successfully sent to ${applicant.email}`,
+      };
     } catch (error) {
-      this.logger.error(`Cannot activate applicant email failed for ${id}`, error.stack);
+      this.logger.error(
+        `Cannot activate applicant email failed for ${id}`,
+        error.stack,
+      );
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to activate email');
+      throw new InternalServerErrorException("Failed to activate email");
     }
   }
 
-  async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+  async verifyEmail(
+    token: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
-
-      const hashedToken = createHash('sha256')
-        .update(token)
-        .digest('hex');
+      const hashedToken = createHash("sha256").update(token).digest("hex");
 
       const user = await this.applicantRepository.findOne({
         emailVerificationToken: hashedToken,
         emailVerificationTokenExpires: { $gt: new Date() },
-      });;
+      });
 
       if (!user) {
         throw new NotFoundException(`Applicant account not found`);
@@ -173,19 +218,19 @@ export class ApplicantService implements IApplicantService {
       const updateDto: AddEmailHashDto = {
         emailVerified: true,
         emailVerificationToken: null,
-        emailVerificationTokenExpires: null
-      }
+        emailVerificationTokenExpires: null,
+      };
 
       await this.applicantRepository.update(user._id.toString(), updateDto);
 
       return {
         success: true,
-        message: `Email successfully activated for ${user._id.toString()}`
-      }
+        message: `Email successfully activated for ${user._id.toString()}`,
+      };
     } catch (error) {
       this.logger.error(`Cannot activate applicant email`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to activate email');
+      throw new InternalServerErrorException("Failed to activate email");
     }
   }
 
@@ -199,7 +244,7 @@ export class ApplicantService implements IApplicantService {
       addressProvinceCode: applicant.addressProvinceCode,
       addressProvinceName: applicant.addressProvinceName,
       isActive: applicant.isActive,
-       createdAt: applicant.createdAt,
+      createdAt: applicant.createdAt,
       updatedAt: applicant.updatedAt,
     };
   }

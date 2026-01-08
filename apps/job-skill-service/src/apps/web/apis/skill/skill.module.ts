@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { SkillController } from './controllers';
-import { MongodbModule } from 'apps/job-skill-service/src/libs';
-import { SkillServiceWebProvider } from '../../providers';
+import { Module } from "@nestjs/common";
+import { SkillController } from "./controllers";
+import { MongodbModule } from "apps/job-skill-service/src/libs";
+import { SkillServiceWebProvider } from "../../providers";
 
 @Module({
   imports: [MongodbModule],

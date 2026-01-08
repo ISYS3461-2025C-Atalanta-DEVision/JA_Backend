@@ -1,2 +1,2 @@
-export * from './base-repository.interface';
-export * from './education-repository.interface';
+export * from "./base-repository.interface";
+export * from "./education-repository.interface";

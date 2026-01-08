@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Reflector } from '@nestjs/core';
-import { ApiKeyOrJwtGuard } from './api-key-or-jwt.guard';
+import { Test, TestingModule } from "@nestjs/testing";
+import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Reflector } from "@nestjs/core";
+import { ApiKeyOrJwtGuard } from "./api-key-or-jwt.guard";
 
-describe('ApiKeyOrJwtGuard', () => {
+describe("ApiKeyOrJwtGuard", () => {
   let guard: ApiKeyOrJwtGuard;
   let reflector: Reflector;
 
@@ -14,7 +14,7 @@ describe('ApiKeyOrJwtGuard', () => {
   ): ExecutionContext => {
     const mockRequest = {
       headers,
-      ip: '127.0.0.1',
+      ip: "127.0.0.1",
     };
 
     const context = {
@@ -28,7 +28,7 @@ describe('ApiKeyOrJwtGuard', () => {
     return context;
   };
 
-  describe('API Key authentication', () => {
+  describe("API Key authentication", () => {
     beforeEach(async () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
@@ -37,7 +37,7 @@ describe('ApiKeyOrJwtGuard', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'API_KEY') return 'test-api-key-12345';
+                if (key === "API_KEY") return "test-api-key-12345";
                 return undefined;
               }),
             },
@@ -55,13 +55,13 @@ describe('ApiKeyOrJwtGuard', () => {
       reflector = module.get<Reflector>(Reflector);
     });
 
-    it('should be defined', () => {
+    it("should be defined", () => {
       expect(guard).toBeDefined();
     });
 
-    it('should allow request with valid API key (no JWT)', async () => {
+    it("should allow request with valid API key (no JWT)", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': 'test-api-key-12345',
+        "x-api-key": "test-api-key-12345",
       });
 
       const result = await guard.canActivate(context);
@@ -69,37 +69,45 @@ describe('ApiKeyOrJwtGuard', () => {
       expect(result).toBe(true);
       const request = context.switchToHttp().getRequest();
       expect(request.apiKeyAuth).toBe(true);
-      expect(request.authType).toBe('apiKey');
+      expect(request.authType).toBe("apiKey");
     });
 
-    it('should reject request with invalid API key (and no JWT)', async () => {
+    it("should reject request with invalid API key (and no JWT)", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': 'wrong-api-key',
+        "x-api-key": "wrong-api-key",
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      await expect(guard.canActivate(context)).rejects.toThrow('Invalid API Key');
-    });
-
-    it('should reject request with neither API key nor JWT', async () => {
-      const context = createMockExecutionContext({});
-
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
       await expect(guard.canActivate(context)).rejects.toThrow(
-        'Authentication required (JWT or API Key)',
+        UnauthorizedException,
+      );
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        "Invalid API Key",
       );
     });
 
-    it('should handle empty API key and reject', async () => {
+    it("should reject request with neither API key nor JWT", async () => {
+      const context = createMockExecutionContext({});
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        "Authentication required (JWT or API Key)",
+      );
+    });
+
+    it("should handle empty API key and reject", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': '',
+        "x-api-key": "",
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
-  describe('JWT authentication fallback', () => {
+  describe("JWT authentication fallback", () => {
     let mockSuperCanActivate: jest.SpyInstance;
 
     beforeEach(async () => {
@@ -110,7 +118,7 @@ describe('ApiKeyOrJwtGuard', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'API_KEY') return 'test-api-key-12345';
+                if (key === "API_KEY") return "test-api-key-12345";
                 return undefined;
               }),
             },
@@ -129,7 +137,10 @@ describe('ApiKeyOrJwtGuard', () => {
 
       // Mock the super.canActivate method from AuthGuard('jwt')
       mockSuperCanActivate = jest
-        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate')
+        .spyOn(
+          Object.getPrototypeOf(Object.getPrototypeOf(guard)),
+          "canActivate",
+        )
         .mockImplementation(() => Promise.resolve(true));
     });
 
@@ -137,9 +148,9 @@ describe('ApiKeyOrJwtGuard', () => {
       mockSuperCanActivate.mockRestore();
     });
 
-    it('should allow request with valid JWT (no API key)', async () => {
+    it("should allow request with valid JWT (no API key)", async () => {
       const context = createMockExecutionContext({
-        authorization: 'Bearer valid-jwt-token',
+        authorization: "Bearer valid-jwt-token",
       });
 
       const result = await guard.canActivate(context);
@@ -147,13 +158,13 @@ describe('ApiKeyOrJwtGuard', () => {
       expect(result).toBe(true);
       expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
       const request = context.switchToHttp().getRequest();
-      expect(request.authType).toBe('jwt');
+      expect(request.authType).toBe("jwt");
     });
 
-    it('should prefer API key over JWT when both provided and API key is valid', async () => {
+    it("should prefer API key over JWT when both provided and API key is valid", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': 'test-api-key-12345',
-        authorization: 'Bearer valid-jwt-token',
+        "x-api-key": "test-api-key-12345",
+        authorization: "Bearer valid-jwt-token",
       });
 
       const result = await guard.canActivate(context);
@@ -162,31 +173,37 @@ describe('ApiKeyOrJwtGuard', () => {
       // Should not call JWT validation
       expect(mockSuperCanActivate).not.toHaveBeenCalled();
       const request = context.switchToHttp().getRequest();
-      expect(request.authType).toBe('apiKey');
+      expect(request.authType).toBe("apiKey");
     });
 
-    it('should fallback to JWT when API key is invalid', async () => {
+    it("should fallback to JWT when API key is invalid", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': 'wrong-api-key',
-        authorization: 'Bearer valid-jwt-token',
+        "x-api-key": "wrong-api-key",
+        authorization: "Bearer valid-jwt-token",
       });
 
       // API key is invalid, should throw before JWT fallback
-      await expect(guard.canActivate(context)).rejects.toThrow('Invalid API Key');
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        "Invalid API Key",
+      );
     });
 
-    it('should reject when JWT validation fails', async () => {
-      mockSuperCanActivate.mockRejectedValue(new UnauthorizedException('Invalid JWT'));
+    it("should reject when JWT validation fails", async () => {
+      mockSuperCanActivate.mockRejectedValue(
+        new UnauthorizedException("Invalid JWT"),
+      );
 
       const context = createMockExecutionContext({
-        authorization: 'Bearer invalid-jwt-token',
+        authorization: "Bearer invalid-jwt-token",
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
-  describe('public routes', () => {
+  describe("public routes", () => {
     beforeEach(async () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
@@ -195,7 +212,7 @@ describe('ApiKeyOrJwtGuard', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'API_KEY') return 'test-api-key-12345';
+                if (key === "API_KEY") return "test-api-key-12345";
                 return undefined;
               }),
             },
@@ -213,7 +230,7 @@ describe('ApiKeyOrJwtGuard', () => {
       reflector = module.get<Reflector>(Reflector);
     });
 
-    it('should allow public routes without authentication', async () => {
+    it("should allow public routes without authentication", async () => {
       const context = createMockExecutionContext({});
 
       const result = await guard.canActivate(context);
@@ -222,7 +239,7 @@ describe('ApiKeyOrJwtGuard', () => {
     });
   });
 
-  describe('API key not configured', () => {
+  describe("API key not configured", () => {
     let mockSuperCanActivate: jest.SpyInstance;
 
     beforeEach(async () => {
@@ -247,7 +264,10 @@ describe('ApiKeyOrJwtGuard', () => {
       guard = module.get<ApiKeyOrJwtGuard>(ApiKeyOrJwtGuard);
 
       mockSuperCanActivate = jest
-        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate')
+        .spyOn(
+          Object.getPrototypeOf(Object.getPrototypeOf(guard)),
+          "canActivate",
+        )
         .mockImplementation(() => Promise.resolve(true));
     });
 
@@ -255,10 +275,10 @@ describe('ApiKeyOrJwtGuard', () => {
       mockSuperCanActivate.mockRestore();
     });
 
-    it('should fallback to JWT when API key provided but not configured', async () => {
+    it("should fallback to JWT when API key provided but not configured", async () => {
       const context = createMockExecutionContext({
-        'x-api-key': 'any-key',
-        authorization: 'Bearer valid-jwt-token',
+        "x-api-key": "any-key",
+        authorization: "Bearer valid-jwt-token",
       });
 
       const result = await guard.canActivate(context);
@@ -268,7 +288,7 @@ describe('ApiKeyOrJwtGuard', () => {
     });
   });
 
-  describe('handleRequest method', () => {
+  describe("handleRequest method", () => {
     beforeEach(async () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
@@ -291,22 +311,22 @@ describe('ApiKeyOrJwtGuard', () => {
       guard = module.get<ApiKeyOrJwtGuard>(ApiKeyOrJwtGuard);
     });
 
-    it('should return user when provided', () => {
-      const mockUser = { id: '123', email: 'test@example.com' };
+    it("should return user when provided", () => {
+      const mockUser = { id: "123", email: "test@example.com" };
 
       const result = guard.handleRequest(null, mockUser, null);
 
       expect(result).toEqual(mockUser);
     });
 
-    it('should return undefined for API key auth (no user)', () => {
+    it("should return undefined for API key auth (no user)", () => {
       const result = guard.handleRequest(null, undefined, null);
 
       expect(result).toBeUndefined();
     });
 
-    it('should throw error when error is provided', () => {
-      const error = new UnauthorizedException('Test error');
+    it("should throw error when error is provided", () => {
+      const error = new UnauthorizedException("Test error");
 
       expect(() => guard.handleRequest(error, null, null)).toThrow(error);
     });

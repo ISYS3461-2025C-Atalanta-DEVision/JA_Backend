@@ -1,32 +1,64 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { JobCategoryRepository, JobCategory, SkillRepository } from '../../../libs/dals/mongodb';
-import { CreateJobCategoryDto, UpdateJobCategoryDto, JobCategoryResponseDto } from '../apis/job-category/dtos';
-import { IJobCategoryService } from '../interfaces';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import {
+  JobCategoryRepository,
+  JobCategory,
+  SkillRepository,
+} from "../../../libs/dals/mongodb";
+import {
+  CreateJobCategoryDto,
+  UpdateJobCategoryDto,
+  JobCategoryResponseDto,
+} from "../apis/job-category/dtos";
+import { IJobCategoryService } from "../interfaces";
+import { FilterBuilder } from "@common/filters";
+import { FilterItem, SortItem } from "@common/dtos/filter.dto";
+import { JOB_CATEGORY_FILTER_CONFIG } from "../../../configs";
 
 @Injectable()
 export class JobCategoryService implements IJobCategoryService {
   private readonly logger = new Logger(JobCategoryService.name);
+  private readonly filterBuilder = new FilterBuilder<JobCategory>(
+    JOB_CATEGORY_FILTER_CONFIG,
+  );
 
   constructor(
     private readonly jobCategoryRepository: JobCategoryRepository,
     private readonly skillRepository: SkillRepository,
-  ) { }
+  ) {}
 
-  async create(createDto: CreateJobCategoryDto): Promise<JobCategoryResponseDto> {
+  async create(
+    createDto: CreateJobCategoryDto,
+  ): Promise<JobCategoryResponseDto> {
     try {
       // Check for duplicate name (optional - remove if not needed)
-      const existing = await this.jobCategoryRepository.findByName(createDto.name);
+      const existing = await this.jobCategoryRepository.findByName(
+        createDto.name,
+      );
       if (existing) {
-        throw new ConflictException('JobCategory with this name already exists');
+        throw new ConflictException(
+          "JobCategory with this name already exists",
+        );
       }
 
       const jobCategory = await this.jobCategoryRepository.create(createDto);
       return this.toResponseDto(jobCategory);
     } catch (error) {
-      this.logger.error(`Create jobCategory failed for ${createDto.name}`, error.stack);
+      this.logger.error(
+        `Create jobCategory failed for ${createDto.name}`,
+        error.stack,
+      );
       if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('JobCategory with this name already exists');
-      throw new InternalServerErrorException('Failed to create jobCategory');
+      if (error.code === 11000)
+        throw new ConflictException(
+          "JobCategory with this name already exists",
+        );
+      throw new InternalServerErrorException("Failed to create jobCategory");
     }
   }
 
@@ -40,36 +72,51 @@ export class JobCategoryService implements IJobCategoryService {
     } catch (error) {
       this.logger.error(`Find jobCategory failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to find jobCategory');
+      throw new InternalServerErrorException("Failed to find jobCategory");
     }
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    filters?: FilterItem[],
+    sorting?: SortItem[],
+  ): Promise<{
     data: JobCategoryResponseDto[];
     total: number;
     page: number;
     limit: number;
+    totalPages: number;
   }> {
     try {
       const skip = (page - 1) * limit;
-      const [jobCategories, total] = await this.jobCategoryRepository.findManyAndCount(
-        {},
-        { skip, limit, sort: { createdAt: -1 } },
-      );
+      const query = this.filterBuilder.buildQuery(filters);
+      const sort = this.filterBuilder.buildSort(sorting);
+
+      const [jobCategories, total] =
+        await this.jobCategoryRepository.findManyAndCount(query, {
+          skip,
+          limit,
+          sort,
+        });
 
       return {
-        data: jobCategories.map(c => this.toResponseDto(c)),
+        data: jobCategories.map((c) => this.toResponseDto(c)),
         total,
         page,
         limit,
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
       this.logger.error(`Find all job-categories failed`, error.stack);
-      throw new InternalServerErrorException('Failed to fetch job-categories');
+      throw new InternalServerErrorException("Failed to fetch job-categories");
     }
   }
 
-  async update(id: string, updateDto: UpdateJobCategoryDto): Promise<JobCategoryResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateJobCategoryDto,
+  ): Promise<JobCategoryResponseDto> {
     try {
       const jobCategory = await this.jobCategoryRepository.findById(id);
       if (!jobCategory) {
@@ -78,9 +125,11 @@ export class JobCategoryService implements IJobCategoryService {
 
       // Check for duplicate name if name is being updated
       if (updateDto.name && updateDto.name !== jobCategory.name) {
-        const existing = await this.jobCategoryRepository.findByName(updateDto.name);
+        const existing = await this.jobCategoryRepository.findByName(
+          updateDto.name,
+        );
         if (existing) {
-          throw new ConflictException('Name already in use');
+          throw new ConflictException("Name already in use");
         }
       }
 
@@ -88,9 +137,14 @@ export class JobCategoryService implements IJobCategoryService {
       return this.toResponseDto(updated);
     } catch (error) {
       this.logger.error(`Update jobCategory failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Name already in use');
-      throw new InternalServerErrorException('Failed to update jobCategory');
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      )
+        throw error;
+      if (error.code === 11000)
+        throw new ConflictException("Name already in use");
+      throw new InternalServerErrorException("Failed to update jobCategory");
     }
   }
 
@@ -105,17 +159,20 @@ export class JobCategoryService implements IJobCategoryService {
       await this.jobCategoryRepository.update(id, { isActive: false });
 
       // Cascade soft delete to skills
-      const cascadeCount = await this.skillRepository.softDeleteByJobCategoryId(id);
-      this.logger.log(`Cascade soft deleted ${cascadeCount} skills for category ${id}`);
+      const cascadeCount =
+        await this.skillRepository.softDeleteByJobCategoryId(id);
+      this.logger.log(
+        `Cascade soft deleted ${cascadeCount} skills for category ${id}`,
+      );
 
       return {
         success: true,
-        message: 'JobCategory deleted successfully',
+        message: "JobCategory deleted successfully",
       };
     } catch (error) {
       this.logger.error(`Delete jobCategory failed for ${id}`, error.stack);
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to delete jobCategory');
+      throw new InternalServerErrorException("Failed to delete jobCategory");
     }
   }
 
@@ -127,20 +184,28 @@ export class JobCategoryService implements IJobCategoryService {
       }
 
       // Cascade hard delete skills first
-      const cascadeCount = await this.skillRepository.hardDeleteByJobCategoryId(id);
-      this.logger.log(`Cascade hard deleted ${cascadeCount} skills for category ${id}`);
+      const cascadeCount =
+        await this.skillRepository.hardDeleteByJobCategoryId(id);
+      this.logger.log(
+        `Cascade hard deleted ${cascadeCount} skills for category ${id}`,
+      );
 
       // Then hard delete category
       await this.jobCategoryRepository.delete(id);
 
       return {
         success: true,
-        message: 'JobCategory permanently deleted',
+        message: "JobCategory permanently deleted",
       };
     } catch (error) {
-      this.logger.error(`Hard delete jobCategory failed for ${id}`, error.stack);
+      this.logger.error(
+        `Hard delete jobCategory failed for ${id}`,
+        error.stack,
+      );
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to permanently delete jobCategory');
+      throw new InternalServerErrorException(
+        "Failed to permanently delete jobCategory",
+      );
     }
   }
 
@@ -152,7 +217,7 @@ export class JobCategoryService implements IJobCategoryService {
       isActive: jobCategory.isActive,
       createdAt: jobCategory.createdAt,
       updatedAt: jobCategory.updatedAt,
-      icon: jobCategory.icon
+      icon: jobCategory.icon,
     };
   }
 }

@@ -1,5 +1,5 @@
-import { IBaseMongoRepository } from './base-repository.interface';
-import { AdminOAuthAccount } from '../schemas';
+import { IBaseMongoRepository } from "./base-repository.interface";
+import { AdminOAuthAccount } from "../schemas";
 
 export interface TokenData {
   accessToken: string;

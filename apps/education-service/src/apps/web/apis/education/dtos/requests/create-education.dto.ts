@@ -1,4 +1,4 @@
-import { EducationLevel } from 'apps/education-service/src/libs/dals/mongodb/schemas/education.schema';
+import { EducationLevel } from "apps/education-service/src/libs/dals/mongodb/schemas/education.schema";
 import {
   IsEnum,
   IsMongoId,
@@ -9,7 +9,7 @@ import {
   IsDateString,
   Min,
   Max,
-} from 'class-validator';
+} from "class-validator";
 
 export class CreateEducationDto {
   @IsNotEmpty()

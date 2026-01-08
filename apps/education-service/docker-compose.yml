@@ -1,0 +1,23 @@
+version: "3.8"
+
+# Education Service Docker Compose
+# Usage: docker-compose up -d --build
+
+services:
+  education-service:
+    build:
+      context: ../..
+      dockerfile: apps/education-service/Dockerfile
+    container_name: education-service
+    env_file:
+      - .env.development
+    ports:
+      - "3006:3006"   # TCP microservice port
+      - "3016:3016"   # Health check port
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3016/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

@@ -1,1 +1,1 @@
-export * from './storage-folder.enum';
+export * from "./storage-folder.enum";

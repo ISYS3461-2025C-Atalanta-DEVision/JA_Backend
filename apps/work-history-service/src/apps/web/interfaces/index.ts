@@ -1,1 +1,1 @@
-export * from './work-history-service.interface';
+export * from "./work-history-service.interface";

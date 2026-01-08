@@ -1,1 +1,1 @@
-export * from './work-history.service';
+export * from "./work-history.service";

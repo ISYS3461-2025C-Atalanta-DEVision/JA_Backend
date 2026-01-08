@@ -9,18 +9,18 @@ import {
   Req,
   Logger,
   Optional,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { firstValueFrom, timeout, catchError } from 'rxjs';
-import { Response, Request } from 'express';
-import { Throttle } from '@nestjs/throttler';
-import { Public } from '@auth/decorators';
-import { LoginDto } from '@auth/dto';
-import { JweTokenService } from '@auth/services';
-import { Role } from '@auth/enums';
-import { createHash, randomUUID } from 'crypto';
-import { TokenRevocationService } from '@redis/services/token-revocation.service';
+} from "@nestjs/common";
+import { ClientProxy } from "@nestjs/microservices";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { firstValueFrom, timeout, catchError } from "rxjs";
+import { Response, Request } from "express";
+import { Throttle } from "@nestjs/throttler";
+import { Public } from "@auth/decorators";
+import { LoginDto } from "@auth/dto";
+import { JweTokenService } from "@auth/services";
+import { Role } from "@auth/enums";
+import { createHash, randomUUID } from "crypto";
+import { TokenRevocationService } from "@redis/services/token-revocation.service";
 
 /**
  * Gateway Admin Auth Controller
@@ -33,17 +33,18 @@ import { TokenRevocationService } from '@redis/services/token-revocation.service
  * 4. Store tokens in Admin Service (admin_oauth_accounts)
  * 5. Return tokens to client
  */
-@ApiTags('Admin Auth')
-@Controller('auth/admin')
+@ApiTags("Admin Auth")
+@Controller("auth/admin")
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name);
   private readonly ACCESS_TOKEN_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
   private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(
-    @Inject('ADMIN_SERVICE') private readonly adminClient: ClientProxy,
+    @Inject("ADMIN_SERVICE") private readonly adminClient: ClientProxy,
     private readonly jweTokenService: JweTokenService,
-    @Optional() private readonly tokenRevocationService?: TokenRevocationService,
+    @Optional()
+    private readonly tokenRevocationService?: TokenRevocationService,
   ) {}
 
   /**
@@ -51,7 +52,7 @@ export class AdminAuthController {
    * Using SHA-256 for consistent hashing
    */
   private hashRefreshToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+    return createHash("sha256").update(token).digest("hex");
   }
 
   /**
@@ -80,8 +81,12 @@ export class AdminAuthController {
 
     // Calculate expiration dates
     const now = new Date();
-    const accessTokenExp = new Date(now.getTime() + this.ACCESS_TOKEN_EXPIRY_MS);
-    const refreshTokenExp = new Date(now.getTime() + this.REFRESH_TOKEN_EXPIRY_MS);
+    const accessTokenExp = new Date(
+      now.getTime() + this.ACCESS_TOKEN_EXPIRY_MS,
+    );
+    const refreshTokenExp = new Date(
+      now.getTime() + this.REFRESH_TOKEN_EXPIRY_MS,
+    );
 
     // Hash refresh token for storage
     const refreshTokenHash = this.hashRefreshToken(tokens.refreshToken);
@@ -96,7 +101,7 @@ export class AdminAuthController {
     await firstValueFrom(
       this.adminClient
         .send(
-          { cmd: 'admin.auth.storeTokens' },
+          { cmd: "admin.auth.storeTokens" },
           {
             adminId: user.id,
             provider,
@@ -117,30 +122,40 @@ export class AdminAuthController {
   /**
    * Set auth cookies
    */
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-    res.cookie('accessToken', accessToken, {
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 30 * 60 * 1000, // 30 minutes
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
 
-  @Post('login')
+  @Post("login")
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  @ApiOperation({ summary: 'Login admin', description: 'Authenticate admin with email/password' })
+  @ApiOperation({
+    summary: "Login admin",
+    description: "Authenticate admin with email/password",
+  })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: 200,
+    description: "Login successful, tokens set in cookies",
+  })
+  @ApiResponse({ status: 401, description: "Invalid credentials" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -148,21 +163,22 @@ export class AdminAuthController {
     try {
       // 1. Verify credentials in Admin Service (returns user data only)
       const result = await firstValueFrom(
-        this.adminClient
-          .send({ cmd: 'admin.auth.verify' }, loginDto)
-          .pipe(
-            timeout(5000),
-            catchError((error) => {
-              throw new HttpException(
-                error.message || 'Admin service unavailable',
-                error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-              );
-            }),
-          ),
+        this.adminClient.send({ cmd: "admin.auth.verify" }, loginDto).pipe(
+          timeout(5000),
+          catchError((error) => {
+            throw new HttpException(
+              error.message || "Admin service unavailable",
+              error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+          }),
+        ),
       );
 
       // 2. Generate tokens in Gateway (using provider from result)
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 3. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -173,18 +189,22 @@ export class AdminAuthController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to login',
+        error.message || "Failed to login",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Post('refresh')
+  @Post("refresh")
   @Public()
-  @ApiOperation({ summary: 'Refresh tokens', description: 'Get new access/refresh tokens using refresh token from cookie' })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiOperation({
+    summary: "Refresh tokens",
+    description:
+      "Get new access/refresh tokens using refresh token from cookie",
+  })
+  @ApiResponse({ status: 200, description: "Tokens refreshed successfully" })
+  @ApiResponse({ status: 401, description: "Invalid or expired refresh token" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -192,28 +212,32 @@ export class AdminAuthController {
     try {
       const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) {
-        throw new HttpException('Refresh token not found', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          "Refresh token not found",
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       // 1. Verify and decrypt JWE refresh token in Gateway
-      const payload = await this.jweTokenService.verifyRefreshToken(refreshToken);
+      const payload =
+        await this.jweTokenService.verifyRefreshToken(refreshToken);
 
       // Get provider from JWT payload or default to 'email'
-      const provider = (payload as any).provider || 'email';
+      const provider = (payload as any).provider || "email";
 
       // 2. Validate stored hash in Admin Service
       const refreshTokenHash = this.hashRefreshToken(refreshToken);
       const result = await firstValueFrom(
         this.adminClient
           .send(
-            { cmd: 'admin.auth.validateRefresh' },
+            { cmd: "admin.auth.validateRefresh" },
             { adminId: payload.sub, provider, refreshTokenHash },
           )
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Invalid refresh token',
+                error.message || "Invalid refresh token",
                 error.status || HttpStatus.UNAUTHORIZED,
               );
             }),
@@ -221,7 +245,10 @@ export class AdminAuthController {
       );
 
       // 3. Generate new JWE tokens in Gateway (using provider from result)
-      const tokens = await this.generateAndStoreTokens(result.user, result.provider);
+      const tokens = await this.generateAndStoreTokens(
+        result.user,
+        result.provider,
+      );
 
       // 4. Set cookies
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -232,20 +259,20 @@ export class AdminAuthController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Failed to refresh token',
+        error.message || "Failed to refresh token",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Post('logout')
-  @ApiOperation({ summary: 'Logout admin', description: 'Revoke tokens and clear auth cookies' })
-  @ApiResponse({ status: 200, description: 'Logout successful' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async logout(
-    @Req() req: any,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  @Post("logout")
+  @ApiOperation({
+    summary: "Logout admin",
+    description: "Revoke tokens and clear auth cookies",
+  })
+  @ApiResponse({ status: 200, description: "Logout successful" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     try {
       const adminId = req.user?.id;
       if (adminId) {
@@ -258,20 +285,20 @@ export class AdminAuthController {
         // Clear tokens in Admin Service
         await firstValueFrom(
           this.adminClient
-            .send({ cmd: 'admin.auth.logout' }, { adminId })
+            .send({ cmd: "admin.auth.logout" }, { adminId })
             .pipe(timeout(5000)),
         );
       }
 
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
 
-      return { message: 'Logged out successfully' };
+      return { message: "Logged out successfully" };
     } catch (error) {
       // Even if logout fails on backend, clear cookies
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
-      return { message: 'Logged out successfully' };
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      return { message: "Logged out successfully" };
     }
   }
 }

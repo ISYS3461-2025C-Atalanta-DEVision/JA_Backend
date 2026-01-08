@@ -1,4 +1,4 @@
 export enum NewCommuneVillageLevel {
-  WARD = 'Phường',
-  VILLAGE = 'Xã',
+  WARD = "Phường",
+  VILLAGE = "Xã",
 }

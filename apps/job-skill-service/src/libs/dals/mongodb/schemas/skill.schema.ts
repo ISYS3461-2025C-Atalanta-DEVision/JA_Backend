@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type SkillDocument = HydratedDocument<Skill>;
 
@@ -8,7 +8,7 @@ export type SkillDocument = HydratedDocument<Skill>;
  * Stores skill data linked to JobCategory
  */
 @Schema({
-  collection: 'skills',
+  collection: "skills",
   timestamps: true,
 })
 export class Skill {

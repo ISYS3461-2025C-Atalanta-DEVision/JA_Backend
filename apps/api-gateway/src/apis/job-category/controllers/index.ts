@@ -1,1 +1,1 @@
-export * from './job-category.controller';
+export * from "./job-category.controller";

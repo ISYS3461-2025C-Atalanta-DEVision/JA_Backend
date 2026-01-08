@@ -1,44 +1,55 @@
-import { Controller, Inject } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { WORK_HISTORY_SERVICE_WEB_PROVIDER } from '../../../constants';
-import { IWorkHistoryService } from '../../../interfaces';
-import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from '../dtos';
+import { Controller, Inject } from "@nestjs/common";
+import { MessagePattern, Payload } from "@nestjs/microservices";
+import { WORK_HISTORY_SERVICE_WEB_PROVIDER } from "../../../constants";
+import { IWorkHistoryService } from "../../../interfaces";
+import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from "../dtos";
+import { FindAllQueryParams } from "@common/dtos/filter.dto";
 
 @Controller()
 export class WorkHistoryController {
   constructor(
     @Inject(WORK_HISTORY_SERVICE_WEB_PROVIDER)
     private readonly workHistoryService: IWorkHistoryService,
-  ) { }
+  ) {}
 
-  @MessagePattern({ cmd: 'workHistory.create' })
-  async create(@Payload() data: { createDto: CreateWorkHistoryDto, applicantId: string }) {
-    return await this.workHistoryService.create(data.createDto, data.applicantId);
+  @MessagePattern({ cmd: "workHistory.create" })
+  async create(
+    @Payload() data: { createDto: CreateWorkHistoryDto; applicantId: string },
+  ) {
+    return await this.workHistoryService.create(
+      data.createDto,
+      data.applicantId,
+    );
   }
 
-  @MessagePattern({ cmd: 'workHistory.findByApplicantId' })
+  @MessagePattern({ cmd: "workHistory.findByApplicantId" })
   async findByApplicantId(@Payload() data: { applicantId: string }) {
     return await this.workHistoryService.findByApplicantId(data.applicantId);
   }
 
-  @MessagePattern({ cmd: 'workHistory.findById' })
+  @MessagePattern({ cmd: "workHistory.findById" })
   async findById(@Payload() data: { id: string }) {
     return await this.workHistoryService.findById(data.id);
   }
 
-  @MessagePattern({ cmd: 'workHistory.findAll' })
-  async findAll(@Payload() data: { page?: number; limit?: number }) {
+  @MessagePattern({ cmd: "workHistory.findAll" })
+  async findAll(@Payload() data: FindAllQueryParams) {
     const page = data.page || 1;
     const limit = data.limit || 10;
-    return await this.workHistoryService.findAll(page, limit);
+    return await this.workHistoryService.findAll(
+      page,
+      limit,
+      data.filters,
+      data.sorting,
+    );
   }
 
-  @MessagePattern({ cmd: 'workHistory.update' })
+  @MessagePattern({ cmd: "workHistory.update" })
   async update(@Payload() data: { id: string; updates: UpdateWorkHistoryDto }) {
     return await this.workHistoryService.update(data.id, data.updates);
   }
 
-  @MessagePattern({ cmd: 'workHistory.delete' })
+  @MessagePattern({ cmd: "workHistory.delete" })
   async delete(@Payload() data: { id: string }) {
     return await this.workHistoryService.delete(data.id);
   }

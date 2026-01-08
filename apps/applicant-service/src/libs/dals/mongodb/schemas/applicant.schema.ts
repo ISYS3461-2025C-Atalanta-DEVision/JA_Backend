@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type ApplicantDocument = HydratedDocument<Applicant>;
 
@@ -9,7 +9,7 @@ export type ApplicantDocument = HydratedDocument<Applicant>;
  * Token storage is handled by OAuthAccount
  */
 @Schema({
-  collection: 'applicants',
+  collection: "applicants",
   timestamps: true,
 })
 export class Applicant {
@@ -34,7 +34,7 @@ export class Applicant {
   addressProvinceName?: string;
 
   @Prop()
-  avatarUrl?: string
+  avatarUrl?: string;
 
   @Prop({ default: false })
   isPremium: boolean;
@@ -71,10 +71,10 @@ export class Applicant {
   emailVerified: boolean;
 
   @Prop()
-  emailVerificationToken?: string
+  emailVerificationToken?: string;
 
   @Prop()
-  emailVerificationTokenExpires?: Date
+  emailVerificationTokenExpires?: Date;
 
   /**
    * Number of failed login attempts (for brute force protection)

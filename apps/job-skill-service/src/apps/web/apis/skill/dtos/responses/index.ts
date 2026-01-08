@@ -1,1 +1,1 @@
-export * from './skill-response.dto';
+export * from "./skill-response.dto";

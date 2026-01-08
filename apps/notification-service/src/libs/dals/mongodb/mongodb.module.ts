@@ -1,21 +1,21 @@
-import { Module, Provider } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module, Provider } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
 import {
   Notification,
   NotificationSchema,
   SearchProfileProjection,
   SearchProfileProjectionSchema,
-} from './schemas';
+} from "./schemas";
 import {
   NotificationRepository,
   SearchProfileProjectionRepository,
-} from './repositories';
+} from "./repositories";
 import {
   NOTIFICATION_REPO_PROVIDER,
   INotificationRepository,
   SEARCH_PROFILE_PROJECTION_REPO_PROVIDER,
   ISearchProfileProjectionRepository,
-} from './interfaces';
+} from "./interfaces";
 
 const NotificationRepositoryProvider: Provider<INotificationRepository> = {
   provide: NOTIFICATION_REPO_PROVIDER,

@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Education, EducationSchema } from './schemas';
-import { EducationRepositoryProvider } from './providers';
-import { EducationRepository } from './repositories';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { Education, EducationSchema } from "./schemas";
+import { EducationRepositoryProvider } from "./providers";
+import { EducationRepository } from "./repositories";
 
 @Module({
   imports: [
@@ -10,14 +10,7 @@ import { EducationRepository } from './repositories';
       { name: Education.name, schema: EducationSchema },
     ]),
   ],
-  providers: [
-    EducationRepository,
-    EducationRepositoryProvider,
-  ],
-  exports: [
-    MongooseModule,
-    EducationRepository,
-    EducationRepositoryProvider,
-  ],
+  providers: [EducationRepository, EducationRepositoryProvider],
+  exports: [MongooseModule, EducationRepository, EducationRepositoryProvider],
 })
 export class MongodbModule {}

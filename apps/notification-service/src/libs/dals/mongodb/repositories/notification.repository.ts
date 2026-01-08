@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model, Types } from "mongoose";
 import {
   Notification,
   NotificationChannel,
   NotificationStatus,
-} from '../schemas';
-import { INotificationRepository } from '../interfaces';
+} from "../schemas";
+import { INotificationRepository } from "../interfaces";
 
 @Injectable()
 export class NotificationRepository implements INotificationRepository {
@@ -22,7 +22,9 @@ export class NotificationRepository implements INotificationRepository {
     return (await this.model.findById(id).lean().exec()) as Notification | null;
   }
 
-  async findByNotificationId(notificationId: string): Promise<Notification | null> {
+  async findByNotificationId(
+    notificationId: string,
+  ): Promise<Notification | null> {
     return (await this.model
       .findOne({ notificationId })
       .lean()
@@ -70,28 +72,28 @@ export class NotificationRepository implements INotificationRepository {
     },
   ): Promise<Notification | null> {
     const updateData: any = {
-      'deliveries.$.status': status,
+      "deliveries.$.status": status,
     };
 
     if (extra?.sentAt) {
-      updateData['deliveries.$.sentAt'] = extra.sentAt;
+      updateData["deliveries.$.sentAt"] = extra.sentAt;
     }
     if (extra?.deliveredAt) {
-      updateData['deliveries.$.deliveredAt'] = extra.deliveredAt;
+      updateData["deliveries.$.deliveredAt"] = extra.deliveredAt;
     }
     if (extra?.messageId) {
-      updateData['deliveries.$.messageId'] = extra.messageId;
+      updateData["deliveries.$.messageId"] = extra.messageId;
     }
     if (extra?.error) {
-      updateData['deliveries.$.error'] = extra.error;
+      updateData["deliveries.$.error"] = extra.error;
     }
-    if (typeof extra?.retryCount === 'number') {
-      updateData['deliveries.$.retryCount'] = extra.retryCount;
+    if (typeof extra?.retryCount === "number") {
+      updateData["deliveries.$.retryCount"] = extra.retryCount;
     }
 
     return (await this.model
       .findOneAndUpdate(
-        { notificationId, 'deliveries.channel': channel },
+        { notificationId, "deliveries.channel": channel },
         { $set: updateData },
         { new: true },
       )
@@ -120,7 +122,9 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async countUnread(recipientId: string): Promise<number> {
-    return await this.model.countDocuments({ recipientId, isRead: false }).exec();
+    return await this.model
+      .countDocuments({ recipientId, isRead: false })
+      .exec();
   }
 
   async findPendingDeliveries(

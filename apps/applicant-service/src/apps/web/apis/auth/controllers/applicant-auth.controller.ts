@@ -1,11 +1,11 @@
-import { Controller, Inject } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { APPLICANT_AUTH_SERVICE_WEB_PROVIDER } from '../../../constants';
+import { Controller, Inject } from "@nestjs/common";
+import { MessagePattern, Payload } from "@nestjs/microservices";
+import { APPLICANT_AUTH_SERVICE_WEB_PROVIDER } from "../../../constants";
 import {
   IApplicantAuthService,
   TokenStorageData,
   RegisterData,
-} from '../../../interfaces';
+} from "../../../interfaces";
 
 @Controller()
 export class ApplicantAuthController {
@@ -18,7 +18,7 @@ export class ApplicantAuthController {
    * Register new applicant with email/password
    * Returns user data (Gateway generates tokens)
    */
-  @MessagePattern({ cmd: 'applicant.auth.register' })
+  @MessagePattern({ cmd: "applicant.auth.register" })
   async register(@Payload() data: RegisterData) {
     return await this.authService.register(data);
   }
@@ -27,7 +27,7 @@ export class ApplicantAuthController {
    * Verify email/password credentials
    * Returns user data (Gateway generates tokens)
    */
-  @MessagePattern({ cmd: 'applicant.auth.verify' })
+  @MessagePattern({ cmd: "applicant.auth.verify" })
   async verifyCredentials(
     @Payload() data: { email: string; password: string },
   ) {
@@ -38,9 +38,10 @@ export class ApplicantAuthController {
    * Find or create OAuth applicant
    * Used by Gateway after verifying Firebase token
    */
-  @MessagePattern({ cmd: 'applicant.auth.oauth' })
+  @MessagePattern({ cmd: "applicant.auth.oauth" })
   async findOrCreateOAuthApplicant(
-    @Payload() data: {
+    @Payload()
+    data: {
       provider: string;
       providerId: string;
       email: string;
@@ -61,9 +62,10 @@ export class ApplicantAuthController {
    * Firebase authentication handler
    * Receives verified Firebase user info from API Gateway
    */
-  @MessagePattern({ cmd: 'applicant.auth.firebase' })
+  @MessagePattern({ cmd: "applicant.auth.firebase" })
   async firebaseAuth(
-    @Payload() data: {
+    @Payload()
+    data: {
       uid: string;
       email: string;
       name: string;
@@ -71,7 +73,7 @@ export class ApplicantAuthController {
     },
   ) {
     return await this.authService.findOrCreateOAuthApplicant(
-      'google',
+      "google",
       data.uid,
       data.email,
       data.name,
@@ -83,9 +85,14 @@ export class ApplicantAuthController {
    * Validate refresh token hash
    * Gateway calls this after verifying JWT signature
    */
-  @MessagePattern({ cmd: 'applicant.auth.validateRefresh' })
+  @MessagePattern({ cmd: "applicant.auth.validateRefresh" })
   async validateRefreshToken(
-    @Payload() data: { applicantId: string; provider: string; refreshTokenHash: string },
+    @Payload()
+    data: {
+      applicantId: string;
+      provider: string;
+      refreshTokenHash: string;
+    },
   ) {
     return await this.authService.validateRefreshToken(
       data.applicantId,
@@ -98,7 +105,7 @@ export class ApplicantAuthController {
    * Store tokens
    * Called by Gateway after generating tokens
    */
-  @MessagePattern({ cmd: 'applicant.auth.storeTokens' })
+  @MessagePattern({ cmd: "applicant.auth.storeTokens" })
   async storeTokens(@Payload() data: TokenStorageData) {
     return await this.authService.storeTokens(data);
   }
@@ -106,7 +113,7 @@ export class ApplicantAuthController {
   /**
    * Logout - clear tokens
    */
-  @MessagePattern({ cmd: 'applicant.auth.logout' })
+  @MessagePattern({ cmd: "applicant.auth.logout" })
   async logout(@Payload() data: { applicantId: string; provider?: string }) {
     return await this.authService.logout(data.applicantId, data.provider);
   }

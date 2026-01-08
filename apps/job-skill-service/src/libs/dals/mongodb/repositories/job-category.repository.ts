@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { BaseMongoRepository } from './base.repository';
-import { JobCategory } from '../schemas';
-import { IJobCategoryRepository } from '../interfaces';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { BaseMongoRepository } from "./base.repository";
+import { JobCategory } from "../schemas";
+import { IJobCategoryRepository } from "../interfaces";
 
 @Injectable()
 export class JobCategoryRepository
   extends BaseMongoRepository<JobCategory>
-  implements IJobCategoryRepository {
+  implements IJobCategoryRepository
+{
   constructor(
     @InjectModel(JobCategory.name)
     model: Model<JobCategory>,

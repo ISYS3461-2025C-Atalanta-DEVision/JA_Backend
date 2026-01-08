@@ -1,16 +1,16 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
 import {
   AdminApplicant,
   AdminApplicantSchema,
   AdminOAuthAccount,
   AdminOAuthAccountSchema,
-} from './schemas';
-import { AdminApplicantRepositoryProvider } from './providers';
+} from "./schemas";
+import { AdminApplicantRepositoryProvider } from "./providers";
 import {
   AdminApplicantRepository,
   AdminOAuthAccountRepository,
-} from './repositories';
+} from "./repositories";
 
 @Module({
   imports: [

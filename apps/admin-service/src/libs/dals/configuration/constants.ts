@@ -1,1 +1,1 @@
-export const APP_CONFIG_SERVICE_PROVIDER = Symbol('AppConfigServiceProvider');
+export const APP_CONFIG_SERVICE_PROVIDER = Symbol("AppConfigServiceProvider");

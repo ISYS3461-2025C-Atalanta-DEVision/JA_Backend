@@ -1,1 +1,1 @@
-export * from './applicant.controller';
+export * from "./applicant.controller";

@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type SearchProfileProjectionDocument =
   HydratedDocument<SearchProfileProjection>;
@@ -8,11 +8,11 @@ export type SearchProfileProjectionDocument =
  * Employment types for job matching
  */
 export enum EmploymentType {
-  FULL_TIME = 'FULL_TIME',
-  PART_TIME = 'PART_TIME',
-  CONTRACT = 'CONTRACT',
-  INTERNSHIP = 'INTERNSHIP',
-  FRESHER = 'FRESHER',
+  FULL_TIME = "FULL_TIME",
+  PART_TIME = "PART_TIME",
+  CONTRACT = "CONTRACT",
+  INTERNSHIP = "INTERNSHIP",
+  FRESHER = "FRESHER",
 }
 
 /**
@@ -26,7 +26,7 @@ export class SalaryRange {
   @Prop()
   max?: number;
 
-  @Prop({ required: true, default: 'USD' })
+  @Prop({ required: true, default: "USD" })
   currency: string;
 }
 
@@ -39,7 +39,7 @@ export class SalaryRange {
  * incoming new job posts against criteria of all active subscribers
  */
 @Schema({
-  collection: 'search_profile_projections',
+  collection: "search_profile_projections",
   timestamps: true,
 })
 export class SearchProfileProjection {
@@ -102,7 +102,7 @@ export class SearchProfileProjection {
   /**
    * Expected salary range (requirement 5.2.4)
    */
-  @Prop({ type: SalaryRange, default: { min: 0, currency: 'USD' } })
+  @Prop({ type: SalaryRange, default: { min: 0, currency: "USD" } })
   expectedSalary: SalaryRange;
 
   /**

@@ -1,1 +1,1 @@
-export * from './work-history.controller';
+export * from "./work-history.controller";

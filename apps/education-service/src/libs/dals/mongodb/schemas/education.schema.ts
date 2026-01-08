@@ -1,14 +1,14 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type EducationDocument = HydratedDocument<Education>;
 
 export enum EducationLevel {
-  HighSchool = 'HighSchool',
-  Bachelor = 'Bachelor',
-  Master = 'Master',
-  PhD = 'PhD',
-  NoGiven = 'NoGiven',
+  HighSchool = "HighSchool",
+  Bachelor = "Bachelor",
+  Master = "Master",
+  PhD = "PhD",
+  NoGiven = "NoGiven",
 }
 
 /**
@@ -16,7 +16,7 @@ export enum EducationLevel {
  * Stores education data
  */
 @Schema({
-  collection: 'educations',
+  collection: "educations",
   timestamps: true,
 })
 export class Education {

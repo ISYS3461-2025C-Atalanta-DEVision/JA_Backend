@@ -1,4 +1,4 @@
-import { appConfig } from './app.config';
+import { appConfig } from "./app.config";
 
 export const configs = [appConfig];
 

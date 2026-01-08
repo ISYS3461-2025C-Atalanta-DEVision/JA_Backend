@@ -1,0 +1,23 @@
+version: "3.8"
+
+# Job Skill Service Docker Compose
+# Usage: docker-compose up -d --build
+
+services:
+  job-skill-service:
+    build:
+      context: ../..
+      dockerfile: apps/job-skill-service/Dockerfile
+    container_name: job-skill-service
+    env_file:
+      - .env.development
+    ports:
+      - "3004:3004"   # TCP microservice port
+      - "3014:3014"   # Health check port
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

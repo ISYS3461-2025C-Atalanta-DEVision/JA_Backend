@@ -11,39 +11,35 @@
 // Subscription Topics
 // ===========================================
 export const TOPIC_SUBSCRIPTION_PREMIUM_JA_CREATED =
-  'subscription.premium.ja.created';
+  "subscription.premium.ja.created";
 export const TOPIC_SUBSCRIPTION_PREMIUM_JA_EXPIRED =
-  'subscription.premium.ja.expired';
+  "subscription.premium.ja.expired";
 export const TOPIC_SUBSCRIPTION_PREMIUM_JM_CREATED =
-  'subscription.premium.jm.created';
+  "subscription.premium.jm.created";
 export const TOPIC_SUBSCRIPTION_PREMIUM_JM_EXPIRED =
-  'subscription.premium.jm.expired';
+  "subscription.premium.jm.expired";
 
 // ===========================================
 // Profile Topics
 // ===========================================
 export const TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED =
-  'profile.ja.search-profile.created';
+  "profile.ja.search-profile.created";
 export const TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED =
-  'profile.ja.search-profile.updated';
+  "profile.ja.search-profile.updated";
 export const TOPIC_PROFILE_JM_SEARCH_PROFILE_CREATED =
-  'profile.jm.search-profile.created';
+  "profile.jm.search-profile.created";
 export const TOPIC_PROFILE_JM_SEARCH_PROFILE_UPDATED =
-  'profile.jm.search-profile.updated';
+  "profile.jm.search-profile.updated";
 
 // ===========================================
 // Job Topics
 // ===========================================
-export const TOPIC_JOB_CREATED = 'job.created';
-export const TOPIC_JOB_UPDATED = 'job.updated';
-export const TOPIC_JOB_CLOSED = 'job.closed';
+export const TOPIC_JOB_CREATED = "job.created";
+export const TOPIC_JOB_UPDATED = "job.updated";
+export const TOPIC_JOB_CLOSED = "job.closed";
 
 // ===========================================
 // Matching Topics
 // ===========================================
-export const TOPIC_MATCHING_JM_TO_JA_COMPLETED = 'matching.jm-to-ja.completed';
-export const TOPIC_MATCHING_JA_TO_JM_COMPLETED = 'matching.ja-to-jm.completed';
-
-
-
-
+export const TOPIC_MATCHING_JM_TO_JA_COMPLETED = "matching.jm-to-ja.completed";
+export const TOPIC_MATCHING_JA_TO_JM_COMPLETED = "matching.ja-to-jm.completed";

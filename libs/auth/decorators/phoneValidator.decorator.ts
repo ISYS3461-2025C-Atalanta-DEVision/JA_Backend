@@ -2,8 +2,8 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
-} from 'class-validator';
-import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
+} from "class-validator";
+import { PhoneNumberUtil, PhoneNumberFormat } from "google-libphonenumber";
 
 const phoneUtil = PhoneNumberUtil.getInstance();
 
@@ -24,7 +24,7 @@ export function IsPhoneIntl(validationOptions?: ValidationOptions) {
           }
         },
         defaultMessage(): string {
-          return 'Phone number must be a valid international format';
+          return "Phone number must be a valid international format";
         },
       },
     });

@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type AdminOAuthAccountDocument = HydratedDocument<AdminOAuthAccount>;
 
@@ -14,7 +14,7 @@ export type AdminOAuthAccountDocument = HydratedDocument<AdminOAuthAccount>;
  * - Easier token revocation per provider
  */
 @Schema({
-  collection: 'admin_oauth_accounts',
+  collection: "admin_oauth_accounts",
   timestamps: true,
 })
 export class AdminOAuthAccount {

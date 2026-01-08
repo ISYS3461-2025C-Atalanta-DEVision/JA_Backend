@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type WorkHistoryDocument = HydratedDocument<WorkHistory>;
 
@@ -8,7 +8,7 @@ export type WorkHistoryDocument = HydratedDocument<WorkHistory>;
  * Stores workHistory data
  */
 @Schema({
-  collection: 'work-histories',
+  collection: "work-histories",
   timestamps: true,
 })
 export class WorkHistory {

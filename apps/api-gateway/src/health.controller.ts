@@ -1,7 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
-import { Public } from '@auth/decorators';
+import { Controller, Get } from "@nestjs/common";
+import { Public } from "@auth/decorators";
 
-@Controller('health')
+@Controller("health")
 export class HealthController {
   private readonly startTime = Date.now();
 
@@ -9,25 +9,25 @@ export class HealthController {
   @Public()
   health() {
     return {
-      status: 'ok',
-      service: 'api-gateway',
+      status: "ok",
+      service: "api-gateway",
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
     };
   }
 
-  @Get('ready')
+  @Get("ready")
   @Public()
   ready() {
     return {
-      status: 'ready',
-      service: 'api-gateway',
+      status: "ready",
+      service: "api-gateway",
     };
   }
 
-  @Get('live')
+  @Get("live")
   @Public()
   live() {
-    return { status: 'alive' };
+    return { status: "alive" };
   }
 }

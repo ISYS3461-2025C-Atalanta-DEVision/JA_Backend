@@ -1,6 +1,6 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { StorageService, STORAGE_CONFIG } from './storage.service';
-import { StorageModuleConfig, StorageModuleAsyncOptions } from './interfaces';
+import { DynamicModule, Module } from "@nestjs/common";
+import { StorageService, STORAGE_CONFIG } from "./storage.service";
+import { StorageModuleConfig, StorageModuleAsyncOptions } from "./interfaces";
 
 @Module({})
 export class StorageModule {

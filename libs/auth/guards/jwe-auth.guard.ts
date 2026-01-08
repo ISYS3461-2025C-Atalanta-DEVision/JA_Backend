@@ -3,12 +3,12 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { ALLOW_API_KEY } from '../decorators/api-key-auth.decorator';
-import { JweTokenService } from '../services/jwe-token.service';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { Request } from "express";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { ALLOW_API_KEY } from "../decorators/api-key-auth.decorator";
+import { JweTokenService } from "../services/jwe-token.service";
 
 /**
  * JWE Auth Guard
@@ -20,7 +20,7 @@ export class JweAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jweTokenService: JweTokenService,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is marked as public
@@ -34,10 +34,10 @@ export class JweAuthGuard implements CanActivate {
     }
 
     // Check if route allows API key auth - let ApiKeyOrJweGuard handle it
-    const allowApiKey = this.reflector.getAllAndOverride<boolean>(ALLOW_API_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const allowApiKey = this.reflector.getAllAndOverride<boolean>(
+      ALLOW_API_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (allowApiKey) {
       return true; // Skip JWE validation, ApiKeyOrJweGuard will handle
@@ -45,12 +45,10 @@ export class JweAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
 
-
     const token = this.extractToken(request);
 
-
     if (!token) {
-      throw new UnauthorizedException('No access token provided');
+      throw new UnauthorizedException("No access token provided");
     }
 
     try {
@@ -68,7 +66,7 @@ export class JweAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException("Invalid or expired token");
     }
   }
 
@@ -83,7 +81,7 @@ export class JweAuthGuard implements CanActivate {
 
     // Fallback to Authorization header
     const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       return authHeader.substring(7);
     }
 

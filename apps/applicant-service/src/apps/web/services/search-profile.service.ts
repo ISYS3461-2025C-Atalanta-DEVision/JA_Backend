@@ -1,13 +1,17 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { SearchProfileRepository, SearchProfile, EmploymentType } from '../../../libs/dals/mongodb';
-import { KafkaService } from '@kafka/kafka.service';
-import { TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED } from '@kafka/constants';
-import { ISearchProfilePayload } from '@kafka/interfaces';
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  SearchProfileRepository,
+  SearchProfile,
+  EmploymentType,
+} from "../../../libs/dals/mongodb";
+import { KafkaService } from "@kafka/kafka.service";
+import { TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED } from "@kafka/constants";
+import { ISearchProfilePayload } from "@kafka/interfaces";
 
 export interface UpsertSearchProfileDto {
   desiredRoles?: string[];
-  skillIds?: string[];      // Skill IDs from job-skill-service
-  skillNames?: string[];    // Cached skill names for display
+  skillIds?: string[]; // Skill IDs from job-skill-service
+  skillNames?: string[]; // Cached skill names for display
   experienceYears?: number;
   desiredLocations?: string[];
   expectedSalary?: {
@@ -43,11 +47,15 @@ export class SearchProfileService {
     data: UpsertSearchProfileDto,
   ): Promise<SearchProfile> {
     // Get existing profile to determine changed fields
-    const existingProfile = await this.searchProfileRepository.findByApplicantId(applicantId);
+    const existingProfile =
+      await this.searchProfileRepository.findByApplicantId(applicantId);
     const isCreate = !existingProfile;
 
     // Upsert the profile
-    const result = await this.searchProfileRepository.upsertByApplicantId(applicantId, data);
+    const result = await this.searchProfileRepository.upsertByApplicantId(
+      applicantId,
+      data,
+    );
 
     // Determine changed fields
     const changedFields = this.getChangedFields(existingProfile, data);
@@ -57,13 +65,13 @@ export class SearchProfileService {
       const payload: ISearchProfilePayload = {
         profileId: result._id.toString(),
         userId: applicantId,
-        userType: 'APPLICANT',
+        userType: "APPLICANT",
         desiredRoles: result.desiredRoles || [],
         skillIds: result.skillIds || [],
         skillNames: result.skillNames || [],
         experienceYears: result.experienceYears || 0,
         desiredLocations: result.desiredLocations || [],
-        expectedSalary: result.expectedSalary || { min: 0, currency: 'USD' },
+        expectedSalary: result.expectedSalary || { min: 0, currency: "USD" },
         employmentTypes: (result.employmentTypes || []) as any,
         isActive: result.isActive,
         isPremium: false, // Premium status managed by Job Manager
@@ -71,19 +79,19 @@ export class SearchProfileService {
 
       await this.kafkaService.publish(
         TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED,
-        'profile.ja.search-profile.updated',
+        "profile.ja.search-profile.updated",
         {
           profileId: result._id.toString(),
           userId: applicantId,
-          userType: 'APPLICANT',
+          userType: "APPLICANT",
           searchProfile: payload,
-          changedFields: isCreate ? ['all'] : changedFields,
+          changedFields: isCreate ? ["all"] : changedFields,
           isPremium: false,
         },
       );
 
       this.logger.log(
-        `Published profile update event for applicant ${applicantId}, changed: ${changedFields.join(', ')}`,
+        `Published profile update event for applicant ${applicantId}, changed: ${changedFields.join(", ")}`,
       );
     } catch (error) {
       this.logger.error(
@@ -102,7 +110,9 @@ export class SearchProfileService {
   async deactivate(applicantId: string): Promise<boolean> {
     const result = await this.searchProfileRepository.deactivate(applicantId);
     if (!result) {
-      throw new NotFoundException(`Search profile for applicant ${applicantId} not found`);
+      throw new NotFoundException(
+        `Search profile for applicant ${applicantId} not found`,
+      );
     }
     return result;
   }
@@ -113,7 +123,9 @@ export class SearchProfileService {
   async activate(applicantId: string): Promise<boolean> {
     const result = await this.searchProfileRepository.activate(applicantId);
     if (!result) {
-      throw new NotFoundException(`Search profile for applicant ${applicantId} not found`);
+      throw new NotFoundException(
+        `Search profile for applicant ${applicantId} not found`,
+      );
     }
     return result;
   }
@@ -125,30 +137,33 @@ export class SearchProfileService {
     existing: SearchProfile | null,
     newData: UpsertSearchProfileDto,
   ): string[] {
-    if (!existing) return ['all'];
+    if (!existing) return ["all"];
 
     const changedFields: string[] = [];
 
     if (newData.desiredRoles !== undefined) {
-      const oldRoles = (existing.desiredRoles || []).sort().join(',');
-      const newRoles = (newData.desiredRoles || []).sort().join(',');
-      if (oldRoles !== newRoles) changedFields.push('desiredRoles');
+      const oldRoles = (existing.desiredRoles || []).sort().join(",");
+      const newRoles = (newData.desiredRoles || []).sort().join(",");
+      if (oldRoles !== newRoles) changedFields.push("desiredRoles");
     }
 
     if (newData.skillIds !== undefined) {
-      const oldSkillIds = (existing.skillIds || []).sort().join(',');
-      const newSkillIds = (newData.skillIds || []).sort().join(',');
-      if (oldSkillIds !== newSkillIds) changedFields.push('skillIds');
+      const oldSkillIds = (existing.skillIds || []).sort().join(",");
+      const newSkillIds = (newData.skillIds || []).sort().join(",");
+      if (oldSkillIds !== newSkillIds) changedFields.push("skillIds");
     }
 
-    if (newData.experienceYears !== undefined && existing.experienceYears !== newData.experienceYears) {
-      changedFields.push('experienceYears');
+    if (
+      newData.experienceYears !== undefined &&
+      existing.experienceYears !== newData.experienceYears
+    ) {
+      changedFields.push("experienceYears");
     }
 
     if (newData.desiredLocations !== undefined) {
-      const oldLocations = (existing.desiredLocations || []).sort().join(',');
-      const newLocations = (newData.desiredLocations || []).sort().join(',');
-      if (oldLocations !== newLocations) changedFields.push('desiredLocations');
+      const oldLocations = (existing.desiredLocations || []).sort().join(",");
+      const newLocations = (newData.desiredLocations || []).sort().join(",");
+      if (oldLocations !== newLocations) changedFields.push("desiredLocations");
     }
 
     if (newData.expectedSalary !== undefined) {
@@ -159,20 +174,23 @@ export class SearchProfileService {
         oldSalary?.max !== newSalary?.max ||
         oldSalary?.currency !== newSalary?.currency
       ) {
-        changedFields.push('expectedSalary');
+        changedFields.push("expectedSalary");
       }
     }
 
     if (newData.employmentTypes !== undefined) {
-      const oldTypes = (existing.employmentTypes || []).sort().join(',');
-      const newTypes = (newData.employmentTypes || []).sort().join(',');
-      if (oldTypes !== newTypes) changedFields.push('employmentTypes');
+      const oldTypes = (existing.employmentTypes || []).sort().join(",");
+      const newTypes = (newData.employmentTypes || []).sort().join(",");
+      if (oldTypes !== newTypes) changedFields.push("employmentTypes");
     }
 
-    if (newData.isActive !== undefined && existing.isActive !== newData.isActive) {
-      changedFields.push('isActive');
+    if (
+      newData.isActive !== undefined &&
+      existing.isActive !== newData.isActive
+    ) {
+      changedFields.push("isActive");
     }
 
-    return changedFields.length > 0 ? changedFields : ['none'];
+    return changedFields.length > 0 ? changedFields : ["none"];
   }
 }
