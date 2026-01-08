@@ -19,5 +19,9 @@ export class CreateApplicantDto {
 
   @IsOptional()
   @IsString()
+  avatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
   addressProvinceCode?: string;
 }

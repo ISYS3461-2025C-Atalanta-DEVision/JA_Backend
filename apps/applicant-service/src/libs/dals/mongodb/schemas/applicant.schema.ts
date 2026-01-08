@@ -33,6 +33,12 @@ export class Applicant {
   @Prop()
   addressProvinceName?: string;
 
+  @Prop()
+  avatarUrl?: string
+
+  @Prop({ default: false })
+  isPremium: boolean;
+
   /**
    * ISO 3166-1 alpha-2 country code (e.g., 'VN', 'US')
    */

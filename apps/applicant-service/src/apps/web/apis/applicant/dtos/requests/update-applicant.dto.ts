@@ -19,9 +19,17 @@ export class UpdateApplicantDto {
 
   @IsOptional()
   @IsString()
+  avatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
   addressProvinceCode?: string;
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isPremium?: boolean
 }

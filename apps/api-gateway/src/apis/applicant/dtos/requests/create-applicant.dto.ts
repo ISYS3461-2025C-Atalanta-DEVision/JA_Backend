@@ -22,6 +22,11 @@ export class CreateApplicantDto {
   @IsString()
   address?: string;
 
+  @ApiProperty({ example: 'https://d2a765vgwhyp2i.cloudfront.net/toni-infante-vivi-w1.jpg', description: 'CDN url of the avatar', required: false })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
   @ApiProperty({ example: 'HCM', description: 'Province/city code', required: false })
   @IsOptional()
   @IsString()
