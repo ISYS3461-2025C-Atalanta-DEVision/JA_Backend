@@ -7,8 +7,10 @@ import {
   IsOptional,
   IsAlpha,
   Length,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsPhoneIntl } from '@auth/decorators/phoneValidator.decorator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'John Doe', required: true })
@@ -18,14 +20,25 @@ export class RegisterDto {
   name: string;
 
   @ApiProperty({ example: 'john@example.com', required: true })
-  @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Invalid email format' })
+  @MaxLength(254, { message: 'Email must be less than 255 characters' })
   email: string;
 
   @ApiProperty({ example: 'SecurePass123!', required: true })
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+
+  @Matches(/[A-Z]/, {
+    message: 'Password must contain at least one uppercase letter',
+  })
+  @Matches(/\d/, {
+    message: 'Password must contain at least one number',
+  })
+  @Matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, {
+    message: 'Password must contain at least one special character',
+  })
   password: string;
 
   @ApiProperty({
@@ -40,6 +53,7 @@ export class RegisterDto {
   country: string;
 
   @ApiProperty({ example: '+84901234567', required: false })
+  @IsPhoneIntl({ message: 'Invalid international phone number' })
   @IsOptional()
   @IsString()
   phone?: string;
