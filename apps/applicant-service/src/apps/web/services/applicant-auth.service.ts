@@ -2,10 +2,10 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
   Logger,
   InternalServerErrorException,
   NotFoundException,
+  HttpStatus,
 } from '@nestjs/common';
 import { hash, verify } from '@node-rs/argon2';
 import { Role } from '@auth/enums';
@@ -25,6 +25,7 @@ import { isValidCountryCode } from '@common/constants/countries';
 import { generateEmailVerificationToken } from '@auth/services';
 import { AddEmailHashDto } from '../apis/applicant/dtos/requests/add-email-verification-hash';
 import { MailerService } from '@libs/mailer';
+import { RpcException } from '@nestjs/microservices';
 
 /**
  * Applicant Auth Service
@@ -49,18 +50,23 @@ export class ApplicantAuthService implements IApplicantAuthService {
     const { name, email, password, country, phone, street, city } = data;
 
     try {
-      // Validate country code
       if (!isValidCountryCode(country)) {
-        throw new BadRequestException('Invalid country code');
+        throw new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid country code',
+        });
       }
 
       const existingApplicant = await this.applicantRepo.findByEmail(email);
       if (existingApplicant) {
-        throw new ConflictException('Email already registered');
+        throw new RpcException({
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Email already registered',
+        });
       }
 
       const passwordHash = await hash(password, {
-        memoryCost: 19456, // ~19 MB (OWASP recommended)
+        memoryCost: 19456,
         timeCost: 2,
         parallelism: 1,
         outputLen: 32,
@@ -78,10 +84,8 @@ export class ApplicantAuthService implements IApplicantAuthService {
         isActive: true,
       });
 
-      //Send verification email to account
-      await this.sendVerificationEmail(applicant._id.toString())
+      await this.sendVerificationEmail(applicant._id.toString());
 
-      // Create email provider oauth account for token storage
       await this.oauthAccountRepo.create({
         applicantId: applicant._id.toString(),
         provider: 'email',
@@ -93,16 +97,22 @@ export class ApplicantAuthService implements IApplicantAuthService {
       return this.toAuthResponse(applicant, 'email');
     } catch (error) {
       this.logger.error(`Register failed for ${email}`, error.stack);
-      if (
-        error instanceof ConflictException ||
-        error instanceof BadRequestException
-      ) {
+
+      if (error instanceof RpcException) {
         throw error;
       }
-      if (error.code === 11000) {
-        throw new ConflictException('Email already registered');
+
+      if (error?.code === 11000) {
+        throw new RpcException({
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Email already registered',
+        });
       }
-      throw new InternalServerErrorException('Registration failed');
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Registration failed',
+      });
     }
   }
 
@@ -121,61 +131,79 @@ export class ApplicantAuthService implements IApplicantAuthService {
   ): Promise<ApplicantAuthResponse> {
     try {
       const applicant = await this.applicantRepo.findByEmail(email);
+
       if (!applicant || !applicant.isActive) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid credentials, please check your email and/or password',
+        });
       }
 
-      // Check if account is locked (brute force protection)
+      // Brute-force lock check
       if (applicant.lockUntil && applicant.lockUntil > new Date()) {
         const remainingSeconds = Math.ceil(
           (applicant.lockUntil.getTime() - Date.now()) / 1000,
         );
-        throw new UnauthorizedException(
-          `Account locked. Try again in ${remainingSeconds} seconds.`,
-        );
+
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: `Account locked. Try again in ${remainingSeconds} seconds.`,
+        });
       }
 
       if (!applicant.passwordHash) {
-        throw new UnauthorizedException('Please use OAuth login (Google)');
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Please use OAuth login (Google)',
+        });
       }
 
       const isPasswordValid = await verify(applicant.passwordHash, password);
-      if (!isPasswordValid) {
-        // Increment login attempts
-        const newAttempts = (applicant.loginAttempts || 0) + 1;
-        await this.applicantRepo.incrementLoginAttempts(
-          applicant._id.toString(),
-        );
 
-        // Lock account if max attempts reached
+      if (!isPasswordValid) {
+        const newAttempts = (applicant.loginAttempts || 0) + 1;
+        await this.applicantRepo.incrementLoginAttempts(applicant._id.toString());
+
         if (newAttempts >= this.MAX_LOGIN_ATTEMPTS) {
           const lockUntil = new Date(Date.now() + this.LOCK_DURATION_MS);
           await this.applicantRepo.lockAccount(
             applicant._id.toString(),
             lockUntil,
           );
+
           this.logger.warn(
             `Account locked for ${email} after ${newAttempts} failed attempts`,
           );
-          throw new UnauthorizedException(
-            `Account locked due to too many failed attempts. Try again in 60 seconds.`,
-          );
+
+          throw new RpcException({
+            statusCode: HttpStatus.UNAUTHORIZED,
+            message:
+              'Account locked due to too many failed attempts. Try again in 60 seconds.',
+          });
         }
 
-        throw new UnauthorizedException('Invalid credentials');
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid credentials, please check your email and/or password',
+        });
       }
 
-      // Reset login attempts on successful login
+      // Successful login
       await this.applicantRepo.resetLoginAttempts(applicant._id.toString());
-
-      // Update last login
       await this.applicantRepo.updateLastLogin(applicant._id.toString());
 
       return this.toAuthResponse(applicant, 'email');
     } catch (error) {
       this.logger.error(`Login failed for ${email}`, error.stack);
-      if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException('Login failed');
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Login failed',
+      });
     }
   }
 

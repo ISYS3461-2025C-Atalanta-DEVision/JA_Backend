@@ -46,7 +46,7 @@ export class ApplicantAuthController {
     private readonly firebaseService: FirebaseService,
     private readonly jweTokenService: JweTokenService,
     @Optional() private readonly tokenRevocationService?: TokenRevocationService,
-  ) {}
+  ) { }
 
   /**
    * Hash refresh token for storage
@@ -156,9 +156,15 @@ export class ApplicantAuthController {
           .pipe(
             timeout(5000),
             catchError((error) => {
+              if (error?.message === 'Email already registered') {
+                throw new HttpException(
+                  'Email already registered',
+                  HttpStatus.CONFLICT,
+                );
+              }
               throw new HttpException(
-                error.message || 'Applicant service unavailable',
-                error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+                'Applicant service unavailable',
+                HttpStatus.SERVICE_UNAVAILABLE,
               );
             }),
           ),
