@@ -115,10 +115,10 @@ export class WorkHistoryController {
     }
   }
 
-  @Get('applicant/:id')
+  @Get('applicant/:applicantId')
   @ApiKeyAuth()
   @ApiOperation({ summary: 'Get work history by applicant ID', description: 'Retrieve a list of work history by applicant ID (requires API key or JWE auth)' })
-  @ApiParam({ name: 'id', description: 'work history ID' })
+  @ApiParam({ name: 'applicantId', description: 'Applicant ID' })
   @ApiResponse({ status: 200, description: 'work history retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'work history not found' })

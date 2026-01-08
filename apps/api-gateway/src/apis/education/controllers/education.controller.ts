@@ -115,10 +115,10 @@ export class EducationController {
     }
   }
 
-  @Get('applicant/:id')
+  @Get('applicant/:applicantId')
   @ApiKeyAuth()
   @ApiOperation({ summary: 'Get education by applicant ID', description: 'Retrieve a list of education by applicant ID (requires API key or JWE auth)' })
-  @ApiParam({ name: 'id', description: 'education ID' })
+  @ApiParam({ name: 'applicantId', description: 'Applicant ID' })
   @ApiResponse({ status: 200, description: 'education retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'education not found' })
