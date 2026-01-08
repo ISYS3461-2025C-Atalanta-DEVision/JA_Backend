@@ -36,8 +36,6 @@ async function bootstrap() {
     }),
   );
 
-  console.log('DB_URL:', process.env.DB_URL);
-
   // Start all microservices (TCP)
   await app.startAllMicroservices();
   logger.log(`TCP microservice listening on port ${servicePort}`);

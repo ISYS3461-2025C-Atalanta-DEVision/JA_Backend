@@ -11,6 +11,7 @@ import { CountriesModule } from './apis/countries';
 import { HealthController } from './health.controller';
 import { NotificationGatewayModule } from './gateways';
 import { configs } from './configs';
+import { EducationModule } from './apis/education';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { configs } from './configs';
     ApplicantModule,
     AuthModule,
     CountriesModule,
+    EducationModule,
     JobCategoryModule,
     NotificationModule,
     SkillModule,

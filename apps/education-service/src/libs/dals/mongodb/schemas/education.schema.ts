@@ -20,8 +20,10 @@ export enum EducationLevel {
   timestamps: true,
 })
 export class Education {
-  @Prop({ type: Types.ObjectId, required: true })
-  applicantId: Types.ObjectId;
+  _id: Types.ObjectId;
+
+  @Prop({ type: String, required: true })
+  applicantId: string;
 
   @Prop({
     type: String,
@@ -34,7 +36,7 @@ export class Education {
   major: string;
 
   @Prop({ type: String })
-  schoolName?: string;
+  schoolName: string;
 
   @Prop({ type: Number })
   gpa?: number;
@@ -45,23 +47,15 @@ export class Education {
   @Prop({ type: Date })
   endDate?: Date;
 
-  @Prop({ type: [Types.ObjectId], default: [] })
-  skillCategories: Types.ObjectId[];
+  @Prop({ type: [String], default: [] })
+  skillCategories: string[];
 
-  @Prop()
   createdAt: Date;
 
-  @Prop()
   updatedAt: Date;
 }
 
 export const EducationSchema = SchemaFactory.createForClass(Education);
-
-// Indexes for performance
-EducationSchema.index({ name: 1 });
-EducationSchema.index({ isActive: 1 });
-EducationSchema.index({ createdAt: -1 });
-
 /**
  * MongoDB Sharding Notes:
  * - Recommended shard key: { _id: "hashed" } for even distribution

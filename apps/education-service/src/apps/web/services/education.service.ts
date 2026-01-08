@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException, Inject } from '@nestjs/common';
 import { EducationRepository, Education } from '../../../libs/dals/mongodb';
 import { CreateEducationDto, UpdateEducationDto, EducationResponseDto } from '../apis/education/dtos';
 import { IEducationService } from '../interfaces';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 
 @Injectable()
 export class EducationService implements IEducationService {
@@ -9,23 +11,66 @@ export class EducationService implements IEducationService {
 
   constructor(
     private readonly educationRepository: EducationRepository,
-  ) {}
+    @Inject('APPLICANT_SERVICE') private readonly applicantClient: ClientProxy,
+  ) { }
 
-  async create(createDto: CreateEducationDto): Promise<EducationResponseDto> {
+  async create(createDto: CreateEducationDto, applicantId: string): Promise<EducationResponseDto> {
     try {
-      // Check for duplicate name (optional - remove if not needed)
-      const existing = await this.educationRepository.findByName(createDto.name);
-      if (existing) {
-        throw new ConflictException('Education with this name already exists');
+      const applicant = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.findById' }, { id: applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(`Failed to validate applicant ${applicantId}: ${error.message}`);
+              return of(null);
+            }),
+          ),
+      );
+
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
       }
 
-      const education = await this.educationRepository.create(createDto);
+      const education = await this.educationRepository.create({ ...createDto, applicantId: applicantId });
       return this.toResponseDto(education);
     } catch (error) {
-      this.logger.error(`Create education failed for ${createDto.name}`, error.stack);
+      this.logger.error(`Create education failed for applicant ${applicantId}`, error.stack);
       if (error instanceof ConflictException) throw error;
       if (error.code === 11000) throw new ConflictException('Education with this name already exists');
       throw new InternalServerErrorException('Failed to create education');
+    }
+  }
+
+  async findByApplicantId(applicantId: string): Promise<EducationResponseDto[]> {
+    try {
+      const applicant = await firstValueFrom(
+        this.applicantClient
+          .send({ cmd: 'applicant.findById' }, { id: applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(`Failed to validate applicant ${applicantId}: ${error.message}`);
+              return of(null);
+            }),
+          ),
+      );
+
+      if (!applicant) {
+        throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
+      }
+
+      const workHistories = await this.educationRepository.findMany({ applicantId: applicantId })
+
+      if (!workHistories.length) {
+        return [];
+      }
+
+      return workHistories.map((wh) => this.toResponseDto(wh));
+    } catch (error) {
+      this.logger.error(`Find educaiton failed for Applicant ${applicantId}`, error.stack);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to find workHistory');
     }
   }
 
@@ -75,14 +120,6 @@ export class EducationService implements IEducationService {
         throw new NotFoundException(`Education with ID ${id} not found`);
       }
 
-      // Check for duplicate name if name is being updated
-      if (updateDto.name && updateDto.name !== education.name) {
-        const existing = await this.educationRepository.findByName(updateDto.name);
-        if (existing) {
-          throw new ConflictException('Name already in use');
-        }
-      }
-
       const updated = await this.educationRepository.update(id, updateDto);
       return this.toResponseDto(updated);
     } catch (error) {
@@ -101,7 +138,7 @@ export class EducationService implements IEducationService {
       }
 
       // Soft delete - set isActive to false
-      await this.educationRepository.update(id, { isActive: false });
+      await this.educationRepository.delete(id);
       return {
         success: true,
         message: 'Education deleted successfully',
@@ -116,9 +153,14 @@ export class EducationService implements IEducationService {
   private toResponseDto(education: Education): EducationResponseDto {
     return {
       id: education._id.toString(),
-      name: education.name,
-      description: education.description,
-      isActive: education.isActive,
+      applicantId: education.applicantId.toString(),
+      levelStudy: education.levelStudy,
+      major: education.major,
+      schoolName: education.schoolName,
+      gpa: education.gpa,
+      startDate: education.startDate,
+      endDate: education.endDate,
+      skillCategories: education.skillCategories,
       createdAt: education.createdAt,
       updatedAt: education.updatedAt,
     };

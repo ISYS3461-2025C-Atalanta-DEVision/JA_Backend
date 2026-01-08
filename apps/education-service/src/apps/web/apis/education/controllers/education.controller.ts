@@ -9,11 +9,16 @@ export class EducationController {
   constructor(
     @Inject(EDUCATION_SERVICE_WEB_PROVIDER)
     private readonly educationService: IEducationService,
-  ) {}
+  ) { }
 
   @MessagePattern({ cmd: 'education.create' })
-  async create(@Payload() createDto: CreateEducationDto) {
-    return await this.educationService.create(createDto);
+  async create(@Payload() data: { createDto: CreateEducationDto, applicantId: string }) {
+    return await this.educationService.create(data.createDto, data.applicantId);
+  }
+
+  @MessagePattern({ cmd: 'education.findByApplicantId' })
+  async findByApplicantId(@Payload() data: { applicantId: string }) {
+    return await this.educationService.findByApplicantId(data.applicantId);
   }
 
   @MessagePattern({ cmd: 'education.findById' })

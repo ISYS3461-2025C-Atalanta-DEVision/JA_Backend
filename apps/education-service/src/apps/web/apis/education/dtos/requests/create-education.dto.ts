@@ -1,11 +1,48 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { EducationLevel } from 'apps/education-service/src/libs/dals/mongodb/schemas/education.schema';
+import {
+  IsEnum,
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsDateString,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateEducationDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  applicantId: string;
+
+  @IsNotEmpty()
+  @IsEnum(EducationLevel)
+  levelStudy: EducationLevel;
+
+  @IsNotEmpty()
+  @IsString()
+  major: string;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  schoolName?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4)
+  gpa?: number;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: Date;
+
+  @IsOptional()
+  @IsString({ each: true })
+  skillCategories?: string[];
 }
