@@ -244,7 +244,7 @@ export class JobApplicationService implements IJobApplicationService {
       id: jobApplication._id.toString(),
       applicantId: jobApplication.applicantId,
       jobId: jobApplication.jobId,
-      cvMediaId: jobApplication.cvMediaId,
+      mediaUrls: jobApplication.mediaUrls,
       appliedAt: jobApplication.appliedAt,
       status: jobApplication.status,
       createdAt: jobApplication.createdAt,

@@ -25,8 +25,8 @@ export class JobApplication {
   @Prop({ type: String, required: true })
   jobId: string;
 
-  @Prop({ type: String })
-  cvMediaId?: string;
+  @Prop({ default: [] })
+  mediaUrls?: string[];
 
   @Prop({ type: Date, required: true })
   appliedAt: Date;

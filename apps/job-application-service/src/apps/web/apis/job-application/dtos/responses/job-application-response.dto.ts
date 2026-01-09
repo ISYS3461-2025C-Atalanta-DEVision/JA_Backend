@@ -4,7 +4,7 @@ export class JobApplicationResponseDto {
   id: string;
   applicantId: string;
   jobId: string;
-  cvMediaId?: string;
+  mediaUrls?: string[];
   appliedAt: Date;
   status: JobApplicationStatus;
   createdAt: Date;
