@@ -203,10 +203,19 @@ deploy_service() {
   print_info "Deploying to Railway service: $railway_service"
 
   if [ -n "$RAILWAY_PROJECT_ID" ]; then
-    # CI/CD mode: use service flag directly (avoids link authentication issues)
-    if ! railway up --detach --service "$railway_service" --environment "$RAILWAY_ENVIRONMENT"; then
-      print_error "Deployment failed for: $folder"
-      return 1
+    # CI/CD mode: use PROJECT_TOKEN for deployment (contains project context)
+    if [ -n "$PROJECT_TOKEN" ]; then
+      print_info "Using PROJECT_TOKEN for deployment"
+      if ! RAILWAY_TOKEN="$PROJECT_TOKEN" railway up --detach --service "$railway_service" --environment "$RAILWAY_ENVIRONMENT"; then
+        print_error "Deployment failed for: $folder"
+        return 1
+      fi
+    else
+      # Fallback to RAILWAY_TOKEN if PROJECT_TOKEN not set
+      if ! railway up --detach --service "$railway_service" --environment "$RAILWAY_ENVIRONMENT"; then
+        print_error "Deployment failed for: $folder"
+        return 1
+      fi
     fi
   else
     # Local mode: link first, then deploy
