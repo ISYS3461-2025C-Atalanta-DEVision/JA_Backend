@@ -30,6 +30,8 @@
     "dev-notification-service": "nest start notification-service --watch",
     "start:notification-service:debug": "nest start notification-service --debug --watch",
     "build:work-history-service": "nest build work-history-service",
+    "build:job-application-service": "nest build job-application-service",
+    "build:education-service": "nest build education-service",
     "start:work-history-service": "nest start work-history-service",
     "dev-work-history-service": "nest start work-history-service --watch",
     "start:work-history-service:debug": "nest start work-history-service --debug --watch",
