@@ -19,7 +19,8 @@ jobs:
 
       - name: Deploy all services to Railway
         env:
-          RAILWAY_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT: production
         run: |

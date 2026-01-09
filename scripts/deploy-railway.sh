@@ -96,22 +96,32 @@ check_railway_cli() {
 }
 
 check_railway_auth() {
-  # If RAILWAY_TOKEN is set (CI/CD), skip whoami check
+  # CI/CD mode: check for authentication tokens
   if [ -n "$RAILWAY_TOKEN" ]; then
     print_info "Using RAILWAY_TOKEN for authentication"
-    return 0
-  fi
-
-  if ! railway whoami &> /dev/null; then
-    print_error "Not logged into Railway. Run: railway login"
-    exit 1
+  elif [ -n "$PROJECT_TOKEN" ]; then
+    # Fall back to PROJECT_TOKEN if RAILWAY_TOKEN not set
+    export RAILWAY_TOKEN="$PROJECT_TOKEN"
+    print_info "Using PROJECT_TOKEN for authentication"
+  else
+    # Local mode: check if logged in
+    if ! railway whoami &> /dev/null; then
+      print_error "Not logged into Railway. Run: railway login"
+      exit 1
+    fi
   fi
 }
 
 check_railway_env() {
+  # Determine if we're in CI/CD mode
+  local is_cicd=false
+  if [ -n "$RAILWAY_TOKEN" ] || [ -n "$PROJECT_TOKEN" ]; then
+    is_cicd=true
+  fi
+
   # For CI/CD, require RAILWAY_PROJECT_ID
-  if [ -n "$RAILWAY_TOKEN" ] && [ -z "$RAILWAY_PROJECT_ID" ]; then
-    print_error "RAILWAY_PROJECT_ID is required when using RAILWAY_TOKEN"
+  if [ "$is_cicd" = true ] && [ -z "$RAILWAY_PROJECT_ID" ]; then
+    print_error "RAILWAY_PROJECT_ID is required in CI/CD mode"
     exit 1
   fi
 
