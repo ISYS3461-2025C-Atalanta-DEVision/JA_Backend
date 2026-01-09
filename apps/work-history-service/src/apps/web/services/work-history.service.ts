@@ -29,7 +29,7 @@ export class WorkHistoryService implements IWorkHistoryService {
   constructor(
     private readonly workHistoryRepository: WorkHistoryRepository,
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
-  ) {}
+  ) { }
 
   async create(
     createDto: CreateWorkHistoryDto,
@@ -216,7 +216,7 @@ export class WorkHistoryService implements IWorkHistoryService {
     return {
       id: workHistory._id.toString(),
       applicantId: workHistory.applicantId.toString(),
-      companyId: workHistory.companyId.toString(),
+      companyName: workHistory.companyName,
       title: workHistory.title,
       description: workHistory.description,
       startDate: workHistory.startDate,

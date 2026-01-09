@@ -17,12 +17,12 @@ export class CreateWorkHistoryDto {
   title: string;
 
   @ApiProperty({
-    example: "66c1f3b2e8f4c1a9b7654321",
-    description: "Company ID (ObjectId as string)",
+    example: "Apple",
+    description: "Name of the company ",
   })
   @IsNotEmpty()
   @IsString()
-  companyId: string;
+  companyName: string;
 
   @ApiProperty({
     example: "2024-06-01",

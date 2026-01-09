@@ -13,7 +13,7 @@ export class UpdateWorkHistoryDto {
 
   @IsOptional()
   @IsString()
-  companyId?: string;
+  companyName?: string;
 
   @IsOptional()
   @IsDateString()
