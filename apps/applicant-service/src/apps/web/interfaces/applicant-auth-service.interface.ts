@@ -12,6 +12,7 @@ export interface ApplicantAuthResponse {
     role: Role;
     country?: string;
     emailVerified?: boolean;
+    isPremium: boolean
   };
   provider: string; // 'email' | 'google'
 }

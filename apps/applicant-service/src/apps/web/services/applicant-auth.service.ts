@@ -40,7 +40,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
     private readonly mailerService: MailerService,
     private readonly applicantRepo: ApplicantRepository,
     private readonly oauthAccountRepo: OAuthAccountRepository,
-  ) {}
+  ) { }
 
   /**
    * Register new applicant with email/password
@@ -454,6 +454,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
         role: Role.Applicant,
         country: applicant.country,
         emailVerified: applicant.emailVerified,
+        isPremium: applicant.isPremium
       },
       provider,
     };
