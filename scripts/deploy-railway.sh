@@ -189,28 +189,28 @@ deploy_service() {
   # Create railway.toml with correct Dockerfile path
   create_railway_toml "$folder"
 
-  # Link to Railway service
-  print_info "Linking to Railway service: $railway_service"
+  # Deploy to Railway
+  print_info "Deploying to Railway service: $railway_service"
+
   if [ -n "$RAILWAY_PROJECT_ID" ]; then
-    # CI/CD mode: use project ID and environment
-    if ! railway link -p "$RAILWAY_PROJECT_ID" -e "$RAILWAY_ENVIRONMENT" -s "$railway_service"; then
-      print_error "Failed to link to Railway service: $railway_service"
+    # CI/CD mode: use service flag directly (avoids link authentication issues)
+    if ! railway up --detach --service "$railway_service" --environment "$RAILWAY_ENVIRONMENT"; then
+      print_error "Deployment failed for: $folder"
       return 1
     fi
   else
-    # Local mode: interactive link
+    # Local mode: link first, then deploy
+    print_info "Linking to Railway service: $railway_service"
     if ! railway link -s "$railway_service"; then
       print_error "Failed to link to Railway service: $railway_service"
       return 1
     fi
-  fi
-  print_success "Linked to $railway_service"
+    print_success "Linked to $railway_service"
 
-  # Deploy from monorepo root (always use --detach, railway up without it streams logs forever)
-  print_info "Deploying to Railway..."
-  if ! railway up --detach; then
-    print_error "Deployment failed for: $folder"
-    return 1
+    if ! railway up --detach; then
+      print_error "Deployment failed for: $folder"
+      return 1
+    fi
   fi
   print_success "Deployment initiated for $folder"
 
