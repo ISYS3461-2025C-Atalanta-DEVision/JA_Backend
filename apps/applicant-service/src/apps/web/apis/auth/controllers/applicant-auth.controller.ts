@@ -6,13 +6,14 @@ import {
   TokenStorageData,
   RegisterData,
 } from "../../../interfaces";
+import { ChangePasswordDto } from "../dtos/requests/changPassword.dto";
 
 @Controller()
 export class ApplicantAuthController {
   constructor(
     @Inject(APPLICANT_AUTH_SERVICE_WEB_PROVIDER)
     private readonly authService: IApplicantAuthService,
-  ) {}
+  ) { }
 
   /**
    * Register new applicant with email/password
@@ -32,6 +33,17 @@ export class ApplicantAuthController {
     @Payload() data: { email: string; password: string },
   ) {
     return await this.authService.verifyCredentials(data.email, data.password);
+  }
+
+  /**
+   * Change password credentials
+   * Returns true or false (operation status)
+   */
+  @MessagePattern({ cmd: "applicant.auth.changePassword" })
+  async changePassword(
+    @Payload() data: { applicantId: string; changePasswordDto: ChangePasswordDto },
+  ) {
+    return await this.authService.changePassword(data.applicantId, data.changePasswordDto.currentPassword, data.changePasswordDto.newPassword);
   }
 
   /**

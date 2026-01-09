@@ -85,6 +85,17 @@ export interface IApplicantAuthService {
   ): Promise<ApplicantAuthResponse>;
 
   /**
+   * Change applicant password
+   * Requires current password verification
+   * Resets login attempts and clears brute-force lock
+   */
+  changePassword(
+    applicantId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean }>
+
+  /**
    * Store tokens for a applicant
    * Called by Gateway after generating new tokens
    */

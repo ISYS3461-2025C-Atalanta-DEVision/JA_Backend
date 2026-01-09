@@ -358,6 +358,79 @@ export class ApplicantAuthService implements IApplicantAuthService {
   }
 
   /**
+   * Change applicant password
+   * Requires current password verification
+   * Resets login attempts and clears brute-force lock
+   */
+  async changePassword(
+    applicantId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean }> {
+    try {
+      const applicant = await this.applicantRepo.findById(applicantId);
+
+      if (!applicant || !applicant.isActive) {
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'User not found or inactive',
+        });
+      }
+
+      if (!applicant.passwordHash) {
+        throw new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Password change not allowed for OAuth-only accounts',
+        });
+      }
+
+      const isCurrentPasswordValid = await verify(
+        applicant.passwordHash,
+        currentPassword,
+      );
+
+      if (!isCurrentPasswordValid) {
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Current password is incorrect',
+        });
+      }
+
+      const newPasswordHash = await hash(newPassword, {
+        memoryCost: 19456,
+        timeCost: 2,
+        parallelism: 1,
+        outputLen: 32,
+      });
+
+      await this.applicantRepo.update(applicantId, {
+        passwordHash: newPasswordHash,
+        loginAttempts: 0,
+        lockUntil: null,
+      });
+
+      // Invalidate all sessions after password change
+      await this.oauthAccountRepo.clearAllTokens(applicantId);
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error(
+        `Change password failed for ${applicantId}`,
+        error.stack,
+      );
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Change password failed',
+      });
+    }
+  }
+
+  /**
    * Store tokens
    * Called by Gateway after generating tokens
    */
