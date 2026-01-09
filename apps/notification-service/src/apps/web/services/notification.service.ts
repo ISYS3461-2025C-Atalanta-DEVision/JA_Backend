@@ -2,7 +2,6 @@ import { Injectable, Logger, Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { MailerService } from "@libs/mailer";
 import {
-  IKafkaEvent,
   IJobCreatedPayload,
   IMatchingJMToJACompletedPayload,
   IPremiumJMCreatedPayload,
@@ -63,7 +62,7 @@ export class NotificationService implements INotificationService {
     private readonly mailerService: MailerService,
     private readonly notificationPubSub: NotificationPubSubService,
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
-  ) {}
+  ) { }
 
   /**
    * Validates applicant exists in applicant-service and returns applicant data including email.
@@ -101,10 +100,8 @@ export class NotificationService implements INotificationService {
    * Instantly evaluate new job posts against active premium subscribers
    * and deliver real-time notifications to matching applicants
    */
-  async handleJobCreated(
-    event: IKafkaEvent<IJobCreatedPayload>,
-  ): Promise<void> {
-    const { payload, eventId } = event;
+  async handleJobCreated(payload: IJobCreatedPayload): Promise<void> {
+    this.logger.log(`Payload received: ${JSON.stringify(payload)}`);
 
     this.logger.log(
       `Processing new job: ${payload.title} at ${payload.companyName}`,
@@ -117,9 +114,9 @@ export class NotificationService implements INotificationService {
       requiredSkillIds: payload.criteria.requiredSkillIds || [],
       requiredSkillNames: payload.criteria.requiredSkillNames || [],
       location: payload.criteria.location,
-      salaryMin: payload.criteria.salaryRange?.min,
+      salaryMin: payload.criteria.salaryRange?.min ?? payload.criteria.salaryAmount,
       salaryMax: payload.criteria.salaryRange?.max,
-      currency: payload.criteria.salaryRange?.currency || "USD",
+      currency: payload.criteria.salaryCurrency,
       employmentType: this.mapEmploymentType(payload.criteria.employmentType),
       isFresherFriendly: payload.criteria.isFresherFriendly || false,
     };
@@ -141,7 +138,6 @@ export class NotificationService implements INotificationService {
           job: payload,
           matchScore: matchResult.matchScore,
           matchedCriteria: matchResult.matchedCriteria,
-          sourceEventId: eventId,
         });
       } catch (error) {
         this.logger.error(
@@ -203,10 +199,10 @@ export class NotificationService implements INotificationService {
         desiredLocations: searchProfile.desiredLocations || [],
         expectedSalary: searchProfile.expectedSalary
           ? {
-              min: searchProfile.expectedSalary.min,
-              max: searchProfile.expectedSalary.max,
-              currency: searchProfile.expectedSalary.currency || "USD",
-            }
+            min: searchProfile.expectedSalary.min,
+            max: searchProfile.expectedSalary.max,
+            currency: searchProfile.expectedSalary.currency || "USD",
+          }
           : { min: 0, currency: "USD" },
         employmentTypes: (searchProfile.employmentTypes || []).map((t) =>
           this.mapEmploymentType(t),
@@ -244,7 +240,6 @@ export class NotificationService implements INotificationService {
       employmentType: boolean;
       roleMatch: boolean;
     };
-    sourceEventId: string;
   }): Promise<void> {
     // Validate applicant exists before sending notification
     const applicant = await this.validateAndGetApplicant(params.applicantId);
@@ -277,7 +272,11 @@ export class NotificationService implements INotificationService {
         companyId: params.job.companyId,
         companyName: params.job.companyName,
         location: params.job.criteria.location,
+        salaryType: params.job.criteria.salaryType,
+        salaryCurrency: params.job.criteria.salaryCurrency,
         salaryRange: params.job.criteria.salaryRange,
+        salaryAmount: params.job.criteria.salaryAmount,
+        salaryEstimationType: params.job.criteria.salaryEstimationType,
         employmentType: params.job.criteria.employmentType,
         matchScore: params.matchScore,
         matchedCriteria: params.matchedCriteria,
@@ -290,16 +289,15 @@ export class NotificationService implements INotificationService {
         },
         ...(recipientEmail
           ? [
-              {
-                channel: NotificationChannel.EMAIL,
-                status: NotificationStatus.PENDING,
-                retryCount: 0,
-              },
-            ]
+            {
+              channel: NotificationChannel.EMAIL,
+              status: NotificationStatus.PENDING,
+              retryCount: 0,
+            },
+          ]
           : []),
       ],
       priority: params.matchScore >= 70 ? "HIGH" : "NORMAL",
-      sourceEventId: params.sourceEventId,
     });
 
     // Publish to Redis for real-time WebSocket delivery
@@ -329,10 +327,8 @@ export class NotificationService implements INotificationService {
    * Notify applicants who matched with a job
    */
   async handleMatchingCompleted(
-    event: IKafkaEvent<IMatchingJMToJACompletedPayload>,
+    payload: IMatchingJMToJACompletedPayload,
   ): Promise<void> {
-    const { payload, eventId } = event;
-
     this.logger.log(
       `Processing matching results from company: ${payload.companyId}, matched ${payload.totalMatches} entities`,
     );
@@ -347,7 +343,6 @@ export class NotificationService implements INotificationService {
             companyId: payload.companyId,
             matchScore: match.matchScore,
             matchedCriteria: match.matchedCriteria,
-            sourceEventId: eventId,
           });
         } catch (error) {
           this.logger.error(
@@ -367,11 +362,7 @@ export class NotificationService implements INotificationService {
    * Handle premium subscription created event from Job Manager
    * This event is for company premium subscriptions
    */
-  async handlePremiumCreated(
-    event: IKafkaEvent<IPremiumJMCreatedPayload>,
-  ): Promise<void> {
-    const { payload } = event;
-
+  async handlePremiumCreated(payload: IPremiumJMCreatedPayload): Promise<void> {
     this.logger.log(
       `Processing company premium subscription: ${payload.companyId}`,
     );
@@ -391,10 +382,8 @@ export class NotificationService implements INotificationService {
    * Send welcome email + trigger matching
    */
   async handleJAPremiumCreated(
-    event: IKafkaEvent<IPremiumJACreatedPayload>,
+    payload: IPremiumJACreatedPayload,
   ): Promise<void> {
-    const { payload, eventId } = event;
-
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.applicantId);
     if (!applicant) {
@@ -440,7 +429,6 @@ export class NotificationService implements INotificationService {
         },
       ],
       priority: "HIGH",
-      sourceEventId: eventId,
     });
 
     // Publish to Redis for real-time WebSocket delivery
@@ -489,10 +477,8 @@ export class NotificationService implements INotificationService {
    * Send expiration notification email
    */
   async handleJAPremiumExpired(
-    event: IKafkaEvent<IPremiumJAExpiredPayload>,
+    payload: IPremiumJAExpiredPayload,
   ): Promise<void> {
-    const { payload, eventId } = event;
-
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.applicantId);
     if (!applicant) {
@@ -534,7 +520,6 @@ export class NotificationService implements INotificationService {
         },
       ],
       priority: "HIGH",
-      sourceEventId: eventId,
     });
 
     // Publish to Redis for real-time WebSocket delivery
@@ -570,10 +555,8 @@ export class NotificationService implements INotificationService {
    * Sync profile to projection and send confirmation notification
    */
   async handleJASearchProfileCreated(
-    event: IKafkaEvent<ISearchProfileCreatedPayload>,
+    payload: ISearchProfileCreatedPayload,
   ): Promise<void> {
-    const { payload, eventId } = event;
-
     if (payload.userType !== "APPLICANT") {
       this.logger.log(
         `Skipping non-applicant profile creation: ${payload.userId}`,
@@ -628,7 +611,6 @@ export class NotificationService implements INotificationService {
         },
       ],
       priority: "NORMAL",
-      sourceEventId: eventId,
     });
 
     // Publish to Redis for real-time WebSocket delivery
@@ -656,10 +638,8 @@ export class NotificationService implements INotificationService {
    * Sync profile to projection and send confirmation notification
    */
   async handleJASearchProfileUpdated(
-    event: IKafkaEvent<ISearchProfileUpdatedPayload>,
+    payload: ISearchProfileUpdatedPayload,
   ): Promise<void> {
-    const { payload, eventId } = event;
-
     // Only process if this is an APPLICANT profile update
     if (payload.userType !== "APPLICANT") {
       this.logger.log(
@@ -715,7 +695,6 @@ export class NotificationService implements INotificationService {
         },
       ],
       priority: "NORMAL",
-      sourceEventId: eventId,
     });
 
     // Publish to Redis for real-time WebSocket delivery
@@ -753,7 +732,6 @@ export class NotificationService implements INotificationService {
       salary: boolean;
       experience: boolean;
     };
-    sourceEventId: string;
   }): Promise<void> {
     // Validate applicant exists before sending notification (only for APPLICANT recipients)
     let recipientEmail = "";
@@ -799,7 +777,6 @@ export class NotificationService implements INotificationService {
         },
       ],
       priority: "NORMAL",
-      sourceEventId: params.sourceEventId,
     });
 
     this.logger.log(`Created notification record: ${notificationId}`);
@@ -960,9 +937,8 @@ export class NotificationService implements INotificationService {
     <div class="content">
       <p>${message}</p>
       ${data?.matchScore ? `<p class="match-score">Match Score: ${data.matchScore}%</p>` : ""}
-      ${
-        data?.matchedCriteria
-          ? `
+      ${data?.matchedCriteria
+        ? `
       <div class="criteria">
         <h3>Matched Criteria:</h3>
         <div class="criteria-item">Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}</div>
@@ -971,7 +947,7 @@ export class NotificationService implements INotificationService {
         <div class="criteria-item">Experience: ${data.matchedCriteria.experience ? "Yes" : "No"}</div>
       </div>
       `
-          : ""
+        : ""
       }
     </div>
     <div class="footer">

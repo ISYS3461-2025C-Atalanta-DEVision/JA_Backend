@@ -17,7 +17,6 @@ import {
   TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED,
 } from "@kafka/constants";
 import {
-  IKafkaEvent,
   IJobCreatedPayload,
   IMatchingJMToJACompletedPayload,
   IPremiumJMCreatedPayload,
@@ -34,29 +33,30 @@ export class KafkaEventController {
   constructor(
     @Inject(NOTIFICATION_SERVICE_WEB_PROVIDER)
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   @EventPattern(TOPIC_JOB_CREATED)
   async handleJobCreated(
-    @Payload() message: IKafkaEvent<IJobCreatedPayload>,
+    @Payload() message: IJobCreatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
     this.logger.log(
       `Received job.created [topic=${topic}, partition=${partition}, offset=${offset}]`,
     );
+    this.logger.debug(`Message Payload: ${JSON.stringify(message)}`);
 
     try {
       await this.notificationService.handleJobCreated(message);
-      this.logger.log(`Processed job.created: ${message.eventId}`);
+      this.logger.log(`Processed job.created: ${message.jobId}`);
     } catch (error) {
-      this.logger.error(`Failed job.created: ${message.eventId}`, error.stack);
+      this.logger.error(`Failed job.created: ${message.jobId}`, error.stack);
     }
   }
 
   @EventPattern(TOPIC_MATCHING_JM_TO_JA_COMPLETED)
   async handleMatchingCompleted(
-    @Payload() message: IKafkaEvent<IMatchingJMToJACompletedPayload>,
+    @Payload() message: IMatchingJMToJACompletedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -66,10 +66,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handleMatchingCompleted(message);
-      this.logger.log(`Processed matching.completed: ${message.eventId}`);
+      this.logger.log(`Processed matching.completed: ${message.companyId}`);
     } catch (error) {
       this.logger.error(
-        `Failed matching.completed: ${message.eventId}`,
+        `Failed matching.completed: ${message.companyId}`,
         error.stack,
       );
     }
@@ -77,7 +77,7 @@ export class KafkaEventController {
 
   @EventPattern(TOPIC_SUBSCRIPTION_PREMIUM_JM_CREATED)
   async handlePremiumCreated(
-    @Payload() message: IKafkaEvent<IPremiumJMCreatedPayload>,
+    @Payload() message: IPremiumJMCreatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -87,10 +87,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handlePremiumCreated(message);
-      this.logger.log(`Processed premium.jm.created: ${message.eventId}`);
+      this.logger.log(`Processed premium.jm.created: ${message.companyId}`);
     } catch (error) {
       this.logger.error(
-        `Failed premium.jm.created: ${message.eventId}`,
+        `Failed premium.jm.created: ${message.companyId}`,
         error.stack,
       );
     }
@@ -98,7 +98,7 @@ export class KafkaEventController {
 
   @EventPattern(TOPIC_SUBSCRIPTION_PREMIUM_JA_CREATED)
   async handleJAPremiumCreated(
-    @Payload() message: IKafkaEvent<IPremiumJACreatedPayload>,
+    @Payload() message: IPremiumJACreatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -108,10 +108,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handleJAPremiumCreated(message);
-      this.logger.log(`Processed premium.ja.created: ${message.eventId}`);
+      this.logger.log(`Processed premium.ja.created: ${message.applicantId}`);
     } catch (error) {
       this.logger.error(
-        `Failed premium.ja.created: ${message.eventId}`,
+        `Failed premium.ja.created: ${message.applicantId}`,
         error.stack,
       );
     }
@@ -119,7 +119,7 @@ export class KafkaEventController {
 
   @EventPattern(TOPIC_SUBSCRIPTION_PREMIUM_JA_EXPIRED)
   async handleJAPremiumExpired(
-    @Payload() message: IKafkaEvent<IPremiumJAExpiredPayload>,
+    @Payload() message: IPremiumJAExpiredPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -129,10 +129,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handleJAPremiumExpired(message);
-      this.logger.log(`Processed premium.ja.expired: ${message.eventId}`);
+      this.logger.log(`Processed premium.ja.expired: ${message.applicantId}`);
     } catch (error) {
       this.logger.error(
-        `Failed premium.ja.expired: ${message.eventId}`,
+        `Failed premium.ja.expired: ${message.applicantId}`,
         error.stack,
       );
     }
@@ -140,7 +140,7 @@ export class KafkaEventController {
 
   @EventPattern(TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED)
   async handleJASearchProfileCreated(
-    @Payload() message: IKafkaEvent<ISearchProfileCreatedPayload>,
+    @Payload() message: ISearchProfileCreatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -150,10 +150,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handleJASearchProfileCreated(message);
-      this.logger.log(`Processed profile.created: ${message.eventId}`);
+      this.logger.log(`Processed profile.created: ${message.profileId}`);
     } catch (error) {
       this.logger.error(
-        `Failed profile.created: ${message.eventId}`,
+        `Failed profile.created: ${message.profileId}`,
         error.stack,
       );
     }
@@ -161,7 +161,7 @@ export class KafkaEventController {
 
   @EventPattern(TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED)
   async handleJASearchProfileUpdated(
-    @Payload() message: IKafkaEvent<ISearchProfileUpdatedPayload>,
+    @Payload() message: ISearchProfileUpdatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
@@ -171,10 +171,10 @@ export class KafkaEventController {
 
     try {
       await this.notificationService.handleJASearchProfileUpdated(message);
-      this.logger.log(`Processed profile.updated: ${message.eventId}`);
+      this.logger.log(`Processed profile.updated: ${message.profileId}`);
     } catch (error) {
       this.logger.error(
-        `Failed profile.updated: ${message.eventId}`,
+        `Failed profile.updated: ${message.profileId}`,
         error.stack,
       );
     }

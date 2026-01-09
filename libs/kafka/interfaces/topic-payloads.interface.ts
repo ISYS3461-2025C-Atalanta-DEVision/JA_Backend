@@ -16,6 +16,10 @@ export type EmploymentType =
 
 export type SubscriptionTier = "NORMAL" | "PREMIUM";
 
+export type SalaryType = "RANGE" | "ESTIMATION" | "NEGOTIABLE";
+
+export type SalaryEstimationType = "ABOUT" | "UP_TO" | "FROM" | "NEGOTIABLE";
+
 export interface ISalaryRange {
   min: number;
   max?: number;
@@ -133,7 +137,12 @@ export interface IJobCreatedPayload {
     minExperience: number;
     maxExperience?: number;
     location: string;
-    salaryRange?: ISalaryRange;
+    // Salary fields
+    salaryType: SalaryType;
+    salaryCurrency: string;
+    salaryRange?: { min: number; max: number }; // for RANGE type
+    salaryAmount?: number; // for ESTIMATION type
+    salaryEstimationType?: SalaryEstimationType; // for ESTIMATION type
     employmentType: EmploymentType;
     isFresherFriendly: boolean;
   };
