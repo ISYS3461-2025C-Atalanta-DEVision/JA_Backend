@@ -96,6 +96,18 @@ check_railway_cli() {
 }
 
 check_railway_auth() {
+  # Debug: show which tokens are available (without revealing values)
+  if [ -n "$RAILWAY_TOKEN" ]; then
+    print_info "RAILWAY_TOKEN is set"
+  else
+    print_warning "RAILWAY_TOKEN is not set"
+  fi
+  if [ -n "$PROJECT_TOKEN" ]; then
+    print_info "PROJECT_TOKEN is set"
+  else
+    print_warning "PROJECT_TOKEN is not set"
+  fi
+
   # CI/CD mode: check for authentication tokens
   if [ -n "$RAILWAY_TOKEN" ]; then
     print_info "Using RAILWAY_TOKEN for authentication"
