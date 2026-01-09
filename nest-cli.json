@@ -71,6 +71,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/education-service/tsconfig.app.json"
       }
+    },
+    "job-application-service": {
+      "type": "application",
+      "root": "apps/job-application-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/job-application-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/job-application-service/tsconfig.app.json"
+      }
     }
   }
 }

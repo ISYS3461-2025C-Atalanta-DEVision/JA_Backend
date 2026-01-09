@@ -29,7 +29,7 @@ export class EducationService implements IEducationService {
   constructor(
     private readonly educationRepository: EducationRepository,
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
-  ) {}
+  ) { }
 
   async create(
     createDto: CreateEducationDto,
@@ -97,22 +97,22 @@ export class EducationService implements IEducationService {
         );
       }
 
-      const workHistories = await this.educationRepository.findMany({
+      const educations = await this.educationRepository.findMany({
         applicantId: applicantId,
       });
 
-      if (!workHistories.length) {
+      if (!educations.length) {
         return [];
       }
 
-      return workHistories.map((wh) => this.toResponseDto(wh));
+      return educations.map((wh) => this.toResponseDto(wh));
     } catch (error) {
       this.logger.error(
-        `Find educaiton failed for Applicant ${applicantId}`,
+        `Find education failed for Applicant ${applicantId}`,
         error.stack,
       );
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException("Failed to find workHistory");
+      throw new InternalServerErrorException("Failed to find education ");
     }
   }
 

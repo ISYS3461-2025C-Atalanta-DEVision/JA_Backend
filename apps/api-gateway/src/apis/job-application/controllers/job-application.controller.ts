@@ -28,47 +28,43 @@ import { CurrentUser, ApiKeyAuth, Public } from "@auth/decorators";
 import { AuthenticatedUser } from "@auth/interfaces";
 import { EmailVerifiedGuard } from "@auth/guards";
 import { firstValueFrom, timeout, catchError } from "rxjs";
-import { CreateWorkHistoryDto, UpdateWorkHistoryDto } from "../dtos";
+import { CreateJobApplicationDto, UpdateJobApplicationDto } from "../dtos";
 import {
   parseFilters,
   parseSorting,
   validatePagination,
 } from "../../../shared/utils/query-parser.util";
 
-@ApiTags("Work History")
-@Controller("work-history")
+@ApiTags("JobApplication")
+@Controller("jobApplication")
 @UseGuards(EmailVerifiedGuard)
-export class WorkHistoryController {
-  private readonly logger = new Logger(WorkHistoryController.name);
+export class JobApplicationController {
+  private readonly logger = new Logger(JobApplicationController.name);
 
   constructor(
-    @Inject("WORK_HISTORY_SERVICE")
-    private readonly workHistoryClient: ClientProxy,
+    @Inject("JOB_APPLICATION_SERVICE") private readonly jobApplicationClient: ClientProxy,
   ) { }
 
   @Post()
   @ApiOperation({
-    summary: "Create work history",
-    description: "Create a new work history profile (requires JWE auth)",
+    summary: "Create jobApplication",
+    description: "Create a new jobApplication profile (requires JWE auth)",
   })
-  @ApiBody({ type: CreateWorkHistoryDto })
-  @ApiResponse({
-    status: 201,
-    description: "work history created successfully",
-  })
+  @ApiBody({ type: CreateJobApplicationDto })
+  @ApiResponse({ status: 201, description: "jobApplication created successfully" })
   @ApiResponse({ status: 400, description: "Invalid input data" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   async create(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() createDto: CreateWorkHistoryDto,
+    @Body() createDto: CreateJobApplicationDto,
   ) {
-    this.logger.log(`User ${user.email} creating work history`);
+    this.logger.log(`User ${user.email} creating jobApplication`);
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
+        this.jobApplicationClient
           .send(
-            { cmd: "workHistory.create" },
+            { cmd: "jobApplication.create" },
             { createDto: createDto, applicantId: user.id },
           )
           .pipe(
@@ -76,7 +72,7 @@ export class WorkHistoryController {
             catchError((error) => {
               this.logger.error(error);
               throw new HttpException(
-                error.message || "work history service unavailable",
+                error.message || "jobApplication service unavailable",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -88,7 +84,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        error.message || "Failed to create work history",
+        error.message || "Failed to create jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -97,17 +93,14 @@ export class WorkHistoryController {
   @Get("applicant/:applicantId")
   @ApiKeyAuth()
   @ApiOperation({
-    summary: "Get work history by applicant ID",
+    summary: "Get jobApplication by applicant ID",
     description:
-      "Retrieve a list of work history by applicant ID (requires API key or JWE auth)",
+      "Retrieve a list of jobApplication by applicant ID (requires API key or JWE auth)",
   })
   @ApiParam({ name: "applicantId", description: "Applicant ID" })
-  @ApiResponse({
-    status: 200,
-    description: "work history retrieved successfully",
-  })
+  @ApiResponse({ status: 200, description: "jobApplication retrieved successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @ApiResponse({ status: 404, description: "work history not found" })
+  @ApiResponse({ status: 404, description: "jobApplication not found" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   async findByApplicantId(
     @CurrentUser() user: AuthenticatedUser | undefined,
@@ -116,20 +109,20 @@ export class WorkHistoryController {
   ) {
     const authType = (request as any).authType || "jwt";
     const identifier = authType === "jwt" && user ? user.email : "API Key";
-    this.logger.log(`Getting Applicant ${applicantId} work history`);
+    this.logger.log(`Getting Applicant ${applicantId} jobApplication`);
 
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
+        this.jobApplicationClient
           .send(
-            { cmd: "workHistory.findByApplicantId" },
+            { cmd: "jobApplication.findByApplicantId" },
             { applicantId: applicantId },
           )
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || "work history not found",
+                error.message || "jobApplication not found",
                 error.status || HttpStatus.NOT_FOUND,
               );
             }),
@@ -141,7 +134,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        error.message || "Failed to fetch work history",
+        error.message || "Failed to fetch jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -150,17 +143,14 @@ export class WorkHistoryController {
   @Get(":id")
   @ApiKeyAuth()
   @ApiOperation({
-    summary: "Get work history by ID",
+    summary: "Get jobApplication by ID",
     description:
-      "Retrieve a single work history by ID (requires API key or JWE auth)",
+      "Retrieve a single jobApplication by ID (requires API key or JWE auth)",
   })
-  @ApiParam({ name: "id", description: "work history ID" })
-  @ApiResponse({
-    status: 200,
-    description: "work history retrieved successfully",
-  })
+  @ApiParam({ name: "id", description: "jobApplication ID" })
+  @ApiResponse({ status: 200, description: "jobApplication retrieved successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @ApiResponse({ status: 404, description: "work history not found" })
+  @ApiResponse({ status: 404, description: "jobApplication not found" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   async findById(
     @CurrentUser() user: AuthenticatedUser | undefined,
@@ -169,21 +159,19 @@ export class WorkHistoryController {
   ) {
     const authType = (request as any).authType || "jwt";
     const identifier = authType === "jwt" && user ? user.email : "API Key";
-    this.logger.log(`${identifier} accessing work history ${id}`);
+    this.logger.log(`${identifier} accessing jobApplication ${id}`);
 
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
-          .send({ cmd: "workHistory.findById" }, { id })
-          .pipe(
-            timeout(5000),
-            catchError((error) => {
-              throw new HttpException(
-                error.message || "work history not found",
-                error.status || HttpStatus.NOT_FOUND,
-              );
-            }),
-          ),
+        this.jobApplicationClient.send({ cmd: "jobApplication.findById" }, { id }).pipe(
+          timeout(5000),
+          catchError((error) => {
+            throw new HttpException(
+              error.message || "jobApplication not found",
+              error.status || HttpStatus.NOT_FOUND,
+            );
+          }),
+        ),
       );
       return result;
     } catch (error) {
@@ -191,7 +179,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        error.message || "Failed to fetch work history",
+        error.message || "Failed to fetch jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -200,9 +188,9 @@ export class WorkHistoryController {
   @Get()
   @ApiKeyAuth()
   @ApiOperation({
-    summary: "Get all work histories",
+    summary: "Get all jobApplication",
     description:
-      "Retrieve paginated list of work historys (requires API key or JWE auth)",
+      "Retrieve paginated list of jobApplications (requires API key or JWE auth)",
   })
   @ApiQuery({
     name: "page",
@@ -231,7 +219,7 @@ export class WorkHistoryController {
   })
   @ApiResponse({
     status: 200,
-    description: "List of work historys retrieved successfully",
+    description: "List of jobApplications retrieved successfully",
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 500, description: "Internal server error" })
@@ -246,13 +234,13 @@ export class WorkHistoryController {
     const authType = (request as any)?.authType || "jwt";
     const identifier = authType === "jwt" && user ? user.email : "API Key";
     const pagination = validatePagination(page, limit);
-    this.logger.log(`${identifier} listing work historys (page ${pagination.page})`);
+    this.logger.log(`${identifier} listing jobApplications (page ${pagination.page})`);
 
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
+        this.jobApplicationClient
           .send(
-            { cmd: "workHistory.findAll" },
+            { cmd: "jobApplication.findAll" },
             {
               page: pagination.page,
               limit: pagination.limit,
@@ -264,7 +252,7 @@ export class WorkHistoryController {
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || "Failed to fetch work history",
+                error.message || "Failed to fetch jobApplication",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -276,7 +264,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        "Failed to fetch work histories",
+        "Failed to fetch jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -284,37 +272,34 @@ export class WorkHistoryController {
 
   @Put(":id")
   @ApiOperation({
-    summary: "Update work history",
-    description: "Update an existing work history profile (requires JWE auth)",
+    summary: "Update jobApplication",
+    description: "Update an existing jobApplication profile (requires JWE auth)",
   })
-  @ApiParam({ name: "id", description: "work history ID" })
-  @ApiBody({ type: UpdateWorkHistoryDto })
-  @ApiResponse({
-    status: 200,
-    description: "work history updated successfully",
-  })
+  @ApiParam({ name: "id", description: "jobApplication ID" })
+  @ApiBody({ type: UpdateJobApplicationDto })
+  @ApiResponse({ status: 200, description: "JobApplication updated successfully" })
   @ApiResponse({ status: 400, description: "Invalid input data" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @ApiResponse({ status: 404, description: "work history not found" })
+  @ApiResponse({ status: 404, description: "jobApplication not found" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
-    @Body() updateDto: UpdateWorkHistoryDto,
+    @Body() updateDto: UpdateJobApplicationDto,
   ) {
-    this.logger.log(`User ${user.email} updating work history ${id}`);
+    this.logger.log(`User ${user.email} updating jobApplication ${id}`);
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
+        this.jobApplicationClient
           .send(
-            { cmd: "workHistory.update" },
+            { cmd: "jobApplication.update" },
             { id, updates: updateDto, userId: user.id },
           )
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || "Failed to update work history",
+                error.message || "Failed to update jobApplication",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -326,7 +311,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        error.message || "Failed to update work history",
+        error.message || "Failed to update jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -334,31 +319,28 @@ export class WorkHistoryController {
 
   @Delete(":id")
   @ApiOperation({
-    summary: "Delete work history",
-    description: "Delete an work history profile (requires JWE auth)",
+    summary: "Delete jobApplication",
+    description: "Delete an jobApplication entry (requires JWE auth)",
   })
-  @ApiParam({ name: "id", description: "work history ID" })
-  @ApiResponse({
-    status: 200,
-    description: "work history deleted successfully",
-  })
+  @ApiParam({ name: "id", description: "jobApplication ID" })
+  @ApiResponse({ status: 200, description: "jobApplication deleted successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @ApiResponse({ status: 404, description: "work history not found" })
+  @ApiResponse({ status: 404, description: "jobApplication not found" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
-    this.logger.log(`User ${user.email} deleting work history ${id}`);
+    this.logger.log(`User ${user.email} deleting jobApplication ${id}`);
     try {
       const result = await firstValueFrom(
-        this.workHistoryClient
-          .send({ cmd: "workHistory.delete" }, { id, userId: user.id })
+        this.jobApplicationClient
+          .send({ cmd: "jobApplication.delete" }, { id, userId: user.id })
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || "Failed to delete work history",
+                error.message || "Failed to delete jobApplication",
                 error.status || HttpStatus.NOT_FOUND,
               );
             }),
@@ -370,7 +352,7 @@ export class WorkHistoryController {
         throw error;
       }
       throw new HttpException(
-        error.message || "Failed to delete work history",
+        error.message || "Failed to delete jobApplication",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

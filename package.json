@@ -34,6 +34,7 @@
     "dev-work-history-service": "nest start work-history-service --watch",
     "start:work-history-service:debug": "nest start work-history-service --debug --watch",
     "dev-education-service": "nest start education-service --watch",
+    "dev-job-application-service": "nest start job-application-service --watch",
     "lint": "eslint '{apps,libs}/**/*.ts' --fix",
     "test": "jest",
     "test:watch": "jest --watch",

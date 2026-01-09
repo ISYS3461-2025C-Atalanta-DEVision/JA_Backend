@@ -20,6 +20,7 @@ import { HealthController } from "./health.controller";
 import { NotificationGatewayModule } from "./gateways";
 import { configs } from "./configs";
 import { EducationModule } from "./apis/education";
+import { JobApplicationModule } from "./apis/job-application";
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { EducationModule } from "./apis/education";
     AuthModule,
     CountriesModule,
     EducationModule,
+    JobApplicationModule,
     JobCategoryModule,
     NotificationModule,
     SkillModule,
@@ -114,4 +116,4 @@ import { EducationModule } from "./apis/education";
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

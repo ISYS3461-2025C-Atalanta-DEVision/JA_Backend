@@ -1,0 +1,6 @@
+{
+  "build:job-application-service": "nest build job-application-service",
+  "start:job-application-service": "nest start job-application-service",
+  "start:job-application-service:dev": "nest start job-application-service --watch",
+  "start:job-application-service:debug": "nest start job-application-service --debug --watch"
+}
