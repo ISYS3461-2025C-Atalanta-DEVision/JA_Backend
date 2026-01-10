@@ -18,6 +18,14 @@ export const FILE_VALIDATION: Record<StorageFolder, FileValidationRule> = {
     ],
     maxSize: 10 * 1024 * 1024, // 10MB
   },
+  [StorageFolder.COVER_LETTER]: {
+    mimeTypes: [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    maxSize: 10 * 1024 * 1024, // 10MB
+  },
   [StorageFolder.JOB]: {
     mimeTypes: ["image/jpeg", "image/png", "image/avif"],
     maxSize: 5 * 1024 * 1024, // 5MB
