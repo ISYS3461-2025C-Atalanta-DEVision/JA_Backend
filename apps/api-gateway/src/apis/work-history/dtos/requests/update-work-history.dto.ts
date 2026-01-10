@@ -45,15 +45,4 @@ export class UpdateWorkHistoryDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @ApiProperty({
-    example: ["66c1f3b2e8f4c1a9b1111111", "66c1f3b2e8f4c1a9b2222222"],
-    required: false,
-    description: "Updated skill category IDs (ObjectId as strings)",
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  skillCategories?: string[];
 }

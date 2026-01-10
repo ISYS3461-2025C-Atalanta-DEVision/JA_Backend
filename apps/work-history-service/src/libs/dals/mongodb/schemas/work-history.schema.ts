@@ -32,9 +32,6 @@ export class WorkHistory {
   @Prop({ type: Date })
   endDate?: Date;
 
-  @Prop({ default: [] })
-  skillCategories: string[];
-
   createdAt: Date;
   updatedAt: Date;
 }

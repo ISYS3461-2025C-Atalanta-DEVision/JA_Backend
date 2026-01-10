@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, IsBoolean } from "class-validator";
+import { IsEmail, IsOptional, IsString, IsBoolean, IsArray } from "class-validator";
 
 export class UpdateApplicantDto {
   @IsOptional()
@@ -8,6 +8,10 @@ export class UpdateApplicantDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsString()
+  objectiveSummary?: string;
 
   @IsOptional()
   @IsString()
@@ -32,4 +36,9 @@ export class UpdateApplicantDto {
   @IsOptional()
   @IsBoolean()
   isPremium?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skillCategories?: string[];
 }
