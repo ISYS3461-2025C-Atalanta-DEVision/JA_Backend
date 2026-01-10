@@ -42,7 +42,8 @@ export class JobApplicationService implements IJobApplicationService {
       //TODO: double check jobId with JM service
 
       const existing = await this.jobApplicationRepository.findOne({
-        applicantId: applicantId
+        applicantId: applicantId,
+        jobId: createDto.jobId
       });
 
       if (existing) {
