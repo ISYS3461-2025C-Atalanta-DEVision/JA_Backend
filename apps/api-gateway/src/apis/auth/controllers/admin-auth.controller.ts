@@ -121,23 +121,27 @@ export class AdminAuthController {
 
   /**
    * Set auth cookies
+   * - Local (HTTP, same-site): sameSite='lax', secure=false
+   * - Production (HTTPS, cross-site): sameSite='none', secure=true
    */
   private setAuthCookies(
     res: Response,
     accessToken: string,
     refreshToken: string,
   ) {
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 30 * 60 * 1000, // 30 minutes
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
