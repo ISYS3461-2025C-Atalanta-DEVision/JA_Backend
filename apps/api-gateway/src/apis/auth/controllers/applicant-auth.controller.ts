@@ -49,7 +49,7 @@ export class ApplicantAuthController {
     private readonly jweTokenService: JweTokenService,
     @Optional()
     private readonly tokenRevocationService?: TokenRevocationService,
-  ) { }
+  ) {}
 
   /**
    * Hash refresh token for storage
@@ -267,21 +267,22 @@ export class ApplicantAuthController {
     }
   }
 
-  @Post('change-password')
+  @Post("change-password")
   @Throttle({ default: { limit: 3, ttl: 900000 } })
   @ApiOperation({
-    summary: 'Change applicant password',
-    description: 'Change password using current password. Invalidates all sessions.',
+    summary: "Change applicant password",
+    description:
+      "Change password using current password. Invalidates all sessions.",
   })
   @ApiBody({ type: ChangePasswordDto })
   @ApiResponse({
     status: 200,
-    description: 'Password changed successfully',
+    description: "Password changed successfully",
   })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 400, description: 'OAuth-only account' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({ status: 401, description: "Invalid credentials" })
+  @ApiResponse({ status: 400, description: "OAuth-only account" })
+  @ApiResponse({ status: 429, description: "Too many requests" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() data: ChangePasswordDto,
@@ -291,17 +292,17 @@ export class ApplicantAuthController {
       await firstValueFrom(
         this.applicantClient
           .send(
-            { cmd: 'applicant.auth.changePassword' },
+            { cmd: "applicant.auth.changePassword" },
             {
               applicantId: user.id,
-              changePasswordDto: data
+              changePasswordDto: data,
             },
           )
           .pipe(
             timeout(5000),
             catchError((error) => {
               throw new HttpException(
-                error.message || 'Applicant service unavailable',
+                error.message || "Applicant service unavailable",
                 error.status || HttpStatus.INTERNAL_SERVER_ERROR,
               );
             }),
@@ -309,17 +310,17 @@ export class ApplicantAuthController {
       );
 
       // Clear auth cookies after password change
-      res.clearCookie('accessToken')
-      res.clearCookie('refreshToken')
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
 
-      return { message: 'Password changed successfully' };
+      return { message: "Password changed successfully" };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
       throw new HttpException(
-        error.message || 'Failed to change password',
+        error.message || "Failed to change password",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

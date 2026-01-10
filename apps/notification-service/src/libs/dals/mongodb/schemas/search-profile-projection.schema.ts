@@ -81,19 +81,6 @@ export class SearchProfileProjection {
   skillIds: string[];
 
   /**
-   * Cached skill names for display (denormalized)
-   * Avoids lookup calls when displaying notifications
-   */
-  @Prop({ type: [String], default: [] })
-  skillNames: string[];
-
-  /**
-   * Years of experience
-   */
-  @Prop({ default: 0 })
-  experienceYears: number;
-
-  /**
    * Desired work locations (countries/cities)
    */
   @Prop({ type: [String], default: [], index: true })
@@ -119,15 +106,10 @@ export class SearchProfileProjection {
 
   /**
    * Premium subscription status (only premium users receive notifications)
+   * Updated via Kafka events: premium.ja.created sets true, premium.ja.expired sets false
    */
   @Prop({ default: false, index: true })
   isPremium: boolean;
-
-  /**
-   * Premium subscription expiry date
-   */
-  @Prop()
-  premiumExpiresAt?: Date;
 
   // ===========================================
   // Timestamps
@@ -158,6 +140,3 @@ SearchProfileProjectionSchema.index({
   isPremium: 1,
   skillIds: 1,
 });
-
-// Index for checking premium expiry
-SearchProfileProjectionSchema.index({ isPremium: 1, premiumExpiresAt: 1 });

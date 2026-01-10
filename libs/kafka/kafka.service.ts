@@ -6,8 +6,6 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Kafka, Producer, ProducerRecord, RecordMetadata } from "kafkajs";
-import { v4 as uuidv4 } from "uuid";
-import { IKafkaEvent, IKafkaMessage } from "./interfaces";
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
@@ -79,6 +77,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Publish an event to a Kafka topic
+   * Sends raw payload without envelope wrapper
    */
   async publish<T>(
     topic: string,
@@ -87,7 +86,6 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     options?: {
       key?: string;
       headers?: Record<string, string>;
-      correlationId?: string;
     },
   ): Promise<RecordMetadata[] | null> {
     if (!this.isConnected) {
@@ -95,23 +93,12 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
 
-    const event: IKafkaEvent<T> = {
-      eventId: uuidv4(),
-      eventType,
-      timestamp: new Date().toISOString(),
-      payload,
-      metadata: {
-        source: this.configService.get<string>("KAFKA_CLIENT_ID", "ja-core"),
-        correlationId: options?.correlationId || uuidv4(),
-      },
-    };
-
     const record: ProducerRecord = {
       topic,
       messages: [
         {
           key: options?.key,
-          value: JSON.stringify(event),
+          value: JSON.stringify(payload),
           headers: options?.headers,
         },
       ],
@@ -119,9 +106,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const result = await this.producer.send(record);
-      this.logger.debug(
-        `Published event to ${topic}: ${eventType} (${event.eventId})`,
-      );
+      this.logger.debug(`Published event to ${topic}: ${eventType}`);
       return result;
     } catch (error) {
       this.logger.error(`Failed to publish to ${topic}`, error);
@@ -131,9 +116,15 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Publish multiple messages in a batch
+   * Sends raw payloads without envelope wrapper
    */
   async publishBatch<T>(
-    messages: IKafkaMessage<T>[],
+    messages: Array<{
+      topic: string;
+      key?: string;
+      payload: T;
+      headers?: Record<string, string>;
+    }>,
   ): Promise<RecordMetadata[] | null> {
     if (!this.isConnected) {
       this.logger.warn("Kafka not connected. Skipping batch publish");
@@ -146,17 +137,9 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
           acc[msg.topic] = [];
         }
 
-        const event: IKafkaEvent<T> = {
-          eventId: uuidv4(),
-          eventType: msg.value.eventType,
-          timestamp: new Date().toISOString(),
-          payload: msg.value.payload,
-          metadata: msg.value.metadata,
-        };
-
         acc[msg.topic].push({
           key: msg.key,
-          value: JSON.stringify(event),
+          value: JSON.stringify(msg.payload),
           headers: msg.headers,
         });
 

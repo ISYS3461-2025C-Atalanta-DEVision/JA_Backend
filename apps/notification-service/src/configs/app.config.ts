@@ -40,4 +40,11 @@ export const appConfig = registerAs("app_config", () => ({
     process.env.APPLICANT_SERVICE_PORT || "3002",
     10,
   ),
+
+  // Job Skill Service (TCP)
+  jobSkillServiceHost: process.env.JOB_SKILL_SERVICE_HOST || "localhost",
+  jobSkillServicePort: parseInt(
+    process.env.JOB_SKILL_SERVICE_PORT || "3004",
+    10,
+  ),
 }));

@@ -70,19 +70,6 @@ export class SearchProfile {
   skillIds: string[];
 
   /**
-   * Cached skill names for display (denormalized)
-   * Synced when skills are selected from job-skill-service picker
-   */
-  @Prop({ type: [String], default: [] })
-  skillNames: string[];
-
-  /**
-   * Years of experience
-   */
-  @Prop({ default: 0 })
-  experienceYears: number;
-
-  /**
    * Desired work locations (countries or cities)
    * Country uses ISO 3166-1 alpha-2 codes
    */

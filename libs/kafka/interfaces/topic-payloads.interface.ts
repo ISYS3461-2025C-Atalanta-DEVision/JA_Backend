@@ -14,8 +14,6 @@ export type EmploymentType =
   | "INTERNSHIP"
   | "FRESHER";
 
-export type SubscriptionTier = "NORMAL" | "PREMIUM";
-
 export type SalaryType = "RANGE" | "ESTIMATION" | "NEGOTIABLE";
 
 export type SalaryEstimationType = "ABOUT" | "UP_TO" | "FROM" | "NEGOTIABLE";
@@ -24,11 +22,6 @@ export interface ISalaryRange {
   min: number;
   max?: number;
   currency: string;
-}
-
-export interface IExperienceRange {
-  min: number;
-  max?: number;
 }
 
 // ===========================================
@@ -43,8 +36,6 @@ export interface ISearchProfilePayload {
   // Matching criteria
   desiredRoles: string[];
   skillIds: string[]; // Skill IDs from job-skill-service
-  skillNames: string[]; // Cached skill names for display
-  experienceYears: number;
   desiredLocations: string[];
   expectedSalary: ISalaryRange;
   employmentTypes: EmploymentType[];
@@ -52,18 +43,17 @@ export interface ISearchProfilePayload {
   // Status
   isActive: boolean;
   isPremium: boolean;
-  premiumExpiresAt?: string;
 }
 
 // ===========================================
 // Subscription Event Payloads
 // ===========================================
+export type SubscriptionTier = "NORMAL" | "PREMIUM";
 
 export interface IPremiumJACreatedPayload {
   applicantId: string;
   subscriptionId: string;
   subscriptionTier: SubscriptionTier;
-  searchProfile: ISearchProfilePayload;
   startDate: string;
   endDate: string;
 }
@@ -74,27 +64,10 @@ export interface IPremiumJAExpiredPayload {
   expiredAt: string;
 }
 
-export interface IPremiumJMCreatedPayload {
-  companyId: string;
+export interface IPremiumJAClosedPayload {
+  applicantId: string;
   subscriptionId: string;
-  subscriptionTier: SubscriptionTier;
-  searchProfile: {
-    skillIds: string[]; // Skill IDs from job-skill-service
-    skillNames: string[]; // Cached skill names for display
-    experienceYears: IExperienceRange;
-    locations: string[];
-    salaryRange: ISalaryRange;
-    educationLevel?: string;
-  };
-  activeJobIds: string[];
-  startDate: string;
-  endDate: string;
-}
-
-export interface IPremiumJMExpiredPayload {
-  companyId: string;
-  subscriptionId: string;
-  expiredAt: string;
+  closedAt: string;
 }
 
 // ===========================================
@@ -131,11 +104,6 @@ export interface IJobCreatedPayload {
   description?: string;
   criteria: {
     requiredSkillIds: string[]; // Skill IDs from job-skill-service
-    requiredSkillNames: string[]; // Cached skill names for display
-    niceToHaveSkillIds?: string[]; // Optional nice-to-have skill IDs
-    niceToHaveSkillNames?: string[]; // Optional nice-to-have skill names
-    minExperience: number;
-    maxExperience?: number;
     location: string;
     // Salary fields
     salaryType: SalaryType;
@@ -163,37 +131,4 @@ export interface IJobClosedPayload {
   companyId: string;
   reason: "EXPIRED" | "FILLED" | "CANCELLED" | "MANUAL";
   closedAt: string;
-}
-
-// ===========================================
-// Matching Event Payloads
-// ===========================================
-
-export interface IMatchResult {
-  matchedEntityId: string;
-  matchedEntityType: "APPLICANT" | "JOB" | "COMPANY";
-  matchScore: number;
-  matchedCriteria: {
-    skillIds: string[]; // Matched skill IDs
-    skillNames: string[]; // Matched skill names for display
-    location: boolean;
-    salary: boolean;
-    experience: boolean;
-  };
-}
-
-export interface IMatchingJMToJACompletedPayload {
-  companyId: string;
-  triggeredBy: "PREMIUM_SUBSCRIPTION" | "PROFILE_UPDATE" | "JOB_CREATED";
-  matches: IMatchResult[];
-  totalMatches: number;
-  processedAt: string;
-}
-
-export interface IMatchingJAToJMCompletedPayload {
-  applicantId: string;
-  triggeredBy: "PREMIUM_SUBSCRIPTION" | "PROFILE_UPDATE";
-  matches: IMatchResult[];
-  totalMatches: number;
-  processedAt: string;
 }

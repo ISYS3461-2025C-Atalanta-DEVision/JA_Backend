@@ -40,7 +40,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
     private readonly mailerService: MailerService,
     private readonly applicantRepo: ApplicantRepository,
     private readonly oauthAccountRepo: OAuthAccountRepository,
-  ) { }
+  ) {}
 
   /**
    * Register new applicant with email/password
@@ -276,9 +276,9 @@ export class ApplicantAuthService implements IApplicantAuthService {
           name,
           email: email.toLowerCase(),
           country: "VN", // Default country for SSO users, can be updated later
-          emailVerified: provider === "google", // Google verifies email
+          emailVerified: true,
           isActive: true,
-          avatarUrl: picture
+          avatarUrl: picture,
         });
 
         oauthAccount = await this.oauthAccountRepo.create({
@@ -374,14 +374,14 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!applicant || !applicant.isActive) {
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'User not found or inactive',
+          message: "User not found or inactive",
         });
       }
 
       if (!applicant.passwordHash) {
         throw new RpcException({
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Password change not allowed for OAuth-only accounts',
+          message: "Password change not allowed for OAuth-only accounts",
         });
       }
 
@@ -393,7 +393,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!isCurrentPasswordValid) {
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Current password is incorrect',
+          message: "Current password is incorrect",
         });
       }
 
@@ -426,7 +426,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Change password failed',
+        message: "Change password failed",
       });
     }
   }
@@ -528,7 +528,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
         role: Role.Applicant,
         country: applicant.country,
         emailVerified: applicant.emailVerified,
-        isPremium: applicant.isPremium
+        isPremium: applicant.isPremium,
       },
       provider,
     };

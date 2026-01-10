@@ -15,7 +15,6 @@ export interface IJobMatchCriteria {
   jobId: string;
   title: string;
   requiredSkillIds: string[]; // Skill IDs from job-skill-service
-  requiredSkillNames: string[]; // Cached names for display
   location: string;
   salaryMin?: number;
   salaryMax?: number;
@@ -26,14 +25,13 @@ export interface IJobMatchCriteria {
 
 /**
  * Match result with score
- * Includes both skill IDs and names for notifications
+ * Skill names fetched from job-skill-service when needed
  */
 export interface IProfileMatchResult {
   profile: SearchProfileProjection;
   matchScore: number;
   matchedCriteria: {
     skillIds: string[]; // Matched skill IDs (for data)
-    skillNames: string[]; // Matched skill names (for display)
     location: boolean;
     salary: boolean;
     employmentType: boolean;
@@ -77,12 +75,9 @@ export interface ISearchProfileProjectionRepository {
 
   /**
    * Update premium status for a profile
+   * Called when premium.ja.created (isPremium=true) or premium.ja.expired (isPremium=false)
    */
-  updatePremiumStatus(
-    applicantId: string,
-    isPremium: boolean,
-    expiresAt?: Date,
-  ): Promise<boolean>;
+  updatePremiumStatus(applicantId: string, isPremium: boolean): Promise<boolean>;
 
   /**
    * Deactivate a profile

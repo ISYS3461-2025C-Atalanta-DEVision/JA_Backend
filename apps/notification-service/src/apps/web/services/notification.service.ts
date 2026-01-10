@@ -3,9 +3,9 @@ import { ClientProxy } from "@nestjs/microservices";
 import { MailerService } from "@libs/mailer";
 import {
   IJobCreatedPayload,
-  IMatchingJMToJACompletedPayload,
-  IPremiumJMCreatedPayload,
+  IJobUpdatedPayload,
   IPremiumJACreatedPayload,
+  IPremiumJAClosedPayload,
   IPremiumJAExpiredPayload,
   ISearchProfileCreatedPayload,
   ISearchProfileUpdatedPayload,
@@ -62,7 +62,45 @@ export class NotificationService implements INotificationService {
     private readonly mailerService: MailerService,
     private readonly notificationPubSub: NotificationPubSubService,
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
+    @Inject("JOB_SKILL_SERVICE")
+    private readonly jobSkillClient: ClientProxy,
   ) { }
+
+  /**
+   * Fetch skill names from job-skill-service by IDs
+   */
+  private async fetchSkillNames(
+    skillIds: string[],
+  ): Promise<Map<string, string>> {
+    if (!skillIds?.length) {
+      return new Map();
+    }
+
+    try {
+      const skills = await firstValueFrom(
+        this.jobSkillClient
+          .send({ cmd: "skill.findByIds" }, { ids: skillIds })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(
+                `Failed to fetch skill names: ${error.message}`,
+              );
+              return of([]);
+            }),
+          ),
+      );
+
+      const skillMap = new Map<string, string>();
+      for (const skill of skills || []) {
+        skillMap.set(skill.id, skill.name);
+      }
+      return skillMap;
+    } catch (error) {
+      this.logger.error(`Skill name fetch error: ${error.message}`);
+      return new Map();
+    }
+  }
 
   /**
    * Validates applicant exists in applicant-service and returns applicant data including email.
@@ -112,9 +150,9 @@ export class NotificationService implements INotificationService {
       jobId: payload.jobId,
       title: payload.title,
       requiredSkillIds: payload.criteria.requiredSkillIds || [],
-      requiredSkillNames: payload.criteria.requiredSkillNames || [],
       location: payload.criteria.location,
-      salaryMin: payload.criteria.salaryRange?.min ?? payload.criteria.salaryAmount,
+      salaryMin:
+        payload.criteria.salaryRange?.min ?? payload.criteria.salaryAmount,
       salaryMax: payload.criteria.salaryRange?.max,
       currency: payload.criteria.salaryCurrency,
       employmentType: this.mapEmploymentType(payload.criteria.employmentType),
@@ -153,6 +191,151 @@ export class NotificationService implements INotificationService {
   }
 
   /**
+   * Handle job updated event
+   * Re-evaluate updated job against active premium subscribers
+   * and deliver real-time notifications to matching applicants
+   */
+  async handleJobUpdated(payload: IJobUpdatedPayload): Promise<void> {
+    this.logger.log(`Payload received: ${JSON.stringify(payload)}`);
+
+    const changedFields = payload.changedFields || [];
+    this.logger.log(
+      `Processing job update: ${payload.jobId} (changed: ${changedFields.join(", ") || "unknown"})`,
+    );
+
+    // Build job match criteria from payload
+    const matchCriteria: IJobMatchCriteria = {
+      jobId: payload.jobId,
+      title: "", // Title not available in update payload
+      requiredSkillIds: payload.criteria.requiredSkillIds || [],
+      location: payload.criteria.location,
+      salaryMin:
+        payload.criteria.salaryRange?.min ?? payload.criteria.salaryAmount,
+      salaryMax: payload.criteria.salaryRange?.max,
+      currency: payload.criteria.salaryCurrency,
+      employmentType: this.mapEmploymentType(payload.criteria.employmentType),
+      isFresherFriendly: payload.criteria.isFresherFriendly || false,
+    };
+
+    // Find all matching premium profiles
+    const matchingProfiles =
+      await this.searchProfileRepo.findMatchingProfiles(matchCriteria);
+
+    this.logger.log(
+      `Found ${matchingProfiles.length} matching profiles for updated job ${payload.jobId}`,
+    );
+
+    // Send notifications to each matching applicant
+    for (const matchResult of matchingProfiles) {
+      try {
+        await this.sendJobUpdateNotification({
+          applicantId: matchResult.profile.applicantId,
+          applicantEmail: matchResult.profile.applicantEmail,
+          jobId: payload.jobId,
+          companyId: payload.companyId,
+          changedFields,
+          matchScore: matchResult.matchScore,
+          matchedCriteria: matchResult.matchedCriteria,
+        });
+      } catch (error) {
+        this.logger.error(
+          `Failed to send job update notification to applicant ${matchResult.profile.applicantId}`,
+          error.stack,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Job updated notification processed for jobId: ${payload.jobId}, notified ${matchingProfiles.length} applicants`,
+    );
+  }
+
+  /**
+   * Send job update notification to a premium applicant
+   */
+  private async sendJobUpdateNotification(params: {
+    applicantId: string;
+    applicantEmail?: string;
+    jobId: string;
+    companyId: string;
+    changedFields: string[];
+    matchScore: number;
+    matchedCriteria: {
+      skillIds: string[];
+      location: boolean;
+      salary: boolean;
+      employmentType: boolean;
+      roleMatch: boolean;
+    };
+  }): Promise<void> {
+    // Validate applicant exists before sending notification
+    const applicant = await this.validateAndGetApplicant(params.applicantId);
+    if (!applicant) {
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${params.applicantId}, skipping job update notification`,
+      );
+      return;
+    }
+
+    const notificationId = uuidv4();
+    const title = "Job Listing Updated!";
+    const changedText = params.changedFields.length > 0
+      ? `Changed: ${params.changedFields.join(", ")}. `
+      : "";
+    const message = `A job you matched with has been updated. ${changedText}Match score: ${params.matchScore}%`;
+
+    // Use validated email from applicant-service
+    const recipientEmail = applicant.email;
+
+    // Create notification record
+    await this.notificationRepository.create({
+      notificationId,
+      recipientId: params.applicantId,
+      recipientType: "APPLICANT",
+      recipientEmail,
+      type: NotificationType.JA_NEW_MATCHING_JOB,
+      title,
+      message,
+      data: {
+        jobId: params.jobId,
+        companyId: params.companyId,
+        changedFields: params.changedFields,
+        matchScore: params.matchScore,
+        matchedCriteria: params.matchedCriteria,
+      },
+      deliveries: [
+        {
+          channel: NotificationChannel.IN_APP,
+          status: NotificationStatus.PENDING,
+          retryCount: 0,
+        },
+      ],
+      priority: params.matchScore >= 70 ? "HIGH" : "NORMAL",
+    });
+
+    // Publish to Redis for real-time WebSocket delivery
+    await this.publishRealtimeNotification(
+      params.applicantId,
+      notificationId,
+      NotificationType.JA_NEW_MATCHING_JOB,
+      title,
+      message,
+    );
+
+    // Mark in-app notification as delivered
+    await this.notificationRepository.updateDeliveryStatus(
+      notificationId,
+      NotificationChannel.IN_APP,
+      NotificationStatus.DELIVERED,
+      { deliveredAt: new Date() },
+    );
+
+    this.logger.log(
+      `Job update notification sent to applicant: ${params.applicantId} (score: ${params.matchScore}%)`,
+    );
+  }
+
+  /**
    * Map job payload employment type to schema EmploymentType
    */
   private mapEmploymentType(type: string): EmploymentType {
@@ -175,17 +358,10 @@ export class NotificationService implements INotificationService {
     applicantId: string;
     searchProfile: ISearchProfilePayload;
     isPremium: boolean;
-    premiumExpiresAt?: Date;
     applicantEmail?: string;
   }): Promise<void> {
-    const {
-      profileId,
-      applicantId,
-      searchProfile,
-      isPremium,
-      premiumExpiresAt,
-      applicantEmail,
-    } = params;
+    const { profileId, applicantId, searchProfile, isPremium, applicantEmail } =
+      params;
 
     try {
       await this.searchProfileRepo.upsertByProfileId(profileId, {
@@ -194,22 +370,19 @@ export class NotificationService implements INotificationService {
         applicantEmail,
         desiredRoles: searchProfile.desiredRoles || [],
         skillIds: searchProfile.skillIds || [],
-        skillNames: searchProfile.skillNames || [],
-        experienceYears: searchProfile.experienceYears || 0,
         desiredLocations: searchProfile.desiredLocations || [],
         expectedSalary: searchProfile.expectedSalary
           ? {
-            min: searchProfile.expectedSalary.min,
-            max: searchProfile.expectedSalary.max,
-            currency: searchProfile.expectedSalary.currency || "USD",
-          }
+              min: searchProfile.expectedSalary.min,
+              max: searchProfile.expectedSalary.max,
+              currency: searchProfile.expectedSalary.currency || "USD",
+            }
           : { min: 0, currency: "USD" },
         employmentTypes: (searchProfile.employmentTypes || []).map((t) =>
           this.mapEmploymentType(t),
         ),
         isActive: searchProfile.isActive ?? true,
         isPremium,
-        premiumExpiresAt,
       });
 
       this.logger.log(
@@ -234,7 +407,6 @@ export class NotificationService implements INotificationService {
     matchScore: number;
     matchedCriteria: {
       skillIds: string[];
-      skillNames: string[];
       location: boolean;
       salary: boolean;
       employmentType: boolean;
@@ -256,6 +428,14 @@ export class NotificationService implements INotificationService {
 
     // Use validated email from applicant-service
     const recipientEmail = applicant.email;
+
+    // Fetch skill names from job-skill-service for display
+    const skillNameMap = await this.fetchSkillNames(
+      params.matchedCriteria.skillIds,
+    );
+    const skillNames = params.matchedCriteria.skillIds.map(
+      (id) => skillNameMap.get(id) || id,
+    );
 
     // Create notification record (with validated email)
     await this.notificationRepository.create({
@@ -279,7 +459,10 @@ export class NotificationService implements INotificationService {
         salaryEstimationType: params.job.criteria.salaryEstimationType,
         employmentType: params.job.criteria.employmentType,
         matchScore: params.matchScore,
-        matchedCriteria: params.matchedCriteria,
+        matchedCriteria: {
+          ...params.matchedCriteria,
+          skillNames, // Include fetched skill names for display
+        },
       },
       deliveries: [
         {
@@ -319,59 +502,6 @@ export class NotificationService implements INotificationService {
 
     this.logger.log(
       `Job match notification sent to applicant: ${params.applicantId} (score: ${params.matchScore}%)`,
-    );
-  }
-
-  /**
-   * Handle matching completed event from Job Manager
-   * Notify applicants who matched with a job
-   */
-  async handleMatchingCompleted(
-    payload: IMatchingJMToJACompletedPayload,
-  ): Promise<void> {
-    this.logger.log(
-      `Processing matching results from company: ${payload.companyId}, matched ${payload.totalMatches} entities`,
-    );
-
-    // Process each match and create notifications
-    for (const match of payload.matches) {
-      if (match.matchedEntityType === "APPLICANT") {
-        try {
-          await this.createAndSendMatchNotification({
-            recipientId: match.matchedEntityId,
-            recipientType: "APPLICANT",
-            companyId: payload.companyId,
-            matchScore: match.matchScore,
-            matchedCriteria: match.matchedCriteria,
-          });
-        } catch (error) {
-          this.logger.error(
-            `Failed to send notification to applicant ${match.matchedEntityId}`,
-            error.stack,
-          );
-        }
-      }
-    }
-
-    this.logger.log(
-      `Matching notifications processed for company: ${payload.companyId}`,
-    );
-  }
-
-  /**
-   * Handle premium subscription created event from Job Manager
-   * This event is for company premium subscriptions
-   */
-  async handlePremiumCreated(payload: IPremiumJMCreatedPayload): Promise<void> {
-    this.logger.log(
-      `Processing company premium subscription: ${payload.companyId}`,
-    );
-
-    // This is a company event - may trigger internal workflows
-    // No direct notification to applicants needed
-
-    this.logger.log(
-      `Company premium subscription processed: ${payload.companyId}`,
     );
   }
 
@@ -448,24 +578,12 @@ export class NotificationService implements INotificationService {
       { deliveredAt: new Date() },
     );
 
-    // Update premium status in search profile projection
-    if (payload.searchProfile) {
-      await this.syncSearchProfileProjection({
-        profileId: payload.searchProfile.profileId,
-        applicantId: payload.applicantId,
-        searchProfile: payload.searchProfile,
-        isPremium: true,
-        premiumExpiresAt: new Date(payload.endDate),
-        applicantEmail: applicant.email,
-      });
-    } else {
-      // Just update premium status if we have a projection already
-      await this.searchProfileRepo.updatePremiumStatus(
-        payload.applicantId,
-        true,
-        new Date(payload.endDate),
-      );
-    }
+    // Update premium status in search profile projection (if exists)
+    // This also sets isActive = true for job matching
+    await this.searchProfileRepo.updatePremiumStatus(
+      payload.applicantId,
+      true,
+    );
 
     this.logger.log(
       `JA premium subscription notification sent: ${payload.applicantId}`,
@@ -540,6 +658,7 @@ export class NotificationService implements INotificationService {
     );
 
     // Update premium status to false in search profile projection
+    // This also sets isActive = false
     await this.searchProfileRepo.updatePremiumStatus(
       payload.applicantId,
       false,
@@ -547,6 +666,85 @@ export class NotificationService implements INotificationService {
 
     this.logger.log(
       `JA premium expiration notification sent: ${payload.applicantId}`,
+    );
+  }
+
+  /**
+   * Handle JA premium subscription closed event (user cancelled / admin terminated)
+   * Send cancellation notification and deactivate profile
+   */
+  async handleJAPremiumClosed(
+    payload: IPremiumJAClosedPayload,
+  ): Promise<void> {
+    // Validate applicant exists before processing
+    const applicant = await this.validateAndGetApplicant(payload.applicantId);
+    if (!applicant) {
+      this.logger.warn(
+        `[SKIP] Applicant not found: ${payload.applicantId}, skipping premium closure`,
+      );
+      return;
+    }
+
+    this.logger.log(`Processing JA premium closure: ${payload.applicantId}`);
+
+    const notificationId = uuidv4();
+    const title = "Premium Subscription Cancelled";
+    const message = `Your premium subscription has been cancelled on ${new Date(payload.closedAt).toLocaleDateString()}. You can resubscribe anytime to continue enjoying enhanced job matching features!`;
+
+    // Create notification record (with validated email)
+    await this.notificationRepository.create({
+      notificationId,
+      recipientId: payload.applicantId,
+      recipientType: "APPLICANT",
+      recipientEmail: applicant.email,
+      type: NotificationType.JA_PREMIUM_EXPIRED,
+      title,
+      message,
+      data: {
+        subscriptionId: payload.subscriptionId,
+        closedAt: payload.closedAt,
+      },
+      deliveries: [
+        {
+          channel: NotificationChannel.EMAIL,
+          status: NotificationStatus.PENDING,
+          retryCount: 0,
+        },
+        {
+          channel: NotificationChannel.IN_APP,
+          status: NotificationStatus.PENDING,
+          retryCount: 0,
+        },
+      ],
+      priority: "HIGH",
+    });
+
+    // Publish to Redis for real-time WebSocket delivery
+    await this.publishRealtimeNotification(
+      payload.applicantId,
+      notificationId,
+      NotificationType.JA_PREMIUM_EXPIRED,
+      title,
+      message,
+    );
+
+    // Mark in-app notification as delivered
+    await this.notificationRepository.updateDeliveryStatus(
+      notificationId,
+      NotificationChannel.IN_APP,
+      NotificationStatus.DELIVERED,
+      { deliveredAt: new Date() },
+    );
+
+    // Update premium status to false in search profile projection
+    // This also sets isActive = false
+    await this.searchProfileRepo.updatePremiumStatus(
+      payload.applicantId,
+      false,
+    );
+
+    this.logger.log(
+      `JA premium closure notification sent: ${payload.applicantId}`,
     );
   }
 
@@ -718,100 +916,6 @@ export class NotificationService implements INotificationService {
   }
 
   /**
-   * Create and send a job match notification
-   */
-  private async createAndSendMatchNotification(params: {
-    recipientId: string;
-    recipientType: "APPLICANT" | "COMPANY";
-    companyId: string;
-    matchScore: number;
-    matchedCriteria: {
-      skillIds: string[];
-      skillNames: string[];
-      location: boolean;
-      salary: boolean;
-      experience: boolean;
-    };
-  }): Promise<void> {
-    // Validate applicant exists before sending notification (only for APPLICANT recipients)
-    let recipientEmail = "";
-    if (params.recipientType === "APPLICANT") {
-      const applicant = await this.validateAndGetApplicant(params.recipientId);
-      if (!applicant) {
-        this.logger.warn(
-          `[SKIP] Applicant not found: ${params.recipientId}, skipping match notification`,
-        );
-        return;
-      }
-      recipientEmail = applicant.email;
-    }
-
-    const notificationId = uuidv4();
-    const title = "New Job Match Found!";
-    const message = `You've been matched with a company based on your profile! Match score: ${params.matchScore}%`;
-
-    // Create notification record (with validated email)
-    const notification = await this.notificationRepository.create({
-      notificationId,
-      recipientId: params.recipientId,
-      recipientType: params.recipientType,
-      recipientEmail,
-      type: NotificationType.JA_NEW_MATCHING_JOB,
-      title,
-      message,
-      data: {
-        companyId: params.companyId,
-        matchScore: params.matchScore,
-        matchedCriteria: params.matchedCriteria,
-      },
-      deliveries: [
-        {
-          channel: NotificationChannel.EMAIL,
-          status: NotificationStatus.PENDING,
-          retryCount: 0,
-        },
-        {
-          channel: NotificationChannel.IN_APP,
-          status: NotificationStatus.PENDING,
-          retryCount: 0,
-        },
-      ],
-      priority: "NORMAL",
-    });
-
-    this.logger.log(`Created notification record: ${notificationId}`);
-
-    // Publish to Redis for real-time WebSocket delivery
-    await this.publishRealtimeNotification(
-      params.recipientId,
-      notificationId,
-      NotificationType.JA_NEW_MATCHING_JOB,
-      title,
-      message,
-    );
-
-    // Send email notification (if email is available)
-    if (recipientEmail) {
-      try {
-        await this.sendEmailNotification(notification);
-      } catch (error) {
-        this.logger.error(
-          `Failed to send email for notification ${notificationId}`,
-          error.stack,
-        );
-      }
-    }
-
-    // Mark in-app notification as delivered
-    await this.notificationRepository.updateDeliveryStatus(
-      notificationId,
-      NotificationChannel.IN_APP,
-      NotificationStatus.DELIVERED,
-      { deliveredAt: new Date() },
-    );
-  }
-
-  /**
    * Publish notification to Redis for real-time WebSocket delivery
    */
   private async publishRealtimeNotification(
@@ -944,7 +1048,6 @@ export class NotificationService implements INotificationService {
         <div class="criteria-item">Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}</div>
         <div class="criteria-item">Location: ${data.matchedCriteria.location ? "Yes" : "No"}</div>
         <div class="criteria-item">Salary: ${data.matchedCriteria.salary ? "Yes" : "No"}</div>
-        <div class="criteria-item">Experience: ${data.matchedCriteria.experience ? "Yes" : "No"}</div>
       </div>
       `
         : ""
@@ -976,7 +1079,6 @@ export class NotificationService implements INotificationService {
       text += `\n- Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}`;
       text += `\n- Location: ${data.matchedCriteria.location ? "Yes" : "No"}`;
       text += `\n- Salary: ${data.matchedCriteria.salary ? "Yes" : "No"}`;
-      text += `\n- Experience: ${data.matchedCriteria.experience ? "Yes" : "No"}`;
     }
 
     text +=

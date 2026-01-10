@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import {
   SearchProfileRepository,
+  ApplicantRepository,
   SearchProfile,
   EmploymentType,
 } from "../../../libs/dals/mongodb";
@@ -11,8 +12,6 @@ import { ISearchProfilePayload } from "@kafka/interfaces";
 export interface UpsertSearchProfileDto {
   desiredRoles?: string[];
   skillIds?: string[]; // Skill IDs from job-skill-service
-  skillNames?: string[]; // Cached skill names for display
-  experienceYears?: number;
   desiredLocations?: string[];
   expectedSalary?: {
     min: number;
@@ -20,7 +19,7 @@ export interface UpsertSearchProfileDto {
     currency: string;
   };
   employmentTypes?: EmploymentType[];
-  isActive?: boolean;
+  // Note: isActive is controlled internally based on premium status
 }
 
 @Injectable()
@@ -29,6 +28,7 @@ export class SearchProfileService {
 
   constructor(
     private readonly searchProfileRepository: SearchProfileRepository,
+    private readonly applicantRepository: ApplicantRepository,
     private readonly kafkaService: KafkaService,
   ) {}
 
@@ -60,6 +60,10 @@ export class SearchProfileService {
     // Determine changed fields
     const changedFields = this.getChangedFields(existingProfile, data);
 
+    // Get applicant's premium status
+    const applicant = await this.applicantRepository.findById(applicantId);
+    const isPremium = applicant?.isPremium ?? false;
+
     // Publish Kafka event
     try {
       const payload: ISearchProfilePayload = {
@@ -68,13 +72,11 @@ export class SearchProfileService {
         userType: "APPLICANT",
         desiredRoles: result.desiredRoles || [],
         skillIds: result.skillIds || [],
-        skillNames: result.skillNames || [],
-        experienceYears: result.experienceYears || 0,
         desiredLocations: result.desiredLocations || [],
         expectedSalary: result.expectedSalary || { min: 0, currency: "USD" },
         employmentTypes: (result.employmentTypes || []) as any,
         isActive: result.isActive,
-        isPremium: false, // Premium status managed by Job Manager
+        isPremium,
       };
 
       await this.kafkaService.publish(
@@ -86,12 +88,13 @@ export class SearchProfileService {
           userType: "APPLICANT",
           searchProfile: payload,
           changedFields: isCreate ? ["all"] : changedFields,
-          isPremium: false,
+          isPremium,
         },
+        { key: applicantId },
       );
 
       this.logger.log(
-        `Published profile update event for applicant ${applicantId}, changed: ${changedFields.join(", ")}`,
+        `Published profile update event for applicant ${applicantId}, isPremium: ${isPremium}, changed: ${changedFields.join(", ")}`,
       );
     } catch (error) {
       this.logger.error(
@@ -153,13 +156,6 @@ export class SearchProfileService {
       if (oldSkillIds !== newSkillIds) changedFields.push("skillIds");
     }
 
-    if (
-      newData.experienceYears !== undefined &&
-      existing.experienceYears !== newData.experienceYears
-    ) {
-      changedFields.push("experienceYears");
-    }
-
     if (newData.desiredLocations !== undefined) {
       const oldLocations = (existing.desiredLocations || []).sort().join(",");
       const newLocations = (newData.desiredLocations || []).sort().join(",");
@@ -184,12 +180,7 @@ export class SearchProfileService {
       if (oldTypes !== newTypes) changedFields.push("employmentTypes");
     }
 
-    if (
-      newData.isActive !== undefined &&
-      existing.isActive !== newData.isActive
-    ) {
-      changedFields.push("isActive");
-    }
+    // Note: isActive is not tracked here as it's controlled internally
 
     return changedFields.length > 0 ? changedFields : ["none"];
   }

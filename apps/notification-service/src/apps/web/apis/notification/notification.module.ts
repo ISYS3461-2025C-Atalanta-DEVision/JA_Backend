@@ -26,6 +26,18 @@ import { RedisModule } from "@redis/redis.module";
         }),
         inject: [ConfigService],
       },
+      {
+        name: "JOB_SKILL_SERVICE",
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>("app_config.jobSkillServiceHost"),
+            port: configService.get<number>("app_config.jobSkillServicePort"),
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
   controllers: [NotificationController],

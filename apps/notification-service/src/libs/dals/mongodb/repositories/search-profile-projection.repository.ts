@@ -56,16 +56,10 @@ export class SearchProfileProjectionRepository
   }
 
   async findActivePremiumProfiles(): Promise<SearchProfileProjection[]> {
-    const now = new Date();
     return (await this.model
       .find({
         isActive: true,
         isPremium: true,
-        $or: [
-          { premiumExpiresAt: { $exists: false } },
-          { premiumExpiresAt: null },
-          { premiumExpiresAt: { $gt: now } },
-        ],
       })
       .lean()
       .exec()) as SearchProfileProjection[];
@@ -85,18 +79,11 @@ export class SearchProfileProjectionRepository
   async findMatchingProfiles(
     criteria: IJobMatchCriteria,
   ): Promise<IProfileMatchResult[]> {
-    const now = new Date();
-
     // Get all active premium profiles
     const profiles = await this.model
       .find({
         isActive: true,
         isPremium: true,
-        $or: [
-          { premiumExpiresAt: { $exists: false } },
-          { premiumExpiresAt: null },
-          { premiumExpiresAt: { $gt: now } },
-        ],
       })
       .lean()
       .exec();
@@ -146,7 +133,6 @@ export class SearchProfileProjectionRepository
 
     const matchedCriteria = {
       skillIds: [] as string[],
-      skillNames: [] as string[],
       location: false,
       salary: false,
       employmentType: false,
@@ -159,12 +145,6 @@ export class SearchProfileProjectionRepository
       matchedCriteria.skillIds = profile.skillIds.filter((id) =>
         criteria.requiredSkillIds.includes(id),
       );
-
-      // Get corresponding skill names for display
-      matchedCriteria.skillNames = matchedCriteria.skillIds.map((id) => {
-        const index = profile.skillIds.indexOf(id);
-        return profile.skillNames?.[index] || id;
-      });
 
       const skillMatchRatio =
         matchedCriteria.skillIds.length / criteria.requiredSkillIds.length;
@@ -304,15 +284,15 @@ export class SearchProfileProjectionRepository
   async updatePremiumStatus(
     applicantId: string,
     isPremium: boolean,
-    expiresAt?: Date,
   ): Promise<boolean> {
-    const updateData: any = { isPremium };
-    if (expiresAt) {
-      updateData.premiumExpiresAt = expiresAt;
-    }
-
+    // When premium status changes, also update isActive status
+    // Premium = true -> isActive = true (profile can match jobs)
+    // Premium = false -> isActive = false (profile cannot match jobs)
     const result = await this.model
-      .findOneAndUpdate({ applicantId }, { $set: updateData })
+      .findOneAndUpdate(
+        { applicantId },
+        { $set: { isPremium, isActive: isPremium } },
+      )
       .exec();
 
     return result !== null;

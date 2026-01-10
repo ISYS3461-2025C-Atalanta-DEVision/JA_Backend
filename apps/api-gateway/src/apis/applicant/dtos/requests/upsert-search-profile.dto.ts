@@ -1,7 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
   IsArray,
-  IsBoolean,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -66,26 +65,6 @@ export class UpsertSearchProfileDto {
   skillIds?: string[];
 
   @ApiProperty({
-    example: ["React", "TypeScript"],
-    description: "Cached skill names for display",
-    required: false,
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  skillNames?: string[];
-
-  @ApiProperty({
-    example: 3,
-    description: "Years of experience",
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  experienceYears?: number;
-
-  @ApiProperty({
     example: ["Ho Chi Minh", "Remote"],
     description: "Desired work locations",
     required: false,
@@ -116,13 +95,6 @@ export class UpsertSearchProfileDto {
   @IsArray()
   @IsEnum(EmploymentType, { each: true })
   employmentTypes?: EmploymentType[];
-
-  @ApiProperty({
-    example: true,
-    description: "Whether profile is active",
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  // Note: isActive is controlled internally based on premium status
+  // Users cannot set this field directly for security reasons
 }

@@ -9,18 +9,18 @@ import { NOTIFICATION_SERVICE_WEB_PROVIDER } from "../../apps/web/constants";
 import { NotificationService } from "../../apps/web/services";
 import {
   TOPIC_JOB_CREATED,
-  TOPIC_MATCHING_JM_TO_JA_COMPLETED,
-  TOPIC_SUBSCRIPTION_PREMIUM_JM_CREATED,
+  TOPIC_JOB_UPDATED,
   TOPIC_SUBSCRIPTION_PREMIUM_JA_CREATED,
+  TOPIC_SUBSCRIPTION_PREMIUM_JA_CLOSED,
   TOPIC_SUBSCRIPTION_PREMIUM_JA_EXPIRED,
   TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED,
   TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED,
 } from "@kafka/constants";
 import {
   IJobCreatedPayload,
-  IMatchingJMToJACompletedPayload,
-  IPremiumJMCreatedPayload,
+  IJobUpdatedPayload,
   IPremiumJACreatedPayload,
+  IPremiumJAClosedPayload,
   IPremiumJAExpiredPayload,
   ISearchProfileCreatedPayload,
   ISearchProfileUpdatedPayload,
@@ -54,45 +54,22 @@ export class KafkaEventController {
     }
   }
 
-  @EventPattern(TOPIC_MATCHING_JM_TO_JA_COMPLETED)
-  async handleMatchingCompleted(
-    @Payload() message: IMatchingJMToJACompletedPayload,
+  @EventPattern(TOPIC_JOB_UPDATED)
+  async handleJobUpdated(
+    @Payload() message: IJobUpdatedPayload,
     @Ctx() context: KafkaContext,
   ) {
     const { topic, partition, offset } = this.getKafkaMetadata(context);
     this.logger.log(
-      `Received matching.completed [topic=${topic}, partition=${partition}, offset=${offset}]`,
+      `Received job.updated [topic=${topic}, partition=${partition}, offset=${offset}]`,
     );
+    this.logger.debug(`Message Payload: ${JSON.stringify(message)}`);
 
     try {
-      await this.notificationService.handleMatchingCompleted(message);
-      this.logger.log(`Processed matching.completed: ${message.companyId}`);
+      await this.notificationService.handleJobUpdated(message);
+      this.logger.log(`Processed job.updated: ${message.jobId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed matching.completed: ${message.companyId}`,
-        error.stack,
-      );
-    }
-  }
-
-  @EventPattern(TOPIC_SUBSCRIPTION_PREMIUM_JM_CREATED)
-  async handlePremiumCreated(
-    @Payload() message: IPremiumJMCreatedPayload,
-    @Ctx() context: KafkaContext,
-  ) {
-    const { topic, partition, offset } = this.getKafkaMetadata(context);
-    this.logger.log(
-      `Received premium.jm.created [topic=${topic}, partition=${partition}, offset=${offset}]`,
-    );
-
-    try {
-      await this.notificationService.handlePremiumCreated(message);
-      this.logger.log(`Processed premium.jm.created: ${message.companyId}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed premium.jm.created: ${message.companyId}`,
-        error.stack,
-      );
+      this.logger.error(`Failed job.updated: ${message.jobId}`, error.stack);
     }
   }
 
@@ -133,6 +110,27 @@ export class KafkaEventController {
     } catch (error) {
       this.logger.error(
         `Failed premium.ja.expired: ${message.applicantId}`,
+        error.stack,
+      );
+    }
+  }
+
+  @EventPattern(TOPIC_SUBSCRIPTION_PREMIUM_JA_CLOSED)
+  async handleJAPremiumClosed(
+    @Payload() message: IPremiumJAClosedPayload,
+    @Ctx() context: KafkaContext,
+  ) {
+    const { topic, partition, offset } = this.getKafkaMetadata(context);
+    this.logger.log(
+      `Received premium.ja.closed [topic=${topic}, partition=${partition}, offset=${offset}]`,
+    );
+
+    try {
+      await this.notificationService.handleJAPremiumClosed(message);
+      this.logger.log(`Processed premium.ja.closed: ${message.applicantId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed premium.ja.closed: ${message.applicantId}`,
         error.stack,
       );
     }
