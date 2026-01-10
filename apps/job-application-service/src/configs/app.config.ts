@@ -13,4 +13,15 @@ export const appConfig = registerAs('app_config', () => ({
     process.env.APPLICANT_SERVICE_PORT || "3002",
     10,
   ),
+
+  // Kafka
+  kafkaClientId: process.env.KAFKA_CLIENT_ID || "ja-notification-service",
+  kafkaBrokers: (process.env.KAFKA_BROKERS || "localhost:9092").split(","),
+  kafkaConsumerGroup:
+    process.env.KAFKA_CONSUMER_GROUP_APPLICATION || "ja-job-application-group",
+  // SASL config - enable when security protocol is set
+  kafkaSsl: process.env.KAFKA_SECURITY_PROTOCOL === "SASL_SSL",
+  kafkaSaslMechanism: process.env.KAFKA_SASL_MECHANISM,
+  kafkaSaslUsername: process.env.KAFKA_SASL_USERNAME,
+  kafkaSaslPassword: process.env.KAFKA_SASL_PASSWORD,
 }));

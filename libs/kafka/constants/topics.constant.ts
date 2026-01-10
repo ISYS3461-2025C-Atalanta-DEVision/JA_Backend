@@ -8,6 +8,12 @@
  */
 
 // ===========================================
+// Job application Topics
+// ===========================================
+export const TOPIC_APPLICATION_CREATED =
+  "applicant_apply_job";
+
+// ===========================================
 // Subscription Topics
 // ===========================================
 export const TOPIC_SUBSCRIPTION_PREMIUM_JA_CREATED =

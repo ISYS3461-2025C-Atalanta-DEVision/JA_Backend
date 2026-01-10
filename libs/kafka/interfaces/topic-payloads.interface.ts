@@ -32,6 +32,37 @@ export interface IExperienceRange {
 }
 
 // ===========================================
+// Application Event Payloads
+// ===========================================
+
+export interface IJobApplicationCreated {
+  jobId: string;
+  companyId: string;
+  companyName: string;
+  title: string;
+  description?: string;
+  criteria: {
+    requiredSkillIds: string[]; // Skill IDs from job-skill-service
+    requiredSkillNames: string[]; // Cached skill names for display
+    niceToHaveSkillIds?: string[]; // Optional nice-to-have skill IDs
+    niceToHaveSkillNames?: string[]; // Optional nice-to-have skill names
+    minExperience: number;
+    maxExperience?: number;
+    location: string;
+    // Salary fields
+    salaryType: SalaryType;
+    salaryCurrency: string;
+    salaryRange?: { min: number; max: number }; // for RANGE type
+    salaryAmount?: number; // for ESTIMATION type
+    salaryEstimationType?: SalaryEstimationType; // for ESTIMATION type
+    employmentType: EmploymentType;
+    isFresherFriendly: boolean;
+  };
+  postedAt: string;
+  expiresAt?: string;
+}
+
+// ===========================================
 // Search Profile (shared between JA and JM)
 // ===========================================
 
