@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateApplicantDto {
   @ApiProperty({
@@ -14,6 +14,14 @@ export class CreateApplicantDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+
+  @ApiProperty({
+    example: "Here to find the best 401k deal possible",
+    description: "Summary of the applicant objective on the platform",
+  })
+  @IsOptional()
+  @IsString()
+  objectiveSummary?: string;
 
   @ApiProperty({
     example: "+84901234567",
@@ -41,6 +49,17 @@ export class CreateApplicantDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+
+  @ApiProperty({
+    example: ["66c1f3b2e8f4c1a9b1111111", "66c1f3b2e8f4c1a9b2222222"],
+    description: "Skill category IDs (ObjectId as strings)",
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skillCategories?: string[];
 
   @ApiProperty({
     example: "HCM",

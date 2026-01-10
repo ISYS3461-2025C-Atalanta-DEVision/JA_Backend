@@ -30,9 +30,4 @@ export class CreateWorkHistoryDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  skillCategories?: string[];
 }

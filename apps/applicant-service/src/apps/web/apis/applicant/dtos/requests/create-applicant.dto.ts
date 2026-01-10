@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateApplicantDto {
   @IsNotEmpty()
@@ -8,6 +8,10 @@ export class CreateApplicantDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+
+  @IsOptional()
+  @IsString()
+  objectiveSummary?: string;
 
   @IsOptional()
   @IsString()
@@ -24,4 +28,9 @@ export class CreateApplicantDto {
   @IsOptional()
   @IsString()
   addressProvinceCode?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skillCategories?: string[];
 }
