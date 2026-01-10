@@ -29,6 +29,6 @@ export const JOB_CATEGORY_FILTER_CONFIG: EntityFilterConfig = {
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
   },
-  defaultFilter: {},
+  defaultFilter: { isActive: true },
   defaultSort: { createdAt: -1 },
 };

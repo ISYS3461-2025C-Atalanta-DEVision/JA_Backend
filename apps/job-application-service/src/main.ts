@@ -1,11 +1,11 @@
-import { NestFactory } from '@nestjs/core';
-import { Transport, MicroserviceOptions } from '@nestjs/microservices';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { AppModule } from './app.module';
-import { IAppConfigService, APP_CONFIG_SERVICE_PROVIDER } from './libs';
+import { NestFactory } from "@nestjs/core";
+import { Transport, MicroserviceOptions } from "@nestjs/microservices";
+import { ValidationPipe, Logger } from "@nestjs/common";
+import { AppModule } from "./app.module";
+import { IAppConfigService, APP_CONFIG_SERVICE_PROVIDER } from "./libs";
 
 async function bootstrap() {
-  const logger = new Logger('JobApplicationService');
+  const logger = new Logger("JobApplicationService");
 
   // Create HTTP application (for health checks)
   const app = await NestFactory.create(AppModule);
@@ -42,7 +42,9 @@ async function bootstrap() {
 
   // Start HTTP server for health checks
   await app.listen(healthPort, "0.0.0.0");
-  logger.log(`Health endpoint available at http://0.0.0.0:${healthPort}/health`);
+  logger.log(
+    `Health endpoint available at http://0.0.0.0:${healthPort}/health`,
+  );
 }
 
 bootstrap();

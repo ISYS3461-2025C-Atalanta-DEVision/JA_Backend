@@ -14,6 +14,5 @@ export const WORK_HISTORY_FILTER_CONFIG: EntityFilterConfig = {
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
   },
-  defaultFilter: {},
   defaultSort: { createdAt: -1 },
 };

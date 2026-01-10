@@ -9,7 +9,7 @@ export const ADMIN_APPLICANT_FILTER_CONFIG: EntityFilterConfig = {
     email: { type: "string" },
     description: { type: "string" },
     emailVerified: { type: "boolean", operators: ["equals"] },
-    isActive: { type: "boolean", operators: ["equals"] },
+    isActive: { type: "boolean", operators: ["equals", "in"] },
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
   },

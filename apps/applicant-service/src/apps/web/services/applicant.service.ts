@@ -30,7 +30,7 @@ export class ApplicantService implements IApplicantService {
   constructor(
     private readonly applicantRepository: ApplicantRepository,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
 
   async create(createDto: CreateApplicantDto): Promise<ApplicantResponseDto> {
     try {

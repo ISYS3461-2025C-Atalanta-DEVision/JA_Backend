@@ -41,7 +41,9 @@ export class FilterBuilder<T> {
       const operator = filter.operator || "contains";
 
       // Validate operator is allowed for this field
-      if (!this.isOperatorAllowed(operator, fieldConfig)) continue;
+      if (!this.isOperatorAllowed(operator, fieldConfig)) {
+        continue;
+      }
 
       const condition = this.buildCondition(
         filter.value,
@@ -53,6 +55,7 @@ export class FilterBuilder<T> {
       }
     }
 
+    console.log("[FilterBuilder] Final query:", JSON.stringify(query));
     return query;
   }
 
@@ -129,6 +132,12 @@ export class FilterBuilder<T> {
 
       case "lte":
         return { $lte: this.convertValue(value, type) };
+
+      case "in":
+        const values = value
+          .split(",")
+          .map((v) => this.convertValue(v.trim(), type));
+        return { $in: values };
 
       default:
         return { $regex: escaped, $options: "i" };

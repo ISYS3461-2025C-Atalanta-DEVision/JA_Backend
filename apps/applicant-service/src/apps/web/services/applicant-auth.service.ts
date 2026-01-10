@@ -143,8 +143,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!applicant.isActive) {
         throw new RpcException({
           statusCode: HttpStatus.FORBIDDEN,
-          message:
-            "Account has been deactivated",
+          message: "Account has been deactivated",
         });
       }
 
@@ -236,12 +235,10 @@ export class ApplicantAuthService implements IApplicantAuthService {
       let oauthAccount: OAuthAccount | null = null;
 
       if (applicant) {
-
         if (!applicant.isActive) {
           throw new RpcException({
             statusCode: HttpStatus.FORBIDDEN,
-            message:
-              "Account has been deactivated",
+            message: "Account has been deactivated",
           });
         }
 
@@ -327,7 +324,6 @@ export class ApplicantAuthService implements IApplicantAuthService {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: "Authentication failed",
       });
-
     }
   }
 
@@ -353,8 +349,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
       if (!applicant.isActive) {
         throw new RpcException({
           statusCode: HttpStatus.FORBIDDEN,
-          message:
-            "Account has been deactivated",
+          message: "Account has been deactivated",
         });
       }
 
@@ -392,7 +387,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
 
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: "Token validation failed"
+        message: "Token validation failed",
       });
     }
   }

@@ -33,6 +33,7 @@ export class ApplicantController {
 
   @MessagePattern({ cmd: "applicant.findAll" })
   async findAll(@Payload() data: FindAllQueryParams) {
+    console.log('[ApplicantController] Received filters:', JSON.stringify(data.filters));
     const page = data.page || 1;
     const limit = data.limit || 10;
     return await this.applicantService.findAll(

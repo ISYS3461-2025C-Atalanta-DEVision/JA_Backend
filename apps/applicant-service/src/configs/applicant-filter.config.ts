@@ -15,7 +15,7 @@ export const APPLICANT_FILTER_CONFIG: EntityFilterConfig = {
     city: { type: "string" },
     isPremium: { type: "boolean", operators: ["equals"] },
     emailVerified: { type: "boolean", operators: ["equals"] },
-    isActive: { type: "boolean", operators: ["equals"] },
+    isActive: { type: "boolean", operators: ["equals", "in"] },
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
   },
