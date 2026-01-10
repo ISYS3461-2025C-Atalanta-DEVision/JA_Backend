@@ -31,7 +31,7 @@ export class CreateEducationDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(4)
+  @Max(100)
   gpa?: number;
 
   @IsOptional()
@@ -41,8 +41,4 @@ export class CreateEducationDto {
   @IsOptional()
   @IsDateString()
   endDate?: Date;
-
-  @IsOptional()
-  @IsString({ each: true })
-  skillCategories?: string[];
 }

@@ -28,6 +28,9 @@ export class Applicant {
   phone?: string;
 
   @Prop()
+  highestEducation?: string;
+
+  @Prop()
   address?: string;
 
   @Prop()

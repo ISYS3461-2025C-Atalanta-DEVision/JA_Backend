@@ -4,6 +4,7 @@ export class ApplicantResponseDto {
   email: string;
   objectiveSummary?: string;
   phone?: string;
+  highestEducation?: string;
   country: string;
   address?: string;
   addressProvinceCode?: string;

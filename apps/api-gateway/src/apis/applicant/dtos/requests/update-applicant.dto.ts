@@ -38,6 +38,15 @@ export class UpdateApplicantDto {
   phone?: string;
 
   @ApiProperty({
+    example: "66c1f3b2e8f4c1a9b1111111",
+    description: "Highest Education degree of user",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  highestEducation?: string;
+
+  @ApiProperty({
     example: "123 Main St, District 1",
     description: "Full address",
     required: false,

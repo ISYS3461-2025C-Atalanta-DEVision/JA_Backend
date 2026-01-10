@@ -19,6 +19,10 @@ export class UpdateApplicantDto {
 
   @IsOptional()
   @IsString()
+  highestEducation?: string;
+
+  @IsOptional()
+  @IsString()
   address?: string;
 
   @IsOptional()

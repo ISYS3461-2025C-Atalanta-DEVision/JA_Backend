@@ -241,6 +241,7 @@ export class ApplicantService implements IApplicantService {
       email: applicant.email,
       objectiveSummary: applicant.objectiveSummary,
       phone: applicant.phone,
+      highestEducation: applicant.highestEducation,
       country: applicant.country,
       address: applicant.address,
       addressProvinceCode: applicant.addressProvinceCode,

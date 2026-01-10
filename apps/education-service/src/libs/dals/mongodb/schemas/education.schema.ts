@@ -47,9 +47,6 @@ export class Education {
   @Prop({ type: Date })
   endDate?: Date;
 
-  @Prop({ type: [String], default: [] })
-  skillCategories: string[];
-
   createdAt: Date;
 
   updatedAt: Date;

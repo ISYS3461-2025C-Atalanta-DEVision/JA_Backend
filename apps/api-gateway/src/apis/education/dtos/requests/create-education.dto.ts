@@ -42,13 +42,13 @@ export class CreateEducationDto {
   @ApiPropertyOptional({
     description: "Grade Point Average (from 0-4)",
     minimum: 0,
-    maximum: 4,
-    example: 3.6,
+    maximum: 100,
+    example: 78,
   })
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(4)
+  @Max(100)
   gpa?: number;
 
   @ApiPropertyOptional({
@@ -66,13 +66,4 @@ export class CreateEducationDto {
   @IsOptional()
   @IsDateString()
   endDate?: Date;
-
-  @ApiPropertyOptional({
-    description: "Related skill categories acquired during study",
-    example: ["Algorithms", "Databases", "Machine Learning"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsString({ each: true })
-  skillCategories?: string[];
 }
