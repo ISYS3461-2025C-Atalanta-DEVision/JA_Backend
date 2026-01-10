@@ -21,7 +21,7 @@ export class CreateJobApplicationDto {
 
   @ApiPropertyOptional({
     description: 'Media urls',
-    example: '66b8f2c8e3a4c9a1b1234567',
+    example: '["file.cdn.com", "cover-letter.cdn.com"]',
   })
   @IsOptional()
   @IsArray()

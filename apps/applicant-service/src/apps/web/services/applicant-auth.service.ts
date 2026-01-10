@@ -278,6 +278,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
           country: "VN", // Default country for SSO users, can be updated later
           emailVerified: provider === "google", // Google verifies email
           isActive: true,
+          avatarUrl: picture
         });
 
         oauthAccount = await this.oauthAccountRepo.create({

@@ -5,11 +5,11 @@ import { StorageFolder } from "@storage/enums";
 export class UploadRequestDto {
   @ApiProperty({
     enum: StorageFolder,
-    description: "Storage folder (avatar, cv, job, post)",
+    description: "Storage folder (avatar, cv, cover-letter, job, post)",
     example: StorageFolder.AVATAR,
   })
   @IsEnum(StorageFolder, {
-    message: "Invalid folder. Must be: avatar, cv, job, or post",
+    message: "Invalid folder. Must be: avatar, cv, cover-letter, job, or post",
   })
   folder: StorageFolder;
 }

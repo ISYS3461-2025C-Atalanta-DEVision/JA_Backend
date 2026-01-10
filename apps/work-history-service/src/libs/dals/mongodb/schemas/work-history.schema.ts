@@ -21,7 +21,7 @@ export class WorkHistory {
   title: string;
 
   @Prop({ required: true })
-  companyId: string;
+  companyName: string;
 
   @Prop({ type: String })
   description?: string;

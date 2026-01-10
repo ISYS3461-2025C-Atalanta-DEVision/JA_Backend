@@ -17,7 +17,7 @@ export class CreateWorkHistoryDto {
 
   @IsNotEmpty()
   @IsString()
-  companyId: string;
+  companyName: string;
 
   @IsNotEmpty()
   @IsDateString()

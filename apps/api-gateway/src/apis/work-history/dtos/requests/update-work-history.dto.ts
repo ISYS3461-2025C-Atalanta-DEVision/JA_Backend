@@ -12,13 +12,13 @@ export class UpdateWorkHistoryDto {
   title?: string;
 
   @ApiProperty({
-    example: "66c1f3b2e8f4c1a9b7654321",
+    example: "Apple",
+    description: "Name of the company ",
     required: false,
-    description: "Updated company ID (ObjectId as string)",
   })
   @IsOptional()
   @IsString()
-  companyId?: string;
+  companyName: string;
 
   @ApiProperty({
     example: "2024-07-01",

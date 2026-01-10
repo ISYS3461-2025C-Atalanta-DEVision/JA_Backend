@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException, Inject, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, InternalServerErrorException, Inject, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { JobApplicationRepository, JobApplication } from '../../../libs/dals/mongodb';
 import { CreateJobApplicationDto, UpdateJobApplicationDto, JobApplicationResponseDto } from '../apis/job-application/dtos';
 import { IJobApplicationService } from '../interfaces';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom, timeout, catchError, of } from "rxjs";
 import { now } from 'mongoose';
 import { app } from 'firebase-admin';
@@ -16,53 +16,68 @@ export class JobApplicationService implements IJobApplicationService {
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
   ) { }
 
-  async create(createDto: CreateJobApplicationDto, applicantId: string): Promise<JobApplicationResponseDto> {
+  async create(
+    createDto: CreateJobApplicationDto,
+    applicantId: string,
+  ): Promise<JobApplicationResponseDto> {
     try {
-      // Check if applicant is valid and has applied for this position
       const applicant = await firstValueFrom(
         this.applicantClient
-          .send({ cmd: "applicant.findById" }, { id: applicantId })
+          .send({ cmd: 'applicant.findById' }, { id: applicantId })
           .pipe(
             timeout(5000),
-            catchError((error) => {
-              this.logger.warn(
-                `Failed to validate applicant ${applicantId}: ${error.message}`,
-              );
-              return of(null);
-            }),
+            catchError(() => of(null)),
           ),
       );
 
       if (!applicant) {
-        throw new NotFoundException(
-          `Applicant with ID ${applicantId} not found`,
-        );
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `Applicant with ID ${applicantId} not found`,
+        });
       }
 
-      //TODO: double check jobId with JM service
-
       const existing = await this.jobApplicationRepository.findOne({
-        applicantId: applicantId
+        applicantId,
+        jobId: createDto.jobId,
       });
 
       if (existing) {
-        throw new ConflictException('JobApplication from this applicant already exists, please use the update function');
+        throw new RpcException({
+          statusCode: HttpStatus.CONFLICT,
+          message:
+            `Job application already exists for applicant ${applicantId} and job ${createDto.jobId}`,
+        });
       }
 
-      const jobApplication = await this.jobApplicationRepository.create(
-        {
-          ...createDto,
-          applicantId: applicantId,
-          appliedAt: now()
-        }
-      );
+      const jobApplication = await this.jobApplicationRepository.create({
+        ...createDto,
+        applicantId,
+        appliedAt: new Date(),
+      });
 
       return this.toResponseDto(jobApplication);
     } catch (error) {
-      this.logger.error(`Create jobApplication failed for ${createDto.name}`, error.stack);
-      if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('JobApplication with this name already exists');
-      throw new InternalServerErrorException('Failed to create jobApplication');
+      this.logger.error(
+        `Create jobApplication failed for applicant ${applicantId}`,
+        error?.stack,
+      );
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      if (error?.code === 11000) {
+        throw new RpcException({
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Duplicate job application',
+        });
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to create job application',
+      });
     }
   }
 
