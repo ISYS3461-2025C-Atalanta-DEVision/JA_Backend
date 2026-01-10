@@ -36,6 +36,7 @@ export class JobApplicationService implements IJobApplicationService {
           message: `Applicant with ID ${applicantId} not found`,
         });
       }
+      // TODO: integrate with JM service to check if jobId is valid
 
       const existing = await this.jobApplicationRepository.findOne({
         applicantId,
@@ -90,19 +91,15 @@ export class JobApplicationService implements IJobApplicationService {
           .send({ cmd: "applicant.findById" }, { id: applicantId })
           .pipe(
             timeout(5000),
-            catchError((error) => {
-              this.logger.warn(
-                `Failed to validate applicant ${applicantId}: ${error.message}`,
-              );
-              return of(null);
-            }),
+            catchError(() => of(null)),
           ),
       );
 
       if (!applicant) {
-        throw new NotFoundException(
-          `Applicant with ID ${applicantId} not found`,
-        );
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `Applicant with ID ${applicantId} not found`,
+        });
       }
 
       const applications = await this.jobApplicationRepository.findMany({
@@ -119,8 +116,24 @@ export class JobApplicationService implements IJobApplicationService {
         `Find job applications failed for Applicant ${applicantId}`,
         error.stack,
       );
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException("Failed to find applications");
+
+      if (error instanceof RpcException) throw error;
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      if (error?.code === 11000) {
+        throw new RpcException({
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Duplicate job application',
+        });
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to create job application',
+      });
     }
   }
 
@@ -144,8 +157,14 @@ export class JobApplicationService implements IJobApplicationService {
         `Find job applications failed for job ${jobId}`,
         error.stack,
       );
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException("Failed to find applications");
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: `Failed to find job applications for ${jobId}`,
+      });
     }
   }
 
@@ -153,13 +172,23 @@ export class JobApplicationService implements IJobApplicationService {
     try {
       const jobApplication = await this.jobApplicationRepository.findById(id);
       if (!jobApplication) {
-        throw new NotFoundException(`JobApplication with ID ${id} not found`);
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `JobApplication with ID ${id} not found`,
+        });
       }
       return this.toResponseDto(jobApplication);
     } catch (error) {
       this.logger.error(`Find jobApplication failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to find jobApplication');
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find job application',
+      });
     }
   }
 
@@ -184,7 +213,10 @@ export class JobApplicationService implements IJobApplicationService {
       };
     } catch (error) {
       this.logger.error(`Find all job-applications failed`, error.stack);
-      throw new InternalServerErrorException('Failed to fetch job-applications');
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find job applications',
+      });
     }
   }
 
@@ -192,7 +224,10 @@ export class JobApplicationService implements IJobApplicationService {
     try {
       const jobApplication = await this.jobApplicationRepository.findById(id);
       if (!jobApplication) {
-        throw new NotFoundException(`JobApplication with ID ${id} not found`);
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `JobApplication with ID ${id} not found`,
+        });
       }
 
       // Check if applicant is valid and has applied for this position
@@ -201,23 +236,22 @@ export class JobApplicationService implements IJobApplicationService {
           .send({ cmd: "applicant.findById" }, { id: jobApplication.applicantId })
           .pipe(
             timeout(5000),
-            catchError((error) => {
-              this.logger.warn(
-                `Failed to find applicant ${jobApplication.applicantId}: ${error.message}`,
-              );
-              return of(null);
-            }),
+            catchError(() => of(null)),
           ),
       );
 
       if (!applicant) {
-        throw new NotFoundException(
-          `Applicant with ID ${jobApplication.applicantId} not found`,
-        );
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `Applicant with ID ${jobApplication.applicantId} not found`,
+        });
       }
 
       if (!applicant.isActive) {
-        throw new ForbiddenException('Account is deactivated');
+        throw new RpcException({
+          statusCode: HttpStatus.FORBIDDEN,
+          message: `Account ${jobApplication.applicantId} is deactivated`,
+        });
       }
 
       //TODO: double check jobId with JM service
@@ -226,9 +260,16 @@ export class JobApplicationService implements IJobApplicationService {
       return this.toResponseDto(updated);
     } catch (error) {
       this.logger.error(`Update jobApplication failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
-      if (error.code === 11000) throw new ConflictException('Name already in use');
-      throw new InternalServerErrorException('Failed to update jobApplication');
+      if (error instanceof RpcException) throw error;
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to create job application',
+      });
     }
   }
 
@@ -236,7 +277,10 @@ export class JobApplicationService implements IJobApplicationService {
     try {
       const jobApplication = await this.jobApplicationRepository.findById(id);
       if (!jobApplication) {
-        throw new NotFoundException(`JobApplication with ID ${id} not found`);
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `JobApplication with ID ${id} not found`,
+        });
       }
 
       // Soft delete - set isActive to false
@@ -247,8 +291,15 @@ export class JobApplicationService implements IJobApplicationService {
       };
     } catch (error) {
       this.logger.error(`Delete jobApplication failed for ${id}`, error.stack);
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to delete jobApplication');
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find job application',
+      });
     }
   }
 
