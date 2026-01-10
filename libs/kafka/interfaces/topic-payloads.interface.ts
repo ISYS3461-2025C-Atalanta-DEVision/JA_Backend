@@ -25,6 +25,16 @@ export interface ISalaryRange {
 }
 
 // ===========================================
+// Application Event Payloads
+// ===========================================
+
+export interface IJobApplicationCreated {
+  applicantId: string;
+  jobId: string;
+  mediaUrls: string[];
+}
+
+// ===========================================
 // Search Profile (shared between JA and JM)
 // ===========================================
 

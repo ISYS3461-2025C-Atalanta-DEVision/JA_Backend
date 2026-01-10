@@ -132,11 +132,19 @@ export class ApplicantAuthService implements IApplicantAuthService {
     try {
       const applicant = await this.applicantRepo.findByEmail(email);
 
-      if (!applicant || !applicant.isActive) {
+      if (!applicant) {
         throw new RpcException({
           statusCode: HttpStatus.UNAUTHORIZED,
           message:
             "Invalid credentials, please check your email and/or password",
+        });
+      }
+
+      if (!applicant.isActive) {
+        throw new RpcException({
+          statusCode: HttpStatus.FORBIDDEN,
+          message:
+            "Account has been deactivated",
         });
       }
 
@@ -228,8 +236,13 @@ export class ApplicantAuthService implements IApplicantAuthService {
       let oauthAccount: OAuthAccount | null = null;
 
       if (applicant) {
+
         if (!applicant.isActive) {
-          throw new UnauthorizedException("User account is inactive");
+          throw new RpcException({
+            statusCode: HttpStatus.FORBIDDEN,
+            message:
+              "Account has been deactivated",
+          });
         }
 
         // 2. Find existing oauth account for this applicant+provider
@@ -298,11 +311,7 @@ export class ApplicantAuthService implements IApplicantAuthService {
     } catch (error) {
       this.logger.error(`OAuth login failed for ${email}`, error.stack);
 
-      // Re-throw known exceptions
-      if (
-        error instanceof UnauthorizedException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof RpcException) {
         throw error;
       }
 
@@ -314,7 +323,11 @@ export class ApplicantAuthService implements IApplicantAuthService {
         throw new ConflictException("OAuth account already exists");
       }
 
-      throw new InternalServerErrorException("Authentication failed");
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: "Authentication failed",
+      });
+
     }
   }
 
@@ -329,8 +342,20 @@ export class ApplicantAuthService implements IApplicantAuthService {
   ): Promise<ApplicantAuthResponse> {
     try {
       const applicant = await this.applicantRepo.findById(applicantId);
-      if (!applicant || !applicant.isActive) {
-        throw new UnauthorizedException("User not found or inactive");
+      if (!applicant) {
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message:
+            "Invalid credentials, please check your email and/or password",
+        });
+      }
+
+      if (!applicant.isActive) {
+        throw new RpcException({
+          statusCode: HttpStatus.FORBIDDEN,
+          message:
+            "Account has been deactivated",
+        });
       }
 
       // Get stored refresh token hash from oauth_accounts
@@ -338,13 +363,20 @@ export class ApplicantAuthService implements IApplicantAuthService {
         applicantId,
         provider,
       );
+
       if (!storedHash) {
-        throw new UnauthorizedException("No active session");
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: "No active session",
+        });
       }
 
       // Compare stored hash with provided hash
       if (storedHash !== refreshTokenHash) {
-        throw new UnauthorizedException("Invalid refresh token");
+        throw new RpcException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: "Invalid refresh token",
+        });
       }
 
       return this.toAuthResponse(applicant, provider);
@@ -353,8 +385,15 @@ export class ApplicantAuthService implements IApplicantAuthService {
         `Refresh token validation failed for ${applicantId}`,
         error.stack,
       );
-      if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException("Token validation failed");
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: "Token validation failed"
+      });
     }
   }
 

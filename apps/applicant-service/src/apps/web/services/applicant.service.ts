@@ -239,7 +239,9 @@ export class ApplicantService implements IApplicantService {
       id: applicant._id.toString(),
       name: applicant.name,
       email: applicant.email,
+      objectiveSummary: applicant.objectiveSummary,
       phone: applicant.phone,
+      highestEducation: applicant.highestEducation,
       country: applicant.country,
       address: applicant.address,
       addressProvinceCode: applicant.addressProvinceCode,
@@ -247,6 +249,7 @@ export class ApplicantService implements IApplicantService {
       avatarUrl: applicant.avatarUrl,
       isActive: applicant.isActive,
       isPremium: applicant.isPremium,
+      skillCategories: applicant.skillCategories,
       createdAt: applicant.createdAt,
       updatedAt: applicant.updatedAt,
     };

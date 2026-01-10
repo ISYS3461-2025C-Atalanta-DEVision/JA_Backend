@@ -9,7 +9,6 @@ export class EducationResponseDto {
   gpa?: number;
   startDate?: Date;
   endDate?: Date;
-  skillCategories: string[];
   createdAt: Date;
   updatedAt: Date;
 }

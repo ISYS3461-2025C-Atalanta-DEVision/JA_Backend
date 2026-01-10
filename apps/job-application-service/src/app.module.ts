@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { modules as dalModules, ConfigurationModule, APP_CONFIG_SERVICE_PROVIDER, IAppConfigService } from './libs';
 import { modules } from './apps';
 import { HealthController } from './health.controller';
+import { KafkaModule } from '@kafka/kafka.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { HealthController } from './health.controller';
       },
       inject: [APP_CONFIG_SERVICE_PROVIDER],
     }),
+    KafkaModule,
     ...modules
   ],
   controllers: [HealthController],

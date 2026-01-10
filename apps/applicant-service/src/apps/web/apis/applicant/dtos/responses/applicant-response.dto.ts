@@ -2,7 +2,9 @@ export class ApplicantResponseDto {
   id: string;
   name: string;
   email: string;
+  objectiveSummary?: string;
   phone?: string;
+  highestEducation?: string;
   country: string;
   address?: string;
   addressProvinceCode?: string;
@@ -10,6 +12,7 @@ export class ApplicantResponseDto {
   avatarUrl?: string;
   isActive: boolean;
   isPremium: boolean;
+  skillCategories?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

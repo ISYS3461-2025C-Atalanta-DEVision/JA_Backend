@@ -221,7 +221,6 @@ export class WorkHistoryService implements IWorkHistoryService {
       description: workHistory.description,
       startDate: workHistory.startDate,
       endDate: workHistory.endDate,
-      skillCategories: workHistory.skillCategories.map((id) => id.toString()),
       createdAt: workHistory.createdAt,
       updatedAt: workHistory.updatedAt,
     };

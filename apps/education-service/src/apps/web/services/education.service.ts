@@ -222,7 +222,6 @@ export class EducationService implements IEducationService {
       gpa: education.gpa,
       startDate: education.startDate,
       endDate: education.endDate,
-      skillCategories: education.skillCategories,
       createdAt: education.createdAt,
       updatedAt: education.updatedAt,
     };

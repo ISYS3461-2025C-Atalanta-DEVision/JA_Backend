@@ -22,7 +22,13 @@ export class Applicant {
   email: string;
 
   @Prop()
+  objectiveSummary?: string;
+
+  @Prop()
   phone?: string;
+
+  @Prop()
+  highestEducation?: string;
 
   @Prop()
   address?: string;
@@ -38,6 +44,9 @@ export class Applicant {
 
   @Prop({ default: false })
   isPremium: boolean;
+
+  @Prop({ default: [] })
+  skillCategories: string[];
 
   /**
    * ISO 3166-1 alpha-2 country code (e.g., 'VN', 'US')

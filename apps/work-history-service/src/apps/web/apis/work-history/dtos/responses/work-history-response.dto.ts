@@ -6,7 +6,6 @@ export class WorkHistoryResponseDto {
   description?: string;
   startDate: Date;
   endDate?: Date;
-  skillCategories: string[];
   createdAt: Date;
   updatedAt: Date;
 }
