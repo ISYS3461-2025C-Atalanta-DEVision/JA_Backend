@@ -4,8 +4,9 @@ import { CreateJobApplicationDto, UpdateJobApplicationDto, JobApplicationRespons
 import { IJobApplicationService } from '../interfaces';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom, timeout, catchError, of } from "rxjs";
-import { now } from 'mongoose';
-import { app } from 'firebase-admin';
+import { KafkaService } from '@kafka/kafka.service';
+import { IJobApplicationCreated } from "@kafka/interfaces";
+import { TOPIC_APPLICATION_CREATED } from '@kafka/constants';
 
 @Injectable()
 export class JobApplicationService implements IJobApplicationService {
@@ -13,6 +14,7 @@ export class JobApplicationService implements IJobApplicationService {
 
   constructor(
     private readonly jobApplicationRepository: JobApplicationRepository,
+    private readonly kafkaService: KafkaService,
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
   ) { }
 
@@ -55,6 +57,18 @@ export class JobApplicationService implements IJobApplicationService {
         applicantId,
         appliedAt: new Date(),
       });
+
+      const payload: IJobApplicationCreated = {
+        applicantId: applicantId,
+        jobId: createDto.jobId,
+        mediaUrls: createDto.mediaUrls
+      };
+
+      await this.kafkaService.publish(
+        TOPIC_APPLICATION_CREATED,
+        "application.created",
+        payload
+      );
 
       return this.toResponseDto(jobApplication);
     } catch (error) {

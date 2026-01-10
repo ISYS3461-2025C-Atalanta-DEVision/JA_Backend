@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsDateString,
+  IsArray,
 } from 'class-validator';
 
 export class CreateJobApplicationDto {
@@ -17,8 +18,9 @@ export class CreateJobApplicationDto {
   jobId: string;
 
   @IsOptional()
-  @IsMongoId()
-  cvMediaId?: string;
+  @IsArray()
+  @IsString({ each: true })
+  mediaUrls?: string[];
 
   @IsOptional()
   @IsEnum(JobApplicationStatus)
