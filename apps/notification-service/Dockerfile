@@ -12,8 +12,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the job-skill-service
-RUN npm run build:job-skill-service
+RUN npm run build:notification-service
 
 # Production stage
 FROM node:20-alpine
@@ -24,7 +23,7 @@ WORKDIR /app
 RUN apk add --no-cache wget
 
 # Copy built files and dependencies
-COPY --from=builder /app/dist/apps/job-skill-service ./dist
+COPY --from=builder /app/dist/apps/notification-service ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 
