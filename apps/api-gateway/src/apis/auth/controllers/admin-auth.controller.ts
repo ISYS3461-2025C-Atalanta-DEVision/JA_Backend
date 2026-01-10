@@ -45,7 +45,7 @@ export class AdminAuthController {
     private readonly jweTokenService: JweTokenService,
     @Optional()
     private readonly tokenRevocationService?: TokenRevocationService,
-  ) {}
+  ) { }
 
   /**
    * Hash refresh token for storage
@@ -130,14 +130,14 @@ export class AdminAuthController {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 30 * 60 * 1000, // 30 minutes
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
