@@ -234,6 +234,37 @@ export class ApplicantService implements IApplicantService {
     }
   }
 
+  /**
+   * Set premium status for an applicant (internal service use only)
+   * Called by notification-service when subscription status changes
+   */
+  async setPremiumStatus(
+    applicantId: string,
+    isPremium: boolean,
+  ): Promise<{ success: boolean }> {
+    try {
+      const applicant = await this.applicantRepository.findById(applicantId);
+      if (!applicant) {
+        this.logger.warn(
+          `setPremiumStatus: Applicant ${applicantId} not found`,
+        );
+        return { success: false };
+      }
+
+      await this.applicantRepository.update(applicantId, { isPremium });
+      this.logger.log(
+        `Set isPremium=${isPremium} for applicant ${applicantId}`,
+      );
+      return { success: true };
+    } catch (error) {
+      this.logger.error(
+        `setPremiumStatus failed for ${applicantId}`,
+        error.stack,
+      );
+      return { success: false };
+    }
+  }
+
   private toResponseDto(applicant: Applicant): ApplicantResponseDto {
     return {
       id: applicant._id.toString(),

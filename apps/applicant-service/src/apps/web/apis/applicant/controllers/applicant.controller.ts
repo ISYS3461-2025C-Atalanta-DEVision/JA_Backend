@@ -64,6 +64,20 @@ export class ApplicantController {
     return this.applicantService.verifyEmail(data.token);
   }
 
+  /**
+   * Set premium status (internal service use only)
+   * Called by notification-service when subscription status changes
+   */
+  @MessagePattern({ cmd: "applicant.setPremiumStatus" })
+  async setPremiumStatus(
+    @Payload() data: { applicantId: string; isPremium: boolean },
+  ) {
+    return await this.applicantService.setPremiumStatus(
+      data.applicantId,
+      data.isPremium,
+    );
+  }
+
   // ==================== Search Profile TCP Handlers ====================
 
   @MessagePattern({ cmd: "searchProfile.get" })

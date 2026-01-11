@@ -64,7 +64,7 @@ export class NotificationService implements INotificationService {
     @Inject("APPLICANT_SERVICE") private readonly applicantClient: ClientProxy,
     @Inject("JOB_SKILL_SERVICE")
     private readonly jobSkillClient: ClientProxy,
-  ) { }
+  ) {}
 
   /**
    * Fetch skill names from job-skill-service by IDs
@@ -83,9 +83,7 @@ export class NotificationService implements INotificationService {
           .pipe(
             timeout(5000),
             catchError((error) => {
-              this.logger.warn(
-                `Failed to fetch skill names: ${error.message}`,
-              );
+              this.logger.warn(`Failed to fetch skill names: ${error.message}`);
               return of([]);
             }),
           ),
@@ -99,6 +97,67 @@ export class NotificationService implements INotificationService {
     } catch (error) {
       this.logger.error(`Skill name fetch error: ${error.message}`);
       return new Map();
+    }
+  }
+
+  /**
+   * Sync premium status to applicant-service source schemas
+   * Updates both Applicant.isPremium and SearchProfile.isActive
+   */
+  private async syncPremiumStatusToSource(
+    applicantId: string,
+    isPremium: boolean,
+  ): Promise<void> {
+    // Update Applicant.isPremium via dedicated internal handler
+    try {
+      await firstValueFrom(
+        this.applicantClient
+          .send(
+            { cmd: "applicant.setPremiumStatus" },
+            { applicantId, isPremium },
+          )
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(
+                `Failed to update Applicant.isPremium for ${applicantId}: ${error.message}`,
+              );
+              return of(null);
+            }),
+          ),
+      );
+      this.logger.log(
+        `Synced Applicant.isPremium=${isPremium} for ${applicantId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error syncing Applicant.isPremium for ${applicantId}: ${error.message}`,
+      );
+    }
+
+    // Update SearchProfile.isActive
+    try {
+      const cmd = isPremium ? "searchProfile.activate" : "searchProfile.deactivate";
+      await firstValueFrom(
+        this.applicantClient
+          .send({ cmd }, { applicantId })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.warn(
+                `Failed to ${cmd} for ${applicantId}: ${error.message}`,
+              );
+              return of(null);
+            }),
+          ),
+      );
+      this.logger.log(
+        `Synced SearchProfile.isActive=${isPremium} for ${applicantId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error syncing SearchProfile.isActive for ${applicantId}: ${error.message}`,
+      );
     }
   }
 
@@ -279,9 +338,10 @@ export class NotificationService implements INotificationService {
 
     const notificationId = uuidv4();
     const title = "Job Listing Updated!";
-    const changedText = params.changedFields.length > 0
-      ? `Changed: ${params.changedFields.join(", ")}. `
-      : "";
+    const changedText =
+      params.changedFields.length > 0
+        ? `Changed: ${params.changedFields.join(", ")}. `
+        : "";
     const message = `A job you matched with has been updated. ${changedText}Match score: ${params.matchScore}%`;
 
     // Use validated email from applicant-service
@@ -472,12 +532,12 @@ export class NotificationService implements INotificationService {
         },
         ...(recipientEmail
           ? [
-            {
-              channel: NotificationChannel.EMAIL,
-              status: NotificationStatus.PENDING,
-              retryCount: 0,
-            },
-          ]
+              {
+                channel: NotificationChannel.EMAIL,
+                status: NotificationStatus.PENDING,
+                retryCount: 0,
+              },
+            ]
           : []),
       ],
       priority: params.matchScore >= 70 ? "HIGH" : "NORMAL",
@@ -580,10 +640,10 @@ export class NotificationService implements INotificationService {
 
     // Update premium status in search profile projection (if exists)
     // This also sets isActive = true for job matching
-    await this.searchProfileRepo.updatePremiumStatus(
-      payload.applicantId,
-      true,
-    );
+    await this.searchProfileRepo.updatePremiumStatus(payload.applicantId, true);
+
+    // Sync premium status to applicant-service source schemas
+    await this.syncPremiumStatusToSource(payload.applicantId, true);
 
     this.logger.log(
       `JA premium subscription notification sent: ${payload.applicantId}`,
@@ -664,6 +724,9 @@ export class NotificationService implements INotificationService {
       false,
     );
 
+    // Sync premium status to applicant-service source schemas
+    await this.syncPremiumStatusToSource(payload.applicantId, false);
+
     this.logger.log(
       `JA premium expiration notification sent: ${payload.applicantId}`,
     );
@@ -673,9 +736,7 @@ export class NotificationService implements INotificationService {
    * Handle JA premium subscription closed event (user cancelled / admin terminated)
    * Send cancellation notification and deactivate profile
    */
-  async handleJAPremiumClosed(
-    payload: IPremiumJAClosedPayload,
-  ): Promise<void> {
+  async handleJAPremiumClosed(payload: IPremiumJAClosedPayload): Promise<void> {
     // Validate applicant exists before processing
     const applicant = await this.validateAndGetApplicant(payload.applicantId);
     if (!applicant) {
@@ -742,6 +803,9 @@ export class NotificationService implements INotificationService {
       payload.applicantId,
       false,
     );
+
+    // Sync premium status to applicant-service source schemas
+    await this.syncPremiumStatusToSource(payload.applicantId, false);
 
     this.logger.log(
       `JA premium closure notification sent: ${payload.applicantId}`,
@@ -1041,8 +1105,9 @@ export class NotificationService implements INotificationService {
     <div class="content">
       <p>${message}</p>
       ${data?.matchScore ? `<p class="match-score">Match Score: ${data.matchScore}%</p>` : ""}
-      ${data?.matchedCriteria
-        ? `
+      ${
+        data?.matchedCriteria
+          ? `
       <div class="criteria">
         <h3>Matched Criteria:</h3>
         <div class="criteria-item">Skills: ${data.matchedCriteria.skillNames?.join(", ") || "N/A"}</div>
@@ -1050,7 +1115,7 @@ export class NotificationService implements INotificationService {
         <div class="criteria-item">Salary: ${data.matchedCriteria.salary ? "Yes" : "No"}</div>
       </div>
       `
-        : ""
+          : ""
       }
     </div>
     <div class="footer">

@@ -37,9 +37,7 @@ export class UpdateApplicantDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @IsOptional()
-  @IsBoolean()
-  isPremium?: boolean;
+  // NOTE: isPremium removed for security - use applicant.setPremiumStatus TCP handler
 
   @IsOptional()
   @IsArray()

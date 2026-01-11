@@ -26,4 +26,8 @@ export interface IApplicantService {
     id: string,
   ): Promise<{ success: boolean; message: string }>;
   verifyEmail(token: string): Promise<{ success: boolean; message: string }>;
+  setPremiumStatus(
+    applicantId: string,
+    isPremium: boolean,
+  ): Promise<{ success: boolean }>;
 }
