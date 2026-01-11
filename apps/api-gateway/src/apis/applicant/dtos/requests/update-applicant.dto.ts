@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsOptional, IsString, IsBoolean, IsArray } from "class-validator";
+import { IsEmail, IsOptional, IsString, IsBoolean, IsArray, IsEnum } from "class-validator";
+import { EducationLevel } from "./applicant.enum";
 
 export class UpdateApplicantDto {
   @ApiProperty({
@@ -38,13 +39,13 @@ export class UpdateApplicantDto {
   phone?: string;
 
   @ApiProperty({
-    example: "66c1f3b2e8f4c1a9b1111111",
-    description: "Highest Education degree of user",
+    example: "Master",
+    description: "Highest Education level of user, allowed values: HighSchool, Bachelor, Master, PhD, NoGiven",
     required: false,
   })
   @IsOptional()
-  @IsString()
-  highestEducation?: string;
+  @IsEnum(EducationLevel)
+  highestEducation?: EducationLevel;
 
   @ApiProperty({
     example: "123 Main St, District 1",

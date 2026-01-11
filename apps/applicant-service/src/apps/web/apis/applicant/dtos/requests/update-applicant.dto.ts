@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString, IsBoolean, IsArray } from "class-validator";
+import { EducationLevel } from "apps/applicant-service/src/libs/dals";
+import { IsEmail, IsOptional, IsString, IsBoolean, IsArray, IsEnum } from "class-validator";
 
 export class UpdateApplicantDto {
   @IsOptional()
@@ -18,8 +19,8 @@ export class UpdateApplicantDto {
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  highestEducation?: string;
+  @IsEnum(EducationLevel)
+  highestEducation?: EducationLevel;
 
   @IsOptional()
   @IsString()
