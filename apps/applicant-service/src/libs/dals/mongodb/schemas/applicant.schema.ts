@@ -3,6 +3,14 @@ import { HydratedDocument, Types } from "mongoose";
 
 export type ApplicantDocument = HydratedDocument<Applicant>;
 
+export enum EducationLevel {
+  HighSchool = "HighSchool",
+  Bachelor = "Bachelor",
+  Master = "Master",
+  PhD = "PhD",
+  NoGiven = "NoGiven",
+}
+
 /**
  * Applicant Schema
  * Stores applicant profile and email/password authentication info
@@ -27,8 +35,12 @@ export class Applicant {
   @Prop()
   phone?: string;
 
-  @Prop()
-  highestEducation?: string;
+  @Prop({
+    type: String,
+    enum: Object.values(EducationLevel),
+    required: true,
+  })
+  highestEducation?: EducationLevel;
 
   @Prop()
   address?: string;
