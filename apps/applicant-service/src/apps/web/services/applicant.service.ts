@@ -19,6 +19,9 @@ import { createHash } from "crypto";
 import { FilterBuilder } from "@common/filters";
 import { FilterItem, SortItem } from "@common/dtos/filter.dto";
 import { APPLICANT_FILTER_CONFIG } from "../../../configs";
+import { KafkaService } from "@kafka/kafka.service";
+import { TOPIC_PROFILE_JA_APPLICANT_UPDATED } from "@kafka/constants";
+import { IApplicantProfileUpdatedPayload } from "@kafka/interfaces";
 
 @Injectable()
 export class ApplicantService implements IApplicantService {
@@ -30,6 +33,7 @@ export class ApplicantService implements IApplicantService {
   constructor(
     private readonly applicantRepository: ApplicantRepository,
     private readonly mailerService: MailerService,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async create(createDto: CreateApplicantDto): Promise<ApplicantResponseDto> {
@@ -127,7 +131,24 @@ export class ApplicantService implements IApplicantService {
         }
       }
 
+      // Track changes for Kafka event
+      const changedFields = this.detectProfileChanges(applicant, updateDto);
+      const previousCountry = changedFields.includes("country")
+        ? applicant.country
+        : undefined;
+
       const updated = await this.applicantRepository.update(id, updateDto);
+
+      // Publish Kafka event if skills or country changed
+      if (changedFields.length > 0) {
+        await this.publishProfileUpdateEvent(
+          id,
+          updated,
+          changedFields,
+          previousCountry,
+        );
+      }
+
       return this.toResponseDto(updated);
     } catch (error) {
       this.logger.error(`Update applicant failed for ${id}`, error.stack);
@@ -262,6 +283,73 @@ export class ApplicantService implements IApplicantService {
         error.stack,
       );
       return { success: false };
+    }
+  }
+
+  /**
+   * Detect changes in skills or country fields
+   */
+  private detectProfileChanges(
+    existing: Applicant,
+    updateDto: UpdateApplicantDto,
+  ): ("skillCategories" | "country")[] {
+    const changedFields: ("skillCategories" | "country")[] = [];
+
+    // Check skillCategories change
+    if (updateDto.skillCategories !== undefined) {
+      const oldSkills = (existing.skillCategories || []).sort().join(",");
+      const newSkills = (updateDto.skillCategories || []).sort().join(",");
+      if (oldSkills !== newSkills) {
+        changedFields.push("skillCategories");
+      }
+    }
+
+    // Check country change
+    if (
+      updateDto.country !== undefined &&
+      existing.country !== updateDto.country
+    ) {
+      changedFields.push("country");
+    }
+
+    return changedFields;
+  }
+
+  /**
+   * Publish Kafka event for profile updates (skills/country changes)
+   */
+  private async publishProfileUpdateEvent(
+    applicantId: string,
+    applicant: Applicant,
+    changedFields: ("skillCategories" | "country")[],
+    previousCountry?: string,
+  ): Promise<void> {
+    try {
+      const payload: IApplicantProfileUpdatedPayload = {
+        applicantId,
+        changedFields,
+        skillCategories: applicant.skillCategories,
+        country: applicant.country,
+        previousCountry,
+        isPremium: applicant.isPremium,
+      };
+
+      await this.kafkaService.publish(
+        TOPIC_PROFILE_JA_APPLICANT_UPDATED,
+        "profile.ja.applicant.updated",
+        payload,
+        { key: applicantId },
+      );
+
+      this.logger.log(
+        `Published profile update event for applicant ${applicantId}, changed: ${changedFields.join(", ")}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish profile update event for applicant ${applicantId}`,
+        error.stack,
+      );
+      // Don't throw - profile was saved, Kafka is non-critical
     }
   }
 

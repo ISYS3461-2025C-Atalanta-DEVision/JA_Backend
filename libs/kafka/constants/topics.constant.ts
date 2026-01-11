@@ -10,8 +10,7 @@
 // ===========================================
 // Job application Topics
 // ===========================================
-export const TOPIC_APPLICATION_CREATED =
-  "applicant_apply_job";
+export const TOPIC_APPLICATION_CREATED = "applicant_apply_job";
 
 // ===========================================
 // Subscription Topics
@@ -30,6 +29,10 @@ export const TOPIC_PROFILE_JA_SEARCH_PROFILE_CREATED =
   "profile.ja.search-profile.created";
 export const TOPIC_PROFILE_JA_SEARCH_PROFILE_UPDATED =
   "profile.ja.search-profile.updated";
+
+// Applicant profile update (skills/country changes for Job Manager matching)
+export const TOPIC_PROFILE_JA_APPLICANT_UPDATED =
+  "profile.ja.applicant.updated";
 export const TOPIC_PROFILE_JM_SEARCH_PROFILE_CREATED =
   "profile.jm.search-profile.created";
 export const TOPIC_PROFILE_JM_SEARCH_PROFILE_UPDATED =

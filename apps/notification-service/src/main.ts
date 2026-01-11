@@ -33,6 +33,9 @@ async function bootstrap() {
       consumer: {
         groupId: kafkaConfig.consumerGroup,
       },
+      subscribe: {
+        fromBeginning: false, // ← KEY: Don't start from beginning
+      },
     },
   });
 

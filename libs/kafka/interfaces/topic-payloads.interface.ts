@@ -84,6 +84,22 @@ export interface IPremiumJAClosedPayload {
 // Profile Event Payloads
 // ===========================================
 
+/**
+ * Payload for applicant profile updates (skills/country changes)
+ * Used by Job Manager to trigger headhunt matching
+ */
+export interface IApplicantProfileUpdatedPayload {
+  applicantId: string;
+  changedFields: ("skillCategories" | "country")[];
+  // Current values
+  skillCategories?: string[];
+  country?: string;
+  // For country migration tracking
+  previousCountry?: string;
+  // Metadata
+  isPremium: boolean;
+}
+
 export interface ISearchProfileCreatedPayload {
   profileId: string;
   userId: string;
